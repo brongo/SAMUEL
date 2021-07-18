@@ -1,5 +1,5 @@
-# S.A.M.U.E.L.
-(Source Available: https://github.com/brongo/SAMUEL)
-Mass Unlimited Extraction Library
+# SAMUEL
 
 A tool for extracting assets from DOOM Eternal .streamdb and .resource files.
+
+This is a pre-release version and not intended for public use.
