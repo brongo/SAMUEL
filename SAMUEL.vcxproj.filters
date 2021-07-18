@@ -3,61 +3,50 @@
   <ItemGroup>
     <Filter Include="Source Files">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>
-      </Extensions>
-    </Filter>
-    <Filter Include="Vendor Files">
-      <UniqueIdentifier>{22ce6800-6407-461b-8ca1-0a54c1387f45}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{f318faf9-7a87-4007-86c3-bcd603941aee}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Vendor Files\jsonxx">
-      <UniqueIdentifier>{8e26deaa-ae26-4fe8-a7b0-869441ff5ed7}</UniqueIdentifier>
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="vendor\jsonxx\LICENSE">
-      <Filter>Vendor Files\jsonxx</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="vendor\jsonxx\jsonxx.cc">
-      <Filter>Vendor Files\jsonxx</Filter>
-    </ClCompile>
-    <ClCompile Include="source\SAMUEL.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="source\PackageMapSpec.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\Utilities.cpp">
+    <ClCompile Include="source\jsonxx\jsonxx.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\SAMUEL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="source\ResourceFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\StreamDBFile.cpp">
+    <ClCompile Include="source\StreamdbFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\Utilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="vendor\jsonxx\jsonxx.h">
-      <Filter>Vendor Files\jsonxx</Filter>
-    </ClInclude>
-    <ClInclude Include="source\SAMUEL.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="source\PackageMapSpec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\Utilities.h">
+    <ClInclude Include="source\jsonxx\jsonxx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\SAMUEL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="source\ResourceFile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\StreamDBFile.h">
+    <ClInclude Include="source\StreamdbFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\Utilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
