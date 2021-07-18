@@ -1,4 +1,5 @@
 #pragma once
+
 #include <fstream>
 #include <vector>
 #include <filesystem>
@@ -8,11 +9,11 @@ namespace HAYDEN
     namespace fs = std::filesystem;
 
     typedef unsigned char byte;
-    typedef signed short int16;
-    typedef unsigned short uint16;
-    typedef unsigned int uint32;
-    typedef unsigned __int64 uint64;
-    typedef signed __int64 int64;
+    typedef int16_t int16;
+    typedef uint16_t uint16;
+    typedef uint32_t uint32;
+    typedef uint64_t uint64;
+    typedef int64_t int64;
 
     class StreamDBEntry
     {
