@@ -5,10 +5,37 @@ namespace fs = std::filesystem;
 
 namespace HAYDEN
 {
-    // Helper function. Reads .streamdb file contents into SAMUEL. 
-    void SAMUEL::readStreamDBEntries(std::vector<std::string> fileList)
+    // Helper function. Given a resource file, updates SAMUEL's list of .streamdb files to search.
+    void SAMUEL::UpdateStreamDBFileList(std::string resourceFileName)
     {
-        for (auto i = fileList.begin(); i != fileList.end(); ++i)
+        std::vector<std::string> appendList;
+        appendList = packageMapSpec.GetFilesByResourceName(_basePath + "\\" + resourceFileName);
+
+        // remove any files without .streamdb extension
+        for (int i = 0; i < appendList.size(); i++)
+        {
+            size_t strPos = appendList[i].rfind(".streamdb");
+            if (strPos != -1)
+                continue;
+            appendList.erase(appendList.begin() + i);
+            i--;
+        }
+
+        // append to list, skip any files that were already added
+        for (int i = 0; i < appendList.size(); i++)
+        {
+            auto it = std::find(_streamDBFileList.begin(), _streamDBFileList.end(), appendList[i]);
+            if (it != _streamDBFileList.end())
+                continue;
+            _streamDBFileList.insert(std::end(_streamDBFileList), appendList[i]);
+        }
+        return;
+    }
+    
+    // Helper function. Read .streamdb contents into SAMUEL
+    void SAMUEL::ReadStreamDBFiles()
+    {
+        for (auto i = _streamDBFileList.begin(); i != _streamDBFileList.end(); ++i)
         {
             // build filepath
             std::string filePath = _basePath + "\\" + *i;
@@ -23,13 +50,6 @@ namespace HAYDEN
             StreamDBFile streamDBFile(fsPath);
             this->streamDBFiles.push_back(streamDBFile);
         }
-    }
-
-    // Init function. Populates list of global .streamdb files from packagemapspec.json.
-    void SAMUEL::SetGlobalStreamDBFileList()
-    {
-        _globalStreamDBFileList = packageMapSpec.GetFilesByResourceName(_basePath + "\\gameresources.resources");
-        return;
     }
 
     // Init function. Reads packagemapspec.json data into SAMUEL. 
@@ -60,7 +80,7 @@ namespace HAYDEN
         try 
         {
             resourceFile = ResourceFile(inputFile, 0);
-            _resourceStreamDBFileList = packageMapSpec.GetFilesByResourceName(resourceFile.filename);
+            UpdateStreamDBFileList(resourceFile.filename);
             return;
         }
         catch (...)
@@ -74,7 +94,7 @@ namespace HAYDEN
     uint64_t getStreamDBIndex(uint64_t resourceId, int mipCount = -6)
     {
         // Get hex bytes string
-        std::string hexBytes = int64ToHex(resourceId);
+        std::string hexBytes = intToHex(resourceId);
 
         // Reverse each byte
         for (int i = 0; i < hexBytes.size(); i += 2) {
@@ -90,7 +110,7 @@ namespace HAYDEN
         }
 
         // Get second digit based on mip count
-        hexBytes[1] = int64ToHex((char)(6i64 + mipCount))[1];
+        hexBytes[1] = intToHex((char)(6 + mipCount))[1];
 
         // Convert hex string back to uint64 and return
         return hexToInt64(hexBytes);
@@ -282,10 +302,13 @@ int main(int argc, char* argv[])
     SAMUEL SAM;
     SAM.SetBasePath(argv[2]);
     SAM.LoadPackageMapSpec();
-    SAM.SetGlobalStreamDBFileList();
+    SAM.UpdateStreamDBFileList("gameresources.resources");
 
     // GUI should call this when user selects .resource file to load.
     SAM.LoadResource(argv[1]);
+
+    // Read .streamdb contents into SAMUEL
+    SAM.ReadStreamDBFiles();
 
     // Decompress .resource file headers to get streamdb mipCount + streamdb Indexes
     SAM.getStreamDBDataIndexes(SAM.resourceFile);
@@ -298,5 +321,5 @@ int main(int argc, char* argv[])
 
     SAM.printMatchesToCSV();
     SAM.printUnmatchedToCSV();
-    return 0;
+     return 0;
 }

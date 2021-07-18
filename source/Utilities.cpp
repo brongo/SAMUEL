@@ -9,13 +9,6 @@ namespace HAYDEN
         value = ((value & 0x00FF00FF00FF00FFull) << 8) | ((value & 0xFF00FF00FF00FF00ull) >> 8);
     }
 
-    std::string int64ToHex(uint64_t num)
-    {
-        std::stringstream stream;
-        stream << std::setfill('0') << std::setw(sizeof(uint64_t) * 2) << std::hex << +num;
-        return stream.str();
-    }
-
     uint64_t hexToInt64(std::string hex) 
     {
         uint64_t x;

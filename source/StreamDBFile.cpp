@@ -57,7 +57,6 @@ namespace HAYDEN
             fread(buff4, 1, 4, f);
             indexEntryList[i].compressedSize = *(uint32*)buff4;
         }
-        printf("Finished reading streamdb entries.\n");
         return;
     }
 

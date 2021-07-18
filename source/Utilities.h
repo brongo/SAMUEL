@@ -20,8 +20,16 @@ typedef int WINAPI OodLZ_DecompressFunc(
 
 namespace HAYDEN
 {
-    bool oodleDecompress(const char* outputFile, byte* compressedData, uint64 compressedSize, uint64 decompressedSize);  
+    template <typename T>
+    std::string intToHex(T num)
+    {
+        std::stringstream stream;
+        stream << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << +num;
+        return stream.str();
+    }
+
+    uint64_t hexToInt64(std::string hex); 
     void endianSwap(std::uint64_t& value); 
-    std::string int64ToHex(uint64_t num);
-    uint64_t hexToInt64(std::string hex);
+    
+    bool oodleDecompress(const char* outputFile, byte* compressedData, uint64 compressedSize, uint64 decompressedSize);
 }

@@ -41,8 +41,7 @@ namespace HAYDEN
 			int _hasFatalError = 0;
 			int _errorCode = 0;
 			std::string _basePath;
-			std::vector<std::string> _globalStreamDBFileList;
-			std::vector<std::string> _resourceStreamDBFileList;
+			std::vector<std::string> _streamDBFileList;
 
 		public:
 			std::vector<StreamDBData> streamDBData;
@@ -51,13 +50,13 @@ namespace HAYDEN
 			PackageMapSpec packageMapSpec;
 
 		public:
+			// Helper Functions
+			void UpdateStreamDBFileList(std::string resourceFileName);
+			void ReadStreamDBFiles();
+
 			// Init Functions
 			void SetBasePath(std::string basePath) { _basePath = basePath; }
-			void SetGlobalStreamDBFileList();
 			void LoadPackageMapSpec(); 
-
-			// Helper Functions
-			void readStreamDBEntries(std::vector<std::string> fileList);
 
 			// Public API Functions
 			void LoadResource(std::string fileName);
