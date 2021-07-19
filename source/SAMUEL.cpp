@@ -5,7 +5,29 @@ namespace fs = std::filesystem;
 
 namespace HAYDEN
 {
-    // Helper function. Given a resource file, updates SAMUEL's list of .streamdb files to search.
+    // Init function. Reads packagemapspec.json data into SAMUEL. 
+    void SAMUEL::LoadPackageMapSpec()
+    {
+        try
+        {
+            // read input filestream into stringstream
+            std::ifstream inputStream = std::ifstream(_basePath + (char)fs::path::preferred_separator + "packagemapspec.json");
+            std::stringstream strStream;
+            strStream << inputStream.rdbuf();
+
+            // convert to static string and call PackageMapSpec constructor.
+            std::string jsonStream = strStream.str();
+            packageMapSpec = PackageMapSpec(jsonStream);
+            return;
+        }
+        catch (...)
+        {
+            printf("ERROR: Failed to load packagemapspec.json. \n");
+            return;
+        }
+    }
+
+    // Update SAMUEL's list of .streamdb files to search. Called by LoadResource().
     void SAMUEL::UpdateStreamDBFileList(std::string resourceFileName)
     {
         std::vector<std::string> appendList;
@@ -32,7 +54,7 @@ namespace HAYDEN
         return;
     }
     
-    // Helper function. Read .streamdb contents into SAMUEL
+    // Read .streamdb contents into SAMUEL. Called by LoadResource().
     void SAMUEL::ReadStreamDBFiles()
     {
         for (auto i = _streamDBFileList.begin(); i != _streamDBFileList.end(); ++i)
@@ -52,79 +74,8 @@ namespace HAYDEN
         }
     }
 
-    // Init function. Reads packagemapspec.json data into SAMUEL. 
-    void SAMUEL::LoadPackageMapSpec()
-    {
-        try
-        {
-            // read input filestream into stringstream
-            std::ifstream inputStream = std::ifstream(_basePath + (char)fs::path::preferred_separator + "packagemapspec.json");
-            std::stringstream strStream;            
-            strStream << inputStream.rdbuf();
-            
-            // convert to static string and call PackageMapSpec constructor.
-            std::string jsonStream = strStream.str();
-            packageMapSpec = PackageMapSpec(jsonStream);
-            return;
-        }
-        catch (...)
-        {
-            printf("ERROR: Failed to load packagemapspec.json. \n");
-            return;
-        }
-    }
-
-    // Public API function. Reads .resource file data into SAMUEL. 
-    void SAMUEL::LoadResource(std::string inputFile)
-    {
-        try 
-        {
-            resourceFile = ResourceFile(inputFile, 0);
-            UpdateStreamDBFileList(resourceFile.filename);
-            return;
-        }
-        catch (...)
-        {
-            printf("ERROR: Failed to load resource file %s. \n", inputFile.c_str());
-            return;
-        }
-    }
-
-    // UNSORTED
-    uint64_t getStreamDBIndex(uint64_t resourceId, int mipCount = -6)
-    {
-        // Get hex bytes string
-        std::string hexBytes = intToHex(resourceId);
-
-        // Reverse each byte
-        for (int i = 0; i < hexBytes.size(); i += 2) {
-            std::swap(hexBytes[i], hexBytes[i + (int64)1]);
-        }
-
-        // Shift digits to the right
-        hexBytes = hexBytes.substr(hexBytes.size() - 1) + hexBytes.substr(0, hexBytes.size() - 1);
-
-        // Reverse each byte again
-        for (int i = 0; i < hexBytes.size(); i += 2) {
-            std::swap(hexBytes[i], hexBytes[i + (int64)1]);
-        }
-
-        // Get second digit based on mip count
-        hexBytes[1] = intToHex((char)(6 + mipCount))[1];
-
-        // Convert hex string back to uint64 and return
-        return hexToInt64(hexBytes);
-    }
-    byte* SAMUEL::getCompressedFileData(FILE& f, uint64 fileOffset, uint64 compressedSize)
-    {
-        byte* compressedData = NULL;
-        compressedData = new byte[compressedSize];
-
-        fseek(&f, (long)fileOffset, SEEK_SET);
-        fread(compressedData, 1, compressedSize, &f);
-        return compressedData;
-    }
-    TGAHeader SAMUEL::readTGAHeader(const char* tmpDecompressedHeader)
+    // Parse a single TGA Header file. Called by ReadEmbeddedTGAHeaders().
+    TGAHeader SAMUEL::ReadTGAHeader(const char* tmpDecompressedHeader)
     {
         byte buff4[4];
         TGAHeader tgaHeader;
@@ -154,66 +105,19 @@ namespace HAYDEN
         return tgaHeader;
     }
 
-    void SAMUEL::getStreamDBDataIndexes(ResourceFile& resourceFile)
+    // Reads embedded TGA data from .resources into binary filestream. Called by ReadEmbeddedTGAHeaders().
+    byte* SAMUEL::GetCompressedFileHeader(FILE& f, uint64 fileOffset, uint64 compressedSize)
     {
-        FILE* f = fopen(resourceFile.filename.c_str(), "rb");
-        if (f == NULL)
-        {
-            printf("Error: failed to open %s for reading.\n", resourceFile.filename.c_str());
-            return;
-        }
+        byte* compressedData = NULL;
+        compressedData = new byte[compressedSize];
 
-        // Now, we need to iterate through .resource file entries
-        for (uint64 i = 0; i < resourceFile.numFileEntries; i++)
-        {
-            ResourceEntry thisEntry = resourceFile.resourceEntries[i];
-
-            // check version, for now we only want version = 21
-            if (thisEntry.version != 21)
-                continue;
-
-            if (thisEntry.dataSizeCompressed == 0)
-                continue;
-
-            // FIXME
-            if (thisEntry.compressionMode == 0)
-                continue;
-
-            // go to file offset and read compressed file header into memory
-            byte* compressedData = getCompressedFileData(*f, thisEntry.dataOffset, thisEntry.dataSizeCompressed);
-            if (!oodleDecompress("tmpTGAHeader", compressedData, thisEntry.dataSizeCompressed, thisEntry.dataSizeDecompressed))
-                continue; // error
-
-            compressedData = NULL;
-
-            // get mip data from TGA
-            TGAHeader tgaHeader = readTGAHeader("tmpTGAHeader");
-
-            // get streamdbIndex
-            endianSwap(thisEntry.hash);
-            uint64 streamDBIndex = getStreamDBIndex(thisEntry.hash, tgaHeader.numMips);
-            endianSwap(streamDBIndex);
-
-            // populate streamdbData
-            StreamDBData thisStreamDBFile;
-            thisStreamDBFile.filename = thisEntry.name;
-            thisStreamDBFile.streamDBIndex = streamDBIndex;
-            thisStreamDBFile.streamDBSizeDecompressed = tgaHeader.decompressedSize;
-            thisStreamDBFile.streamDBSizeCompressed = tgaHeader.compressedSize;
-
-            if (tgaHeader.isCompressed == 1)
-                thisStreamDBFile.streamDBCompressionType = thisEntry.compressionMode;
-
-            streamDBData.push_back(thisStreamDBFile);
-            continue;
-        }
-
-        if (f != NULL)
-            fclose(f);
-
-        return;
+        fseek(&f, (long)fileOffset, SEEK_SET);
+        fread(compressedData, 1, compressedSize, &f);
+        return compressedData;
     }
-    int SAMUEL::findMatchingIndex(uint64 streamDBIndex, int streamDBNumber)
+
+    // Helper function called by SearchStreamDBFilesForIndex().
+    int SAMUEL::FindMatchingIndex(uint64 streamDBIndex, int streamDBNumber)
     {
         for (int i = 0; i < streamDBFiles[streamDBNumber].indexEntryCount; i++)
         {
@@ -224,28 +128,123 @@ namespace HAYDEN
         }
         return -1;
     }
-    void SAMUEL::searchStreamDBFilesForIndex(StreamDBData& streamDBData)
+
+    // Loop through export list and match streamDBIndexes against .streamdb files in memory. Called by ExportAll().
+    void SAMUEL::SearchStreamDBFilesForIndex(FileExportItem& streamDBData)
     {
         for (int i = 0; i < streamDBFiles.size(); i++)
         {
-            int matchIndex = findMatchingIndex(streamDBData.streamDBIndex, i);
+            int matchIndex = FindMatchingIndex(streamDBData.streamDBIndex, i);
             if (matchIndex != -1)
             {
                 streamDBData.streamDBNumber = i;
-                streamDBData.streamDBFileName = streamDBFiles[i].fileName; 
+                streamDBData.streamDBFileName = streamDBFiles[i].fileName;
                 streamDBData.streamDBFileOffset = streamDBFiles[i].indexEntryList[matchIndex].fileOffset * (uint64)16;
                 return;
             }
         }
         return;
     }
-    void SAMUEL::printMatchesToCSV()
+
+    // Decompress & Parse TGA Headers embedded in .resources file. Called by ExportAll().
+    std::vector<TGAHeader> SAMUEL::ReadEmbeddedTGAHeaders(ResourceFile& resourceFile)
+    {
+        std::vector<TGAHeader> embeddedTGAHeaders;
+        FILE* f = fopen(resourceFile.filename.c_str(), "rb");
+        if (f == NULL)
+        {
+            printf("Error: failed to open %s for reading.\n", resourceFile.filename.c_str());
+            return embeddedTGAHeaders;
+        }
+
+        // Reads embedded TGA Headers for the data needed to locate them in .streamdb
+        for (uint64 i = 0; i < fileExportList.size(); i++)
+        {
+            FileExportItem& thisFile = fileExportList[i];
+
+            // go to file offset and read compressed file header into memory
+            byte* compressedData = GetCompressedFileHeader(*f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
+
+            // decompress with Oodle DLL
+            if (!oodleDecompress("tmpTGAHeader", compressedData, thisFile.resourceFileCompressedSize, thisFile.resourceFileDecompressedSize))
+                continue; // error
+
+            // get mip data from TGA
+            TGAHeader embeddedTGAHeader = ReadTGAHeader("tmpTGAHeader");
+            embeddedTGAHeaders.push_back(embeddedTGAHeader);
+        }
+
+        fclose(f);
+        return embeddedTGAHeaders;
+    }
+
+    // Converts ResourceID to StreamDBIndex. Called by ExportAll().
+    uint64 SAMUEL::CalculateStreamDBIndex(uint64 resourceId, int mipCount)
+    {
+        // Get hex bytes string
+        std::string hexBytes = intToHex(resourceId);
+
+        // Reverse each byte
+        for (int i = 0; i < hexBytes.size(); i += 2) {
+            std::swap(hexBytes[i], hexBytes[i + (int64)1]);
+        }
+
+        // Shift digits to the right
+        hexBytes = hexBytes.substr(hexBytes.size() - 1) + hexBytes.substr(0, hexBytes.size() - 1);
+
+        // Reverse each byte again
+        for (int i = 0; i < hexBytes.size(); i += 2) {
+            std::swap(hexBytes[i], hexBytes[i + (int64)1]);
+        }
+
+        // Get second digit based on mip count
+        hexBytes[1] = intToHex((char)(6 + mipCount))[1];
+
+        // Convert hex string back to uint64 and return
+        return hexToInt64(hexBytes);
+    }
+
+    // Builds list of files to export from SAMUEL. Called by ExportAll().
+    void SAMUEL::BuildFileExportList()
+    {
+        // Iterate through currently loaded .resource entries to find supported files
+        for (uint64 i = 0; i < resourceFile.numFileEntries; i++)
+        {
+            ResourceEntry thisEntry = resourceFile.resourceEntries[i];
+
+            // for now we only want version == 21 (images)
+            if (thisEntry.version != 21)
+                continue;
+
+            // skips entries with no data to extract
+            if (thisEntry.dataSizeCompressed == 0)
+                continue;
+
+            // FIX ME: this *should* be supported.
+            // skips entries where file header is not compressed
+            if (thisEntry.compressionMode == 0)
+                continue;
+
+            FileExportItem exportItem;
+            exportItem.filename = thisEntry.name;
+            exportItem.resourceFileOffset = thisEntry.dataOffset;
+            exportItem.resourceFileCompressedSize = thisEntry.dataSizeCompressed;
+            exportItem.resourceFileDecompressedSize = thisEntry.dataSizeDecompressed;
+            exportItem.resourceFileHash = thisEntry.hash;
+
+            fileExportList.push_back(exportItem);
+        }
+        return;
+    }
+
+    // Debugging functions. Called by ExportAll().
+    void SAMUEL::PrintMatchesToCSV()
     {
         // Loops through all items with match == 1 and write to file
         std::ofstream outputMatched("matched_tmp", std::ios::app);
-        for (int i = 0; i < streamDBData.size(); i++)
+        for (int i = 0; i < fileExportList.size(); i++)
         {
-            StreamDBData& thisEntry = streamDBData[i];
+            FileExportItem& thisEntry = fileExportList[i];
             if (thisEntry.streamDBNumber == -1)
                 continue;
 
@@ -262,13 +261,13 @@ namespace HAYDEN
         }
         return;
     }
-    void SAMUEL::printUnmatchedToCSV()
+    void SAMUEL::PrintUnmatchedToCSV()
     {
         // Repeats the process, but for unmatched items (match == 0)
         std::ofstream outputUnmatched("unmatched_tmp", std::ios::app);
-        for (int i = 0; i < streamDBData.size(); i++)
+        for (int i = 0; i < fileExportList.size(); i++)
         {
-            StreamDBData& thisEntry = streamDBData[i];
+            FileExportItem& thisEntry = fileExportList[i];
             if (thisEntry.streamDBNumber != -1)
                 continue;
 
@@ -282,6 +281,84 @@ namespace HAYDEN
             output += std::to_string(thisEntry.streamDBNumber) + "\n";
             outputUnmatched.write(output.c_str(), output.length());
         }
+        return;
+    }
+
+    // Public API function. Reads .resource file data into SAMUEL. 
+    void SAMUEL::LoadResource(std::string inputFile)
+    {
+        try
+        {
+            // load .resources file data
+            resourceFile = ResourceFile(inputFile, 0);
+        }
+        catch (...)
+        {
+            printf("ERROR: Failed to read .resource file %s. \n", inputFile.c_str());
+            return;
+        }
+
+        try
+        {
+            // get list of .streamdb files for this resource
+            UpdateStreamDBFileList("gameresources.resources");      // globals
+            UpdateStreamDBFileList(resourceFile.filename);          // resource-specific
+        }
+        catch (...)
+        {
+            printf("ERROR: Failed to read .streamdb list from packagemapspec.json. \n");
+            return;
+        }
+
+        try
+        {
+            // load .streamdb data from files in _streamDBFileList
+            ReadStreamDBFiles();
+        }
+        catch (...)
+        {
+            printf("ERROR: Failed to read .streamdb file data. \n");
+            return;
+        }
+        return;
+    }
+
+    // Public API function. Exports all files from the currently loaded .resources.
+    void SAMUEL::ExportAll()
+    {
+        // Build list of files to export
+        BuildFileExportList();
+
+        // Get embedded TGA data needed to locate files in .streamdb.
+        std::vector<TGAHeader> embeddedTGAHeaders = ReadEmbeddedTGAHeaders(resourceFile);
+        
+        for (int i = 0; i < fileExportList.size(); i++)
+        {
+            FileExportItem& thisFile = fileExportList[i];
+
+            endianSwap(thisFile.resourceFileHash);
+            uint64 streamDBIndex = CalculateStreamDBIndex(thisFile.resourceFileHash, embeddedTGAHeaders[i].numMips);
+            endianSwap(streamDBIndex);
+
+            // populate streamdbData
+            thisFile.streamDBIndex = streamDBIndex;
+            thisFile.streamDBSizeDecompressed = embeddedTGAHeaders[i].decompressedSize;
+            thisFile.streamDBSizeCompressed = embeddedTGAHeaders[i].compressedSize;
+
+            // FIXME, should get compressionType from .resources
+            if (embeddedTGAHeaders[i].isCompressed == 1)
+                thisFile.streamDBCompressionType = 2;
+        }
+        
+        // Loop through streamdbData and decompress files
+        for (int i = 0; i < fileExportList.size(); i++)
+        {
+            SearchStreamDBFilesForIndex(fileExportList[i]);
+        }
+
+        // For Debugging
+        PrintMatchesToCSV();
+        PrintUnmatchedToCSV();
         return;
     }
 }
@@ -299,24 +376,12 @@ int main(int argc, char* argv[])
     SAMUEL SAM;
     SAM.SetBasePath(argv[2]);
     SAM.LoadPackageMapSpec();
-    SAM.UpdateStreamDBFileList("gameresources.resources");
 
-    // GUI should call this when user selects .resource file to load.
+    // API function - call this when user selects .resource file to load.
     SAM.LoadResource(argv[1]);
 
-    // Read .streamdb contents into SAMUEL
-    SAM.ReadStreamDBFiles();
+    // API function - call this when user clicks "Export All" button.
+    SAM.ExportAll();
 
-    // Decompress .resource file headers to get streamdb mipCount + streamdb Indexes
-    SAM.getStreamDBDataIndexes(SAM.resourceFile);
-
-    // Loop through streamdbData and decompress files
-    for (int i = 0; i < SAM.streamDBData.size(); i++)
-    {
-        SAM.searchStreamDBFilesForIndex(SAM.streamDBData[i]);
-    }
-
-    SAM.printMatchesToCSV();
-    SAM.printUnmatchedToCSV();
-     return 0;
+    return 0;
 }

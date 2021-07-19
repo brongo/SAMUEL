@@ -31,7 +31,7 @@ namespace HAYDEN
     }
 
     uint64_t hexToInt64(std::string hex); 
-    void endianSwap(std::uint64_t& value); 
+    void endianSwap(uint64& value); 
     
     bool oodleDecompress(const char* outputFile, byte* compressedData, uint64 compressedSize, uint64 decompressedSize);
 }
