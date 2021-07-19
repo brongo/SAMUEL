@@ -1,8 +1,12 @@
+#ifdef __linux__
+#include <dlfcn.h>
+#endif
+
 #include "Utilities.h"
 
 namespace HAYDEN
 {
-    void endianSwap(std::uint64_t& value) 
+    void endianSwap(uint64& value) 
     {
         value = ((value & 0x00000000FFFFFFFFull) << 32) | ((value & 0xFFFFFFFF00000000ull) >> 32);
         value = ((value & 0x0000FFFF0000FFFFull) << 16) | ((value & 0xFFFF0000FFFF0000ull) >> 16);
@@ -25,9 +29,13 @@ namespace HAYDEN
         uint64 outbytes;
 
         OodLZ_DecompressFunc* OodLZ_Decompress;
+#ifdef _WIN32
         auto oodle = LoadLibraryA("./oo2core_8_win64.dll");
-
         OodLZ_Decompress = (OodLZ_DecompressFunc*)GetProcAddress(oodle, "OodleLZ_Decompress");
+#else
+        auto oodle = dlopen("./liblinoodle.so", RTLD_LAZY);
+        OodLZ_Decompress = (OodLZ_DecompressFunc*)dlsym(oodle, "OodleLZ_Decompress");
+#endif
         if (!OodLZ_Decompress)
         {
             printf("Error: failed to load oo2core_8_win64.dll.\n\n");
@@ -44,18 +52,17 @@ namespace HAYDEN
             return 0;
         }
 
-        if (fopen_s(&f, outputFile, "wb") != 0)
+        f = fopen(outputFile, "wb");
+        if (f == NULL)
         {
             printf("Error: failed to open destination file for writing.\n\n");
             return 0;
         }
 
         // Write to file
-        if (f != NULL)
-        {
-            fwrite(output, 1, outbytes, f);
-            fclose(f);
-        }
+        fwrite(output, 1, outbytes, f);
+        fclose(f);
+
         return 1;
     }
 }

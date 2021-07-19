@@ -9,7 +9,7 @@ namespace HAYDEN
     void SAMUEL::UpdateStreamDBFileList(std::string resourceFileName)
     {
         std::vector<std::string> appendList;
-        appendList = packageMapSpec.GetFilesByResourceName(_basePath + "\\" + resourceFileName);
+        appendList = packageMapSpec.GetFilesByResourceName(_basePath + (char)fs::path::preferred_separator + resourceFileName);
 
         // remove any files without .streamdb extension
         for (int i = 0; i < appendList.size(); i++)
@@ -38,7 +38,7 @@ namespace HAYDEN
         for (auto i = _streamDBFileList.begin(); i != _streamDBFileList.end(); ++i)
         {
             // build filepath
-            std::string filePath = _basePath + "\\" + *i;
+            std::string filePath = _basePath + (char)fs::path::preferred_separator + *i;
 
             // make sure this is a .streamdb file before parsing
             size_t strPos = filePath.rfind(".streamdb");
@@ -58,7 +58,7 @@ namespace HAYDEN
         try
         {
             // read input filestream into stringstream
-            std::ifstream inputStream = std::ifstream(_basePath + "\\packagemapspec.json");
+            std::ifstream inputStream = std::ifstream(_basePath + (char)fs::path::preferred_separator + "packagemapspec.json");
             std::stringstream strStream;            
             strStream << inputStream.rdbuf();
             
@@ -98,7 +98,7 @@ namespace HAYDEN
 
         // Reverse each byte
         for (int i = 0; i < hexBytes.size(); i += 2) {
-            std::swap(hexBytes[i], hexBytes[i + 1i64]);
+            std::swap(hexBytes[i], hexBytes[i + (int64)1]);
         }
 
         // Shift digits to the right
@@ -106,7 +106,7 @@ namespace HAYDEN
 
         // Reverse each byte again
         for (int i = 0; i < hexBytes.size(); i += 2) {
-            std::swap(hexBytes[i], hexBytes[i + 1i64]);
+            std::swap(hexBytes[i], hexBytes[i + (int64)1]);
         }
 
         // Get second digit based on mip count
@@ -126,41 +126,38 @@ namespace HAYDEN
     }
     TGAHeader SAMUEL::readTGAHeader(const char* tmpDecompressedHeader)
     {
-        FILE* f;
         byte buff4[4];
         TGAHeader tgaHeader;
+        FILE* f = fopen(tmpDecompressedHeader, "rb");
 
-        if (fopen_s(&f, tmpDecompressedHeader, "rb") != 0)
+        if (f == NULL)
         {
             printf("Error: failed to open %s for reading.\n", tmpDecompressedHeader);
             return tgaHeader;
         }
 
-        if (f != NULL)
-        {
-            fseek(f, 59, SEEK_SET);
-            fread(buff4, 4, 1, f);
-            tgaHeader.numMips = *(uint32*)buff4;
+        fseek(f, 59, SEEK_SET);
+        fread(buff4, 4, 1, f);
+        tgaHeader.numMips = *(uint32*)buff4;
 
-            fseek(f, 20, SEEK_CUR);
-            fread(buff4, 4, 1, f);
-            tgaHeader.decompressedSize = *(uint32*)buff4;
+        fseek(f, 20, SEEK_CUR);
+        fread(buff4, 4, 1, f);
+        tgaHeader.decompressedSize = *(uint32*)buff4;
 
-            fread(buff4, 4, 1, f);
-            tgaHeader.isCompressed = *(int*)buff4;
+        fread(buff4, 4, 1, f);
+        tgaHeader.isCompressed = *(int*)buff4;
 
-            fread(buff4, 4, 1, f);
-            tgaHeader.compressedSize = *(uint32*)buff4;
+        fread(buff4, 4, 1, f);
+        tgaHeader.compressedSize = *(uint32*)buff4;
 
-            fclose(f);
-        }
+        fclose(f);
         return tgaHeader;
     }
 
     void SAMUEL::getStreamDBDataIndexes(ResourceFile& resourceFile)
     {
-        FILE* f;
-        if (fopen_s(&f, resourceFile.filename.c_str(), "rb") != 0)
+        FILE* f = fopen(resourceFile.filename.c_str(), "rb");
+        if (f == NULL)
         {
             printf("Error: failed to open %s for reading.\n", resourceFile.filename.c_str());
             return;
@@ -293,8 +290,8 @@ int main(int argc, char* argv[])
 {
     printf("SAMUEL v0.1 by SamPT \n");
 
-    if (argc < 1) {
-        printf("USAGE: SAMUEL.exe resourceFile basePath \n");
+    if (argc == 1) {
+        printf("USAGE: SAMUEL resourceFile basePath \n");
         return 1;
     }
 

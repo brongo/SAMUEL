@@ -5,7 +5,8 @@ namespace HAYDEN
     // Open .streamdb filestream. Return 1 on success, 0 on failure.open_s. 
     bool StreamDBFile::openStreamDBFile()
     {
-        if (fopen_s(&f, fileName.c_str(), "rb") != 0)
+        f = fopen(fileName.c_str(), "rb");
+        if (f == NULL)
         {
             printf("Error: failed to open %s for reading.\n", fileName.c_str());
             return 0;

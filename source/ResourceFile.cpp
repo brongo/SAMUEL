@@ -166,23 +166,20 @@ namespace HAYDEN
     // Constructor, calls the helper functions above
     ResourceFile::ResourceFile(std::string filename, int loadPriority)
     {
-        FILE* f;
         printf("Reading file %s\n", filename.c_str());
-        if (fopen_s(&f, filename.c_str(), "rb") != 0) 
+        FILE* f = fopen(filename.c_str(), "rb");
+        if (f == NULL) 
         {
             printf("Error: failed to open %s for reading.\n", filename.c_str());
             return;
         }
 
-        if (f != NULL)
-        {
-            this->filename = filename;
-            this->loadPriority = loadPriority;
-            readFileHeader(f);
-            readStringOffsets(f);
-            readPathIndexes(f);
-            readEntryData(f);
-        }
+        this->filename = filename;
+        this->loadPriority = loadPriority;
+        readFileHeader(f);
+        readStringOffsets(f);
+        readPathIndexes(f);
+        readEntryData(f);
         fclose(f);
     }
 }

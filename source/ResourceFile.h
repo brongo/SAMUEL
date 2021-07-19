@@ -1,12 +1,17 @@
 #pragma once
 
+#ifdef _WIN32
 #include <WinSock2.h> // Additional dependencies: ws2_32.lib - for ntohl
+#elif defined __linux__
+#include <arpa/inet.h>
+#endif
+
 #include <string>
 #include <vector>
 
 typedef unsigned char byte;
-typedef unsigned int uint32;
-typedef unsigned __int64 uint64;
+typedef uint32_t uint32;
+typedef uint64_t uint64;
 
 namespace HAYDEN
 {

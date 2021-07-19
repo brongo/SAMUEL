@@ -1,6 +1,8 @@
 #pragma once
 
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 
 #include <string>
 #include <fstream>
@@ -10,11 +12,11 @@
 #define SAFE_SPACE 64
 
 typedef unsigned char byte;
-typedef unsigned int uint32;
-typedef unsigned __int64 uint64;
-typedef __int64 int64;
+typedef uint32_t uint32;
+typedef uint64_t uint64;
+typedef int64_t int64;
 
-typedef int WINAPI OodLZ_DecompressFunc(
+typedef int OodLZ_DecompressFunc(
     byte* src_buf, int src_len, byte* dst, size_t dst_size, int fuzz, int crc, int verbose,
     byte* dst_base, size_t e, void* cb, void* cb_ctx, void* scratch, size_t scratch_size, int threadPhase);
 
