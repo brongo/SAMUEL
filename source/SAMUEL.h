@@ -13,30 +13,21 @@
 
 namespace HAYDEN
 {
-	class TGAHeader
-	{
-		public:
-			int numMips = 0;
-			int isCompressed = 0;
-			uint32 compressedSize = 0;
-			uint32 decompressedSize = 0;
-	};
-
 	class FileExportItem
 	{
-	public:
-		std::string filename;
-		std::string streamDBFileName;
-		uint64 resourceFileHash = 0;
-		uint64 resourceFileOffset = 0;
-		uint64 resourceFileCompressedSize = 0;
-		uint64 resourceFileDecompressedSize = 0;
-		uint64 streamDBIndex = 0;
-		uint64 streamDBFileOffset = 0;
-		uint64 streamDBSizeCompressed = 0;
-		uint64 streamDBSizeDecompressed = 0;
-		int streamDBCompressionType = 0;
-		int streamDBNumber = -1;
+		public:
+			std::string resourceFileName;
+			std::string streamDBFileName;
+			uint64 resourceFileHash = 0;
+			uint64 resourceFileOffset = 0;
+			uint64 resourceFileCompressedSize = 0;
+			uint64 resourceFileDecompressedSize = 0;
+			uint64 streamDBIndex = 0;
+			uint64 streamDBFileOffset = 0;
+			uint64 streamDBSizeCompressed = 0;
+			uint64 streamDBSizeDecompressed = 0;
+			int streamDBCompressionType = 0;
+			int streamDBNumber = -1;
 	};
 
 	class SAMUEL
@@ -62,16 +53,12 @@ namespace HAYDEN
 			void UpdateStreamDBFileList(std::string resourceFileName);
 			void ReadStreamDBFiles();
 
-			// Helper Functions - ReadEmbeddedTGAHeaders()
-			byte* GetCompressedFileHeader(FILE& f, uint64 fileOffset, uint64 compressedSize);
-			TGAHeader ReadTGAHeader(const char* tmpDecompressedHeader);
-
 			// Helper Functions - SearchStreamDBFilesForIndex()
 			int FindMatchingIndex(uint64 streamIndex, int streamDBNumber);
 
 			// Helper Functions - ExportAll()
 			void BuildFileExportList();
-			std::vector<TGAHeader> ReadEmbeddedTGAHeaders(ResourceFile& resourceFile);
+			std::vector<EmbeddedTGAHeader> ReadEmbeddedTGAHeaders(ResourceFile& resourceFile);
 			uint64 CalculateStreamDBIndex(uint64 resourceId, int mipCount = -6);
 			void SearchStreamDBFilesForIndex(FileExportItem& streamDBData);
 

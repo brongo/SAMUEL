@@ -15,6 +15,15 @@ typedef uint64_t uint64;
 
 namespace HAYDEN
 {
+    class EmbeddedTGAHeader
+    {
+        public:
+            int numMips = 0;
+            int isCompressed = 0;
+            uint32 compressedSize = 0;
+            uint32 decompressedSize = 0;
+    };
+
     class ResourceEntry
     {
         public:
@@ -83,11 +92,15 @@ namespace HAYDEN
             // Default Constructor
             ResourceFile() {};
 
+            // Helper Functions - ReadEmbeddedTGAHeaders()
+            byte* GetCompressedFileHeader(FILE& f, uint64 fileOffset, uint64 compressedSize);
+            EmbeddedTGAHeader ReadTGAHeader(const char* tmpDecompressedHeader);
+
             // Helper functions for organization purposes - not meant to be called individually
-            void readFileHeader(FILE* f);
-            void readStringOffsets(FILE* f);
-            void readPathIndexes(FILE* f);
-            void readEntryData(FILE* f);
+            void ReadFileHeader(FILE* f);
+            void ReadStringOffsets(FILE* f);
+            void ReadPathIndexes(FILE* f);
+            void ReadEntryData(FILE* f);
 
             // Preferred Constructor, calls helper functions above
             ResourceFile(std::string filename, int loadPriority);

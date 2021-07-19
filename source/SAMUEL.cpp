@@ -74,46 +74,36 @@ namespace HAYDEN
         }
     }
 
-    // Parse a single TGA Header file. Called by ReadEmbeddedTGAHeaders().
-    TGAHeader SAMUEL::ReadTGAHeader(const char* tmpDecompressedHeader)
+    // Decompress & Parse TGA Headers embedded in .resources file. Called by ExportAll().
+    std::vector<EmbeddedTGAHeader> SAMUEL::ReadEmbeddedTGAHeaders(ResourceFile& resourceFile)
     {
-        byte buff4[4];
-        TGAHeader tgaHeader;
-        FILE* f = fopen(tmpDecompressedHeader, "rb");
-
+        std::vector<EmbeddedTGAHeader> embeddedTGAHeaders;
+        FILE* f = fopen(resourceFile.filename.c_str(), "rb");
         if (f == NULL)
         {
-            printf("Error: failed to open %s for reading.\n", tmpDecompressedHeader);
-            return tgaHeader;
+            printf("Error: failed to open %s for reading.\n", resourceFile.filename.c_str());
+            return embeddedTGAHeaders;
         }
 
-        fseek(f, 59, SEEK_SET);
-        fread(buff4, 4, 1, f);
-        tgaHeader.numMips = *(uint32*)buff4;
+        // Reads embedded TGA Headers for the data needed to locate file in .streamdb
+        for (uint64 i = 0; i < fileExportList.size(); i++)
+        {
+            FileExportItem& thisFile = fileExportList[i];
 
-        fseek(f, 20, SEEK_CUR);
-        fread(buff4, 4, 1, f);
-        tgaHeader.decompressedSize = *(uint32*)buff4;
+            // go to file offset and read compressed file header into memory
+            byte* compressedData = resourceFile.GetCompressedFileHeader(*f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
 
-        fread(buff4, 4, 1, f);
-        tgaHeader.isCompressed = *(int*)buff4;
+            // decompress with Oodle DLL
+            if (!oodleDecompress("tmpTGAHeader", compressedData, thisFile.resourceFileCompressedSize, thisFile.resourceFileDecompressedSize))
+                continue; // error
 
-        fread(buff4, 4, 1, f);
-        tgaHeader.compressedSize = *(uint32*)buff4;
+            // get mip data from TGA
+            EmbeddedTGAHeader embeddedTGAHeader = resourceFile.ReadTGAHeader("tmpTGAHeader");
+            embeddedTGAHeaders.push_back(embeddedTGAHeader);
+        }
 
         fclose(f);
-        return tgaHeader;
-    }
-
-    // Reads embedded TGA data from .resources into binary filestream. Called by ReadEmbeddedTGAHeaders().
-    byte* SAMUEL::GetCompressedFileHeader(FILE& f, uint64 fileOffset, uint64 compressedSize)
-    {
-        byte* compressedData = NULL;
-        compressedData = new byte[compressedSize];
-
-        fseek(&f, (long)fileOffset, SEEK_SET);
-        fread(compressedData, 1, compressedSize, &f);
-        return compressedData;
+        return embeddedTGAHeaders;
     }
 
     // Helper function called by SearchStreamDBFilesForIndex().
@@ -144,38 +134,6 @@ namespace HAYDEN
             }
         }
         return;
-    }
-
-    // Decompress & Parse TGA Headers embedded in .resources file. Called by ExportAll().
-    std::vector<TGAHeader> SAMUEL::ReadEmbeddedTGAHeaders(ResourceFile& resourceFile)
-    {
-        std::vector<TGAHeader> embeddedTGAHeaders;
-        FILE* f = fopen(resourceFile.filename.c_str(), "rb");
-        if (f == NULL)
-        {
-            printf("Error: failed to open %s for reading.\n", resourceFile.filename.c_str());
-            return embeddedTGAHeaders;
-        }
-
-        // Reads embedded TGA Headers for the data needed to locate them in .streamdb
-        for (uint64 i = 0; i < fileExportList.size(); i++)
-        {
-            FileExportItem& thisFile = fileExportList[i];
-
-            // go to file offset and read compressed file header into memory
-            byte* compressedData = GetCompressedFileHeader(*f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
-
-            // decompress with Oodle DLL
-            if (!oodleDecompress("tmpTGAHeader", compressedData, thisFile.resourceFileCompressedSize, thisFile.resourceFileDecompressedSize))
-                continue; // error
-
-            // get mip data from TGA
-            TGAHeader embeddedTGAHeader = ReadTGAHeader("tmpTGAHeader");
-            embeddedTGAHeaders.push_back(embeddedTGAHeader);
-        }
-
-        fclose(f);
-        return embeddedTGAHeaders;
     }
 
     // Converts ResourceID to StreamDBIndex. Called by ExportAll().
@@ -226,7 +184,7 @@ namespace HAYDEN
                 continue;
 
             FileExportItem exportItem;
-            exportItem.filename = thisEntry.name;
+            exportItem.resourceFileName = thisEntry.name;
             exportItem.resourceFileOffset = thisEntry.dataOffset;
             exportItem.resourceFileCompressedSize = thisEntry.dataSizeCompressed;
             exportItem.resourceFileDecompressedSize = thisEntry.dataSizeDecompressed;
@@ -249,7 +207,7 @@ namespace HAYDEN
                 continue;
 
             std::string output;
-            output += "\"" + thisEntry.filename + "\",";
+            output += "\"" + thisEntry.resourceFileName + "\",";
             output += std::to_string(thisEntry.streamDBIndex) + ",";
             output += std::to_string(thisEntry.streamDBFileOffset) + ",";
             output += std::to_string(thisEntry.streamDBSizeCompressed) + ",";
@@ -272,7 +230,7 @@ namespace HAYDEN
                 continue;
 
             std::string output;
-            output += "\"" + thisEntry.filename + "\",";
+            output += "\"" + thisEntry.resourceFileName + "\",";
             output += std::to_string(thisEntry.streamDBIndex) + ",";
             output += std::to_string(thisEntry.streamDBFileOffset) + ",";
             output += std::to_string(thisEntry.streamDBSizeCompressed) + ",";
@@ -330,7 +288,7 @@ namespace HAYDEN
         BuildFileExportList();
 
         // Get embedded TGA data needed to locate files in .streamdb.
-        std::vector<TGAHeader> embeddedTGAHeaders = ReadEmbeddedTGAHeaders(resourceFile);
+        std::vector<EmbeddedTGAHeader> embeddedTGAHeaders = ReadEmbeddedTGAHeaders(resourceFile);
         
         for (int i = 0; i < fileExportList.size(); i++)
         {

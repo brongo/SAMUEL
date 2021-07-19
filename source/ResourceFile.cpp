@@ -2,8 +2,50 @@
 
 namespace HAYDEN
 {
+    // Parse a TGA Header file.
+    EmbeddedTGAHeader ResourceFile::ReadTGAHeader(const char* tmpDecompressedHeader)
+    {
+        byte buff4[4];
+        EmbeddedTGAHeader tgaHeader;
+        FILE* f = fopen(tmpDecompressedHeader, "rb");
+
+        if (f == NULL)
+        {
+            printf("Error: failed to open %s for reading.\n", tmpDecompressedHeader);
+            return tgaHeader;
+        }
+
+        fseek(f, 59, SEEK_SET);
+        fread(buff4, 4, 1, f);
+        tgaHeader.numMips = *(uint32*)buff4;
+
+        fseek(f, 20, SEEK_CUR);
+        fread(buff4, 4, 1, f);
+        tgaHeader.decompressedSize = *(uint32*)buff4;
+
+        fread(buff4, 4, 1, f);
+        tgaHeader.isCompressed = *(int*)buff4;
+
+        fread(buff4, 4, 1, f);
+        tgaHeader.compressedSize = *(uint32*)buff4;
+
+        fclose(f);
+        return tgaHeader;
+    }
+
+    // Reads a compressed file embedded in .resources into binary filestream.
+    byte* ResourceFile::GetCompressedFileHeader(FILE& f, uint64 fileOffset, uint64 compressedSize)
+    {
+        byte* compressedData = NULL;
+        compressedData = new byte[compressedSize];
+
+        fseek(&f, (long)fileOffset, SEEK_SET);
+        fread(compressedData, 1, compressedSize, &f);
+        return compressedData;
+    }
+
     // Helper functions for organization purposes - not meant to be called individually
-    void ResourceFile::readFileHeader(FILE* f)
+    void ResourceFile::ReadFileHeader(FILE* f)
     {
         byte buff4[4];
         byte buff8[8];
@@ -41,7 +83,7 @@ namespace HAYDEN
 
         return;
     }
-    void ResourceFile::readStringOffsets(FILE* f)
+    void ResourceFile::ReadStringOffsets(FILE* f)
     {
         // Move pointer to string offsets
         byte buff8[8];
@@ -61,7 +103,7 @@ namespace HAYDEN
         }
         return;
     }
-    void ResourceFile::readPathIndexes(FILE* f)
+    void ResourceFile::ReadPathIndexes(FILE* f)
     {
         // Move pointer to path indexes
         byte buff8[8];
@@ -76,7 +118,7 @@ namespace HAYDEN
         }
         return;
     }
-    void ResourceFile::readEntryData(FILE* f)
+    void ResourceFile::ReadEntryData(FILE* f)
     {
         // Read file entries
         resourceEntries.resize(numFileEntries);
@@ -176,10 +218,10 @@ namespace HAYDEN
 
         this->filename = filename;
         this->loadPriority = loadPriority;
-        readFileHeader(f);
-        readStringOffsets(f);
-        readPathIndexes(f);
-        readEntryData(f);
+        ReadFileHeader(f);
+        ReadStringOffsets(f);
+        ReadPathIndexes(f);
+        ReadEntryData(f);
         fclose(f);
     }
 }
