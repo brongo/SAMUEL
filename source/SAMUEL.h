@@ -22,17 +22,21 @@ namespace HAYDEN
 			uint32 decompressedSize = 0;
 	};
 
-	class StreamDBData
+	class FileExportItem
 	{
-		public:
-			std::string filename;
-			std::string streamDBFileName;
-			uint64 streamDBIndex = 0;
-			uint64 streamDBFileOffset = 0;
-			uint64 streamDBSizeCompressed = 0;
-			uint64 streamDBSizeDecompressed = 0;
-			int streamDBCompressionType = 0;
-			int streamDBNumber = -1;
+	public:
+		std::string filename;
+		std::string streamDBFileName;
+		uint64 resourceFileHash = 0;
+		uint64 resourceFileOffset = 0;
+		uint64 resourceFileCompressedSize = 0;
+		uint64 resourceFileDecompressedSize = 0;
+		uint64 streamDBIndex = 0;
+		uint64 streamDBFileOffset = 0;
+		uint64 streamDBSizeCompressed = 0;
+		uint64 streamDBSizeDecompressed = 0;
+		int streamDBCompressionType = 0;
+		int streamDBNumber = -1;
 	};
 
 	class SAMUEL
@@ -44,32 +48,39 @@ namespace HAYDEN
 			std::vector<std::string> _streamDBFileList;
 
 		public:
-			std::vector<StreamDBData> streamDBData;
+			std::vector<FileExportItem> fileExportList;
 			std::vector<StreamDBFile> streamDBFiles;
 			ResourceFile resourceFile;
 			PackageMapSpec packageMapSpec;
 
 		public:
-			// Helper Functions
+			// Init Functions
+			void SetBasePath(std::string basePath) { _basePath = basePath; }
+			void LoadPackageMapSpec();
+
+			// Helper Functions - LoadResource()
 			void UpdateStreamDBFileList(std::string resourceFileName);
 			void ReadStreamDBFiles();
 
-			// Init Functions
-			void SetBasePath(std::string basePath) { _basePath = basePath; }
-			void LoadPackageMapSpec(); 
+			// Helper Functions - ReadEmbeddedTGAHeaders()
+			byte* GetCompressedFileHeader(FILE& f, uint64 fileOffset, uint64 compressedSize);
+			TGAHeader ReadTGAHeader(const char* tmpDecompressedHeader);
+
+			// Helper Functions - SearchStreamDBFilesForIndex()
+			int FindMatchingIndex(uint64 streamIndex, int streamDBNumber);
+
+			// Helper Functions - ExportAll()
+			void BuildFileExportList();
+			std::vector<TGAHeader> ReadEmbeddedTGAHeaders(ResourceFile& resourceFile);
+			uint64 CalculateStreamDBIndex(uint64 resourceId, int mipCount = -6);
+			void SearchStreamDBFilesForIndex(FileExportItem& streamDBData);
 
 			// Public API Functions
 			void LoadResource(std::string fileName);
-
-			// Unsorted
-			void getStreamDBDataIndexes(ResourceFile& resourceFile);
-			int findMatchingIndex(uint64 streamIndex, int streamDBNumber);
-			void searchStreamDBFilesForIndex(StreamDBData& streamDBData);
-			byte* getCompressedFileData(FILE& f, uint64 fileOffset, uint64 compressedSize);
-			TGAHeader readTGAHeader(const char* tmpDecompressedHeader);
+			void ExportAll();
 
 			// Debug Functions
-			void printMatchesToCSV();
-			void printUnmatchedToCSV();
+			void PrintMatchesToCSV();
+			void PrintUnmatchedToCSV();
 	};
 }

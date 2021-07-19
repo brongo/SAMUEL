@@ -27,15 +27,16 @@ namespace HAYDEN
         FILE* f;
         byte* output;
         uint64 outbytes;
-
         OodLZ_DecompressFunc* OodLZ_Decompress;
-#ifdef _WIN32
-        auto oodle = LoadLibraryA("./oo2core_8_win64.dll");
-        OodLZ_Decompress = (OodLZ_DecompressFunc*)GetProcAddress(oodle, "OodleLZ_Decompress");
-#else
-        auto oodle = dlopen("./liblinoodle.so", RTLD_LAZY);
-        OodLZ_Decompress = (OodLZ_DecompressFunc*)dlsym(oodle, "OodleLZ_Decompress");
-#endif
+
+        #ifdef _WIN32
+            auto oodle = LoadLibraryA("./oo2core_8_win64.dll");
+            OodLZ_Decompress = (OodLZ_DecompressFunc*)GetProcAddress(oodle, "OodleLZ_Decompress");
+        #else
+            auto oodle = dlopen("./liblinoodle.so", RTLD_LAZY);
+            OodLZ_Decompress = (OodLZ_DecompressFunc*)dlsym(oodle, "OodleLZ_Decompress");
+        #endif
+
         if (!OodLZ_Decompress)
         {
             printf("Error: failed to load oo2core_8_win64.dll.\n\n");
