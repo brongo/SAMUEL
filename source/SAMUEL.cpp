@@ -173,6 +173,18 @@ namespace HAYDEN
     }
     void SAMUEL::Init(std::string basePath)
     {
+        if (!fs::exists("oo2core_8_win64.dll")) {
+            printf("Error: Could not find oo2core_8_win64.dll in the current directory. \n");
+            exit(1);
+        }
+
+#ifdef __linux__
+        if (!fs::exists("liblinoodle.so")) {
+            printf("Error: Could not find liblinoodle.so in the current directory. \n");
+            exit(1);
+        }
+#endif
+
         SetBasePath(basePath);
         LoadPackageMapSpec();
     }

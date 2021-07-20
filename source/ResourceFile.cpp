@@ -3,33 +3,15 @@
 namespace HAYDEN
 {
     // Parse a TGA Header file.
-    EmbeddedTGAHeader ResourceFile::ReadTGAHeader(const char* tmpDecompressedHeader)
+    EmbeddedTGAHeader ResourceFile::ReadTGAHeader(std::vector<byte> tgaDecompressedHeader)
     {
-        byte buff4[4];
         EmbeddedTGAHeader tgaHeader;
-        FILE* f = fopen(tmpDecompressedHeader, "rb");
 
-        if (f == NULL)
-        {
-            printf("Error: failed to open %s for reading.\n", tmpDecompressedHeader);
-            return tgaHeader;
-        }
+        tgaHeader.numMips = *(uint32*)(tgaDecompressedHeader.data() + 59);
+        tgaHeader.decompressedSize = *(uint32*)(tgaDecompressedHeader.data() + 83);
+        tgaHeader.isCompressed = *(int*)(tgaDecompressedHeader.data() + 87);
+        tgaHeader.compressedSize = *(uint32*)(tgaDecompressedHeader.data() + 91);
 
-        fseek(f, 59, SEEK_SET);
-        fread(buff4, 4, 1, f);
-        tgaHeader.numMips = *(uint32*)buff4;
-
-        fseek(f, 20, SEEK_CUR);
-        fread(buff4, 4, 1, f);
-        tgaHeader.decompressedSize = *(uint32*)buff4;
-
-        fread(buff4, 4, 1, f);
-        tgaHeader.isCompressed = *(int*)buff4;
-
-        fread(buff4, 4, 1, f);
-        tgaHeader.compressedSize = *(uint32*)buff4;
-
-        fclose(f);
         return tgaHeader;
     }
 

@@ -5,7 +5,7 @@
 #endif
 
 #include <string>
-#include <fstream>
+#include <vector>
 #include <sstream>
 #include <iomanip>
 
@@ -33,5 +33,5 @@ namespace HAYDEN
     uint64_t hexToInt64(std::string hex); 
     void endianSwap(uint64& value); 
     
-    bool oodleDecompress(const char* outputFile, byte* compressedData, uint64 compressedSize, uint64 decompressedSize);
+    std::vector<byte> oodleDecompress(byte* compressedData, uint64 compressedSize, uint64 decompressedSize);
 }

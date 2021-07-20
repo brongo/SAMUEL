@@ -22,11 +22,13 @@ namespace HAYDEN
             byte* compressedData = resourceFile.GetCompressedFileHeader(*f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
 
             // decompress with Oodle DLL
-            if (!oodleDecompress("tmpTGAHeader", compressedData, thisFile.resourceFileCompressedSize, thisFile.resourceFileDecompressedSize))
+            auto decompressedData = oodleDecompress(compressedData, thisFile.resourceFileCompressedSize, thisFile.resourceFileDecompressedSize);
+            delete[] compressedData;
+            if (decompressedData.empty())
                 continue; // error
 
             // get mip data from TGA
-            EmbeddedTGAHeader embeddedTGAHeader = resourceFile.ReadTGAHeader("tmpTGAHeader");
+            EmbeddedTGAHeader embeddedTGAHeader = resourceFile.ReadTGAHeader(decompressedData);
             embeddedTGAHeaders.push_back(embeddedTGAHeader);
         }
 
