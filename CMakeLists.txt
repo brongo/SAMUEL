@@ -4,6 +4,8 @@ project(SAMUEL)
 set(CMAKE_CXX_STANDARD 17)
 
 file(GLOB SOURCES
+        ./source/FileExporter.cpp
+        ./source/FileExporter.h
         ./source/PackageMapSpec.cpp
         ./source/PackageMapSpec.h
         ./source/ResourceFile.cpp
