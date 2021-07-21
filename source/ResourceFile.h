@@ -94,7 +94,7 @@ namespace HAYDEN
 
             // Helper Functions - ReadEmbeddedTGAHeaders()
             byte* GetCompressedFileHeader(FILE& f, uint64 fileOffset, uint64 compressedSize);
-            EmbeddedTGAHeader ReadTGAHeader(const char* tmpDecompressedHeader);
+            EmbeddedTGAHeader ReadTGAHeader(std::vector<byte> tgaDecompressedHeader);
 
             // Helper functions for organization purposes - not meant to be called individually
             void ReadFileHeader(FILE* f);

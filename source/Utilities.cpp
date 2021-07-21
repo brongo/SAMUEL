@@ -22,10 +22,9 @@ namespace HAYDEN
         return x;
     }
 
-    bool oodleDecompress(const char* outputFile, byte* compressedData, uint64 compressedSize, uint64 decompressedSize)
+    std::vector<byte> oodleDecompress(byte* compressedData, uint64 compressedSize, uint64 decompressedSize)
     {
-        FILE* f;
-        byte* output;
+        std::vector<byte> output(decompressedSize + SAFE_SPACE);
         uint64 outbytes;
         OodLZ_DecompressFunc* OodLZ_Decompress;
 
@@ -40,30 +39,18 @@ namespace HAYDEN
         if (!OodLZ_Decompress)
         {
             printf("Error: failed to load oo2core_8_win64.dll.\n\n");
-            return 0;
+            return std::vector<byte>();
         }
 
         // Decompress using Oodle DLL
-        output = new byte[decompressedSize + SAFE_SPACE];
-        outbytes = OodLZ_Decompress(compressedData, compressedSize, output, decompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        outbytes = OodLZ_Decompress(compressedData, compressedSize, output.data(), decompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         
         if (!outbytes)
         {
             printf("Error: failed to decompress with Oodle DLL.\n\n");
-            return 0;
+            return std::vector<byte>();
         }
 
-        f = fopen(outputFile, "wb");
-        if (f == NULL)
-        {
-            printf("Error: failed to open destination file for writing.\n\n");
-            return 0;
-        }
-
-        // Write to file
-        fwrite(output, 1, outbytes, f);
-        fclose(f);
-
-        return 1;
+        return std::vector<byte>(output.begin(), output.begin() + outbytes);
     }
 }

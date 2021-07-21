@@ -1,0 +1,20 @@
+# Executable
+SAMUEL.exe
+
+# Project-specific
+oo2core_8_win64.dll
+unmatched_tmp
+matched_tmp
+tmpTGAHeader
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+out/
+build/
+.vs/
+.vscode/
