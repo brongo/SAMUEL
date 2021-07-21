@@ -46,6 +46,6 @@ namespace HAYDEN
             void readStreamDBEntries();
 
             // Preferred Constructor, calls helper functions above
-            StreamDBFile(fs::path& path);
+            StreamDBFile(const fs::path& path);
     };
 }

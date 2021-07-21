@@ -3,7 +3,7 @@
 namespace HAYDEN
 {
     // Construct from .json
-    PackageMapSpec::PackageMapSpec(std::string& json)
+    PackageMapSpec::PackageMapSpec(const std::string& json)
     {
         jsonxx::Object packageMapSpecJson;
         packageMapSpecJson.parse(json);
@@ -41,7 +41,7 @@ namespace HAYDEN
     }
 
     // Dump all PackageMapSpec data
-    std::string PackageMapSpec::Dump()
+    std::string PackageMapSpec::Dump() const
     {
         jsonxx::Object packageMapSpecJson;
         jsonxx::Array files;
@@ -75,14 +75,14 @@ namespace HAYDEN
     }
 
     // Convert path separators to "/", to match packageMapSpec format
-    void PackageMapSpec::NormalizeFilePath(std::string& filePath)
+    void PackageMapSpec::NormalizeFilePath(std::string& filePath) const
     {
         std::replace(filePath.begin(), filePath.end(), '\\', '/');
         return;
     }
 
     // Confirm filepath contains "Base" directory
-    bool PackageMapSpec::InBaseDirectory(std::string& filePath)
+    bool PackageMapSpec::InBaseDirectory(const std::string& filePath) const
     {
         size_t strPos = filePath.rfind("base");
         if (strPos == -1)
@@ -91,7 +91,7 @@ namespace HAYDEN
     }
 
     // Returns filepath relative to "Base" directory
-    std::string PackageMapSpec::GetRelativeFilePath(std::string& filePath)
+    std::string PackageMapSpec::GetRelativeFilePath(const std::string& filePath) const
     {
         size_t strPos = filePath.rfind("base");
         std::string relativePath = filePath.substr(strPos + 5, filePath.length() - strPos);
@@ -99,7 +99,7 @@ namespace HAYDEN
     }
 
     // Returns file index for a given filename
-    size_t PackageMapSpec::GetFileIndexByFileName(std::string& filePath)
+    size_t PackageMapSpec::GetFileIndexByFileName(const std::string& filePath) const
     {       
         auto fileIterator = std::find_if(Files.begin(), Files.end(), [&](const PackageMapSpecFile& file) { return file.Name == filePath; });
         if (fileIterator == Files.end())
@@ -108,7 +108,7 @@ namespace HAYDEN
     }
 
     // Returns map index for a given file index
-    size_t PackageMapSpec::GetMapIndexByFileIndex(size_t fileIndex)
+    size_t PackageMapSpec::GetMapIndexByFileIndex(const size_t fileIndex) const
     {
         auto mapFileRefIterator = std::find_if(MapFileRefs.begin(), MapFileRefs.end(),
             [&](const PackageMapSpecMapFileRef& mapFileRef) { return mapFileRef.File == fileIndex; });
@@ -120,7 +120,7 @@ namespace HAYDEN
     }
 
     // Returns list of .resources and .streamdbs loaded in a certain map
-    std::vector<std::string> PackageMapSpec::GetFilesByResourceName(std::string resourceFileName)
+    std::vector<std::string> PackageMapSpec::GetFilesByResourceName(std::string resourceFileName) const
     {
         size_t fileIndex = -1;
         size_t mapIndex = -1;

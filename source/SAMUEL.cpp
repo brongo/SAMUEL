@@ -28,7 +28,7 @@ namespace HAYDEN
     }
 
     // Update SAMUEL's list of .streamdb files to search. Called by LoadResource().
-    void SAMUEL::UpdateStreamDBFileList(std::string resourceFileName)
+    void SAMUEL::UpdateStreamDBFileList(const std::string resourceFileName)
     {
         std::vector<std::string> appendList;
         appendList = _PackageMapSpec.GetFilesByResourceName(_basePath + (char)fs::path::preferred_separator + resourceFileName);
@@ -75,7 +75,7 @@ namespace HAYDEN
     }
 
     // Debugging functions.
-    void SAMUEL::PrintMatchesToCSV()
+    void SAMUEL::PrintMatchesToCSV() const
     {
         std::vector<FileExportItem> fileExportList = _Exporter.GetFileExportList();
         std::ofstream outputMatched("matched_tmp", std::ios::app);
@@ -99,7 +99,7 @@ namespace HAYDEN
         }
         return;
     }
-    void SAMUEL::PrintUnmatchedToCSV()
+    void SAMUEL::PrintUnmatchedToCSV() const
     {
         std::vector<FileExportItem> fileExportList = _Exporter.GetFileExportList();
         std::ofstream outputUnmatched("unmatched_tmp", std::ios::app);
@@ -124,7 +124,7 @@ namespace HAYDEN
     }
 
     // Public API functions - SAMUEL
-    void SAMUEL::LoadResource(std::string inputFile)
+    void SAMUEL::LoadResource(const std::string inputFile)
     {
         try
         {
@@ -171,7 +171,7 @@ namespace HAYDEN
         PrintUnmatchedToCSV();
         return;
     }
-    void SAMUEL::Init(std::string basePath)
+    void SAMUEL::Init(const std::string basePath)
     {
         if (!fs::exists("oo2core_8_win64.dll")) {
             printf("Error: Could not find oo2core_8_win64.dll in the current directory. \n");

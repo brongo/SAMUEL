@@ -48,13 +48,13 @@ namespace HAYDEN
             std::vector<ResourceEntry> resourceList;
 
         public:
-            void addResourceEntry(ResourceEntry entry)
+            void addResourceEntry(const ResourceEntry entry)
             {
                 resourceList.push_back(entry);
                 numResourceEntries++;
                 return;
             }
-            void appendResourceEntries(std::vector<ResourceEntry> appendList)
+            void appendResourceEntries(const std::vector<ResourceEntry> appendList)
             {
                 resourceList.insert(std::end(resourceList), std::begin(appendList), std::end(appendList));
                 numResourceEntries = resourceList.size();
@@ -93,8 +93,8 @@ namespace HAYDEN
             ResourceFile() {};
 
             // Helper Functions - ReadEmbeddedTGAHeaders()
-            byte* GetCompressedFileHeader(FILE& f, uint64 fileOffset, uint64 compressedSize);
-            EmbeddedTGAHeader ReadTGAHeader(std::vector<byte> tgaDecompressedHeader);
+            byte* GetCompressedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const;
+            EmbeddedTGAHeader ReadTGAHeader(const std::vector<byte> tgaDecompressedHeader) const;
 
             // Helper functions for organization purposes - not meant to be called individually
             void ReadFileHeader(FILE* f);
@@ -103,7 +103,7 @@ namespace HAYDEN
             void ReadEntryData(FILE* f);
 
             // Preferred Constructor, calls helper functions above
-            ResourceFile(std::string filename, int loadPriority);
+            ResourceFile(const std::string filename, const int loadPriority);
 
             
     };

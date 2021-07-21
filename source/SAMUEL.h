@@ -19,8 +19,8 @@ namespace HAYDEN
 		public:
 			
 			// Public API Functions
-			void Init(std::string basePath);
-			void LoadResource(std::string fileName);
+			void Init(const std::string basePath);
+			void LoadResource(const std::string fileName);
 			void ExportAll();
 
 		private:
@@ -34,15 +34,15 @@ namespace HAYDEN
 			FileExporter _Exporter;
 
 			// Init Functions
-			void SetBasePath(std::string basePath) { _basePath = basePath; }
+			void SetBasePath(const std::string basePath) { _basePath = basePath; }
 			void LoadPackageMapSpec();
 
 			// Helper Functions - LoadResource()
-			void UpdateStreamDBFileList(std::string resourceFileName);
+			void UpdateStreamDBFileList(const std::string resourceFileName);
 			void ReadStreamDBFiles();
 
 			// Debug Functions
-			void PrintMatchesToCSV();
-			void PrintUnmatchedToCSV();
+			void PrintMatchesToCSV() const;
+			void PrintUnmatchedToCSV() const;
 	};
 }

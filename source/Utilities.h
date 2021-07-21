@@ -23,15 +23,15 @@ typedef int OodLZ_DecompressFunc(
 namespace HAYDEN
 {
     template <typename T>
-    std::string intToHex(T num)
+    std::string intToHex(const T num)
     {
         std::stringstream stream;
         stream << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << +num;
         return stream.str();
     }
 
-    uint64_t hexToInt64(std::string hex); 
+    uint64_t hexToInt64(const std::string hex); 
     void endianSwap(uint64& value); 
     
-    std::vector<byte> oodleDecompress(byte* compressedData, uint64 compressedSize, uint64 decompressedSize);
+    std::vector<byte> oodleDecompress(byte* compressedData, const uint64 compressedSize, const uint64 decompressedSize);
 }

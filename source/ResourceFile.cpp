@@ -3,7 +3,7 @@
 namespace HAYDEN
 {
     // Parse a TGA Header file.
-    EmbeddedTGAHeader ResourceFile::ReadTGAHeader(std::vector<byte> tgaDecompressedHeader)
+    EmbeddedTGAHeader ResourceFile::ReadTGAHeader(const std::vector<byte> tgaDecompressedHeader) const
     {
         EmbeddedTGAHeader tgaHeader;
 
@@ -16,13 +16,13 @@ namespace HAYDEN
     }
 
     // Reads a compressed file embedded in .resources into binary filestream.
-    byte* ResourceFile::GetCompressedFileHeader(FILE& f, uint64 fileOffset, uint64 compressedSize)
+    byte* ResourceFile::GetCompressedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const
     {
         byte* compressedData = NULL;
         compressedData = new byte[compressedSize];
 
-        fseek(&f, (long)fileOffset, SEEK_SET);
-        fread(compressedData, 1, compressedSize, &f);
+        fseek(f, (long)fileOffset, SEEK_SET);
+        fread(compressedData, 1, compressedSize, f);
         return compressedData;
     }
 
@@ -188,7 +188,7 @@ namespace HAYDEN
     }
 
     // Constructor, calls the helper functions above
-    ResourceFile::ResourceFile(std::string filename, int loadPriority)
+    ResourceFile::ResourceFile(const std::string filename, const int loadPriority)
     {
         printf("Reading file %s\n", filename.c_str());
         FILE* f = fopen(filename.c_str(), "rb");

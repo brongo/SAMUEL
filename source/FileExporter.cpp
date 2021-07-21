@@ -3,7 +3,7 @@
 namespace HAYDEN
 {
     // Decompress & Parse TGA Headers embedded in .resources file. Called by ExportAll().
-    std::vector<EmbeddedTGAHeader> FileExporter::ReadEmbeddedTGAHeaders(ResourceFile& resourceFile)
+    std::vector<EmbeddedTGAHeader> FileExporter::ReadEmbeddedTGAHeaders(const ResourceFile& resourceFile)
     {
         std::vector<EmbeddedTGAHeader> embeddedTGAHeaders;
         FILE* f = fopen(resourceFile.filename.c_str(), "rb");
@@ -19,7 +19,7 @@ namespace HAYDEN
             FileExportItem& thisFile = fileExportList[i];
 
             // go to file offset and read compressed file header into memory
-            byte* compressedData = resourceFile.GetCompressedFileHeader(*f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
+            byte* compressedData = resourceFile.GetCompressedFileHeader(f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
 
             // decompress with Oodle DLL
             auto decompressedData = oodleDecompress(compressedData, thisFile.resourceFileCompressedSize, thisFile.resourceFileDecompressedSize);
@@ -37,7 +37,7 @@ namespace HAYDEN
     }
 
     // Helper function called by SearchStreamDBFilesForIndex().
-    int FileExporter::FindMatchingIndex(uint64 streamDBIndex, int streamDBNumber, std::vector<StreamDBFile>& streamDBFiles)
+    int FileExporter::FindMatchingIndex(const uint64 streamDBIndex, const int streamDBNumber, const std::vector<StreamDBFile>& streamDBFiles) const
     {
         for (int i = 0; i < streamDBFiles[streamDBNumber].indexEntryCount; i++)
         {
@@ -50,7 +50,7 @@ namespace HAYDEN
     }
 
     // Loop through export list and match streamDBIndexes against .streamdb files in memory. Called by ExportAll().
-    void FileExporter::SearchStreamDBFilesForIndex(FileExportItem& streamDBData, std::vector<StreamDBFile>& streamDBFiles)
+    void FileExporter::SearchStreamDBFilesForIndex(FileExportItem& streamDBData, const std::vector<StreamDBFile>& streamDBFiles) const
     {
         for (int i = 0; i < streamDBFiles.size(); i++)
         {
@@ -67,7 +67,7 @@ namespace HAYDEN
     }
 
     // Converts ResourceID to StreamDBIndex. Called by ExportAll().
-    uint64 FileExporter::CalculateStreamDBIndex(uint64 resourceId, int mipCount)
+    uint64 FileExporter::CalculateStreamDBIndex(const uint64 resourceId, const int mipCount) const
     {
         // Get hex bytes string
         std::string hexBytes = intToHex(resourceId);
@@ -93,7 +93,7 @@ namespace HAYDEN
     }
 
     // Builds list of files to export from SAMUEL. Called by ExportAll().
-    void FileExporter::BuildFileExportList(ResourceFile& resourceFile)
+    void FileExporter::BuildFileExportList(const ResourceFile& resourceFile)
     {
         // Iterate through currently loaded .resource entries to find supported files
         for (uint64 i = 0; i < resourceFile.numFileEntries; i++)
@@ -125,7 +125,7 @@ namespace HAYDEN
         return;
     }
 
-    void FileExporter::Init(ResourceFile& resourceFile, std::vector<StreamDBFile>& streamDBFiles)
+    void FileExporter::Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles)
     {
         BuildFileExportList(resourceFile);
 

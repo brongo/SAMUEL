@@ -62,7 +62,7 @@ namespace HAYDEN
     }
 
     // Constructor. Calls all functions above.
-    StreamDBFile::StreamDBFile(fs::path& path)
+    StreamDBFile::StreamDBFile(const fs::path& path)
     {
         fileName = path.string();
         if (openStreamDBFile())
