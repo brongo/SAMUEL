@@ -13,7 +13,7 @@ namespace HAYDEN
         value = ((value & 0x00FF00FF00FF00FFull) << 8) | ((value & 0xFF00FF00FF00FF00ull) >> 8);
     }
 
-    uint64_t hexToInt64(std::string hex) 
+    uint64_t hexToInt64(const std::string hex) 
     {
         uint64_t x;
         std::stringstream stream;
@@ -22,7 +22,7 @@ namespace HAYDEN
         return x;
     }
 
-    std::vector<byte> oodleDecompress(byte* compressedData, uint64 compressedSize, uint64 decompressedSize)
+    std::vector<byte> oodleDecompress(byte* compressedData, const uint64 compressedSize, const uint64 decompressedSize)
     {
         std::vector<byte> output(decompressedSize + SAFE_SPACE);
         uint64 outbytes;

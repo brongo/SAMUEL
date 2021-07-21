@@ -31,8 +31,8 @@ namespace HAYDEN
 		public:
 
 			FileExporter() {};
-			std::vector<FileExportItem> GetFileExportList() { return fileExportList; }
-			void Init(ResourceFile& resourceFile, std::vector<StreamDBFile>& streamDBFiles);
+			std::vector<FileExportItem> GetFileExportList() const { return fileExportList; }
+			void Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles);
 
 		private:
 
@@ -40,10 +40,10 @@ namespace HAYDEN
 			std::vector<FileExportItem> fileExportList;
 
 			// Helper Functions - ExportAll()
-			void BuildFileExportList(ResourceFile& resourceFile);
-			std::vector<EmbeddedTGAHeader> ReadEmbeddedTGAHeaders(ResourceFile& resourceFile);
-			uint64 CalculateStreamDBIndex(uint64 resourceId, int mipCount = -6);
-			int FindMatchingIndex(uint64 streamIndex, int streamDBNumber, std::vector<StreamDBFile>& streamDBFiles);
-			void SearchStreamDBFilesForIndex(FileExportItem& streamDBData, std::vector<StreamDBFile>& streamDBFiles);
+			void BuildFileExportList(const ResourceFile& resourceFile);
+			std::vector<EmbeddedTGAHeader> ReadEmbeddedTGAHeaders(const ResourceFile& resourceFile);
+			uint64 CalculateStreamDBIndex(const uint64 resourceId, const int mipCount = -6) const;
+			int FindMatchingIndex(const uint64 streamIndex, const int streamDBNumber, const std::vector<StreamDBFile>& streamDBFiles) const;
+			void SearchStreamDBFilesForIndex(FileExportItem& streamDBData, const std::vector<StreamDBFile>& streamDBFiles) const;
 	};
 }

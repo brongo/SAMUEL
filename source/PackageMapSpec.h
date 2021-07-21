@@ -25,7 +25,7 @@ namespace HAYDEN
                 Map = -1;
             }
 
-            PackageMapSpecMapFileRef(int32_t file, int32_t map)
+            PackageMapSpecMapFileRef(const int32_t file, const int32_t map)
             {
                 File = file;
                 Map = map;
@@ -47,15 +47,15 @@ namespace HAYDEN
 
         public:
             PackageMapSpec() {};
-            PackageMapSpec(std::string& json);
-            std::string Dump();
+            PackageMapSpec(const std::string& json);
+            std::string Dump() const;
 
-            bool InBaseDirectory(std::string& filePath); 
-            void NormalizeFilePath(std::string& filePath);
-            size_t GetFileIndexByFileName(std::string& filePath);
-            size_t GetMapIndexByFileIndex(size_t fileIndex);
+            bool InBaseDirectory(const std::string& filePath) const; 
+            void NormalizeFilePath(std::string& filePath) const;
+            size_t GetFileIndexByFileName(const std::string& filePath) const;
+            size_t GetMapIndexByFileIndex(const size_t fileIndex) const;
 
-            std::string GetRelativeFilePath(std::string& filePath);
-            std::vector<std::string> GetFilesByResourceName(std::string resourceFileName);
+            std::string GetRelativeFilePath(const std::string& filePath) const;
+            std::vector<std::string> GetFilesByResourceName(std::string resourceFileName) const;
     };
 }
