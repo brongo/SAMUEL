@@ -25,9 +25,6 @@ namespace HAYDEN
 
     class StreamDBFile
     {
-        private:
-            FILE* f = NULL;
-
         public:
             uint64 indexEntryCount = 0;
             uint32 indexStartOffset = 0;
@@ -40,10 +37,8 @@ namespace HAYDEN
             StreamDBFile() {};
 
             // Helper functions for organization purposes - not meant to be called individually
-            bool openStreamDBFile();
-            void closeStreamDBFile();
-            void readStreamDBHeader();
-            void readStreamDBEntries();
+            void readStreamDBHeader(FILE* f);
+            void readStreamDBEntries(FILE* f);
 
             // Preferred Constructor, calls helper functions above
             StreamDBFile(const fs::path& path);
