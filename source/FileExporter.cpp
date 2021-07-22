@@ -21,15 +21,25 @@ namespace HAYDEN
             // go to file offset and read compressed file header into memory
             byte* compressedData = resourceFile.GetCompressedFileHeader(f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
 
-            // decompress with Oodle DLL
-            auto decompressedData = oodleDecompress(compressedData, thisFile.resourceFileCompressedSize, thisFile.resourceFileDecompressedSize);
-            delete[] compressedData;
-            if (decompressedData.empty())
-                continue; // error
+            // check if decompression is necessary
+            // FIXME - duplicate code in if/else, refactor this
+            if (thisFile.resourceFileCompressedSize != thisFile.resourceFileDecompressedSize)
+            {
+                // decompress with Oodle DLL
+                auto decompressedData = oodleDecompress(compressedData, thisFile.resourceFileCompressedSize, thisFile.resourceFileDecompressedSize);
+                delete[] compressedData;
+                if (decompressedData.empty())
+                    continue; // error
 
-            // get mip data from TGA
-            EmbeddedTGAHeader embeddedTGAHeader = resourceFile.ReadTGAHeader(decompressedData);
-            embeddedTGAHeaders.push_back(embeddedTGAHeader);
+                EmbeddedTGAHeader embeddedTGAHeader = resourceFile.ReadTGAHeader(decompressedData);
+                embeddedTGAHeaders.push_back(embeddedTGAHeader);
+            }
+            else
+            {
+                std::vector<byte> decompressedData(*compressedData, *compressedData + thisFile.resourceFileCompressedSize);
+                EmbeddedTGAHeader embeddedTGAHeader = resourceFile.ReadTGAHeader(decompressedData);
+                embeddedTGAHeaders.push_back(embeddedTGAHeader);
+            }        
         }
 
         fclose(f);
@@ -108,9 +118,8 @@ namespace HAYDEN
             if (thisEntry.dataSizeCompressed == 0)
                 continue;
 
-            // FIX ME: this *should* be supported.
-            // skips entries where file header is not compressed
-            if (thisEntry.compressionMode == 0)
+            // skips entries with "lightprobes" path
+            if (thisEntry.name.rfind("/lightprobes/") != -1)
                 continue;
 
             FileExportItem exportItem;
@@ -153,7 +162,17 @@ namespace HAYDEN
         // Loop through streamdbData and decompress files
         for (int i = 0; i < fileExportList.size(); i++)
         {
+            // First pass
             SearchStreamDBFilesForIndex(fileExportList[i], streamDBFiles);
+
+            // Second pass for images that aren't found. 
+            // This catches some wierd UI files whose hash indexes are off by 1.
+            if (fileExportList[i].streamDBNumber == -1)
+            {
+                fileExportList[i].streamDBIndex--;
+                SearchStreamDBFilesForIndex(fileExportList[i], streamDBFiles);
+            }
         }
+        return;
     }
 }
