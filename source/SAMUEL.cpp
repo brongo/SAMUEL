@@ -21,7 +21,7 @@ namespace HAYDEN
         }
         catch (...)
         {
-            printf("ERROR: Failed to load packagemapspec.json. \n");
+            fprintf(stderr, "Error: Failed to load packagemapspec.json.\n");
             return;
         }
     }
@@ -79,7 +79,7 @@ namespace HAYDEN
         }
         catch (...)
         {
-            printf("ERROR: Failed to read .resource file %s. \n", inputFile.c_str());
+            fprintf(stderr, "Error: Failed to read .resource file %s.\n", inputFile.c_str());
             return;
         }
 
@@ -91,7 +91,7 @@ namespace HAYDEN
         }
         catch (...)
         {
-            printf("ERROR: Failed to read .streamdb list from packagemapspec.json. \n");
+            fprintf(stderr, "Error: Failed to read .streamdb list from packagemapspec.json.\n");
             return;
         }
 
@@ -102,7 +102,7 @@ namespace HAYDEN
         }
         catch (...)
         {
-            printf("ERROR: Failed to read .streamdb file data. \n");
+            fprintf(stderr, "Error: Failed to read .streamdb file data.\n");
             return;
         }
         return;
@@ -115,13 +115,13 @@ namespace HAYDEN
     void SAMUEL::Init(const std::string basePath)
     {
         if (!fs::exists("oo2core_8_win64.dll")) {
-            printf("Error: Could not find oo2core_8_win64.dll in the current directory. \n");
+            fprintf(stderr, "Error: Could not find oo2core_8_win64.dll in the current directory.\n");
             exit(1);
         }
 
 #ifdef __linux__
         if (!fs::exists("liblinoodle.so")) {
-            printf("Error: Could not find liblinoodle.so in the current directory. \n");
+            fprintf(stderr, "Error: Could not find liblinoodle.so in the current directory.\n");
             exit(1);
         }
 #endif
@@ -133,16 +133,24 @@ namespace HAYDEN
 
 int main(int argc, char* argv[])
 {
-    printf("SAMUEL v0.1 by SamPT \n");
+    printf("SAMUEL v0.1 by SamPT\n");
 
-    if (argc == 1) {
-        printf("USAGE: SAMUEL resourceFile basePath \n");
+    if (argc < 2) {
+        printf("USAGE: SAMUEL resourceFile basePath\n");
         return 1;
     }
 
+    // Get base path from resource path
+    std::string resourcePath(argv[1]);
+    auto baseIndex = resourcePath.find("base");
+    if (baseIndex == std::string::npos) {
+        fprintf(stderr, "Error: Failed to get game's base path.\n");
+    }
+    std::string basePath = resourcePath.substr(0, baseIndex + 4);
+
     SAMUEL SAM;
-    SAM.Init(argv[2]);
-    SAM.LoadResource(argv[1]);
+    SAM.Init(basePath);
+    SAM.LoadResource(resourcePath);
     SAM.ExportAll();
     return 0;
 }

@@ -93,7 +93,7 @@ namespace HAYDEN
             ResourceFile() {};
 
             // Helper Functions - ReadEmbeddedTGAHeaders()
-            byte* GetCompressedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const;
+            std::vector<byte> GetEmbeddedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const;
             EmbeddedTGAHeader ReadTGAHeader(const std::vector<byte> tgaDecompressedHeader) const;
 
             // Helper functions for constructor

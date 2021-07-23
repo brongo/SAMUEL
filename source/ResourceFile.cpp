@@ -16,13 +16,11 @@ namespace HAYDEN
     }
 
     // Reads embedded file headers into filestream
-    byte* ResourceFile::GetCompressedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const
+    std::vector<byte> ResourceFile::GetEmbeddedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const
     {
-        byte* compressedData = NULL;
-        compressedData = new byte[compressedSize];
-
+        std::vector<byte> compressedData(compressedSize);
         fseek(f, (long)fileOffset, SEEK_SET);
-        fread(compressedData, 1, compressedSize, f);
+        fread(compressedData.data(), 1, compressedSize, f);
         return compressedData;
     }
 
@@ -194,7 +192,7 @@ namespace HAYDEN
         FILE* f = fopen(filename.c_str(), "rb");
         if (f == NULL) 
         {
-            printf("Error: failed to open %s for reading.\n", filename.c_str());
+            fprintf(stderr, "Error: failed to open %s for reading.\n", filename.c_str());
             return;
         }
 

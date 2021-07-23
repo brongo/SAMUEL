@@ -39,7 +39,7 @@ namespace HAYDEN
         FILE* f = fopen(resourceFile.filename.c_str(), "rb");
         if (f == NULL)
         {
-            printf("Error: failed to open %s for reading.\n", resourceFile.filename.c_str());
+            fprintf(stderr, "Error: failed to open %s for reading.\n", resourceFile.filename.c_str());
             return;
         }
         
@@ -47,14 +47,13 @@ namespace HAYDEN
         for (uint64 i = 0; i < _ExportItems.size(); i++)
         {
             FileExportItem& thisFile = _ExportItems[i];
-            byte* compressedData = resourceFile.GetCompressedFileHeader(f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
+            auto compressedData = resourceFile.GetEmbeddedFileHeader(f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
 
             // check if decompression is necessary
             if (thisFile.resourceFileCompressedSize != thisFile.resourceFileDecompressedSize)
             {
                 // decompress with Oodle DLL
-                auto decompressedData = oodleDecompress(compressedData, thisFile.resourceFileCompressedSize, thisFile.resourceFileDecompressedSize);
-                delete[] compressedData;
+                auto decompressedData = oodleDecompress(compressedData, thisFile.resourceFileDecompressedSize);
                 if (decompressedData.empty())
                     continue; // error
 
@@ -63,7 +62,7 @@ namespace HAYDEN
             }
             else
             {
-                std::vector<byte> decompressedData(*compressedData, *compressedData + thisFile.resourceFileCompressedSize);
+                std::vector<byte> decompressedData(compressedData.begin(), compressedData.begin() + thisFile.resourceFileCompressedSize);
                 EmbeddedTGAHeader embeddedTGAHeader = resourceFile.ReadTGAHeader(decompressedData);
                 _TGAHeaderData.push_back(embeddedTGAHeader);
             }        
