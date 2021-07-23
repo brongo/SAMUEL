@@ -26,24 +26,39 @@ namespace HAYDEN
 			int streamDBNumber = -1;
 	};
 
+	class FileExportList
+	{
+		public:
+			FileExportList() {};
+			FileExportList(const ResourceFile& resourceFile, int fileType);
+			std::vector<FileExportItem> GetFileExportItems() { return _ExportItems; }
+
+		private:
+			int _FileType = 0;
+			std::string _ResourceFileName;
+			std::vector<FileExportItem> _ExportItems;
+			std::vector<EmbeddedTGAHeader> _TGAHeaderData;
+
+			// Helper functions for FileExportList constructor
+			void GetResourceEntries(const ResourceFile& resourceFile);
+			void ParseEmbeddedTGAHeaders(const ResourceFile& resourceFile); 
+			void GetStreamDBIndexAndSize();	
+			uint64 CalculateStreamDBIndex(const uint64 resourceId, const int mipCount = -6) const;			
+	};
+
 	class FileExporter
 	{
 		public:
-
 			FileExporter() {};
-			std::vector<FileExportItem> GetFileExportList() const { return fileExportList; }
 			void Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles);
 
 		private:
-
-			// Data used by file export process
-			std::vector<FileExportItem> fileExportList;
-
-			// Helper Functions - ExportAll()
-			void BuildFileExportList(const ResourceFile& resourceFile);
-			std::vector<EmbeddedTGAHeader> ReadEmbeddedTGAHeaders(const ResourceFile& resourceFile);
-			uint64 CalculateStreamDBIndex(const uint64 resourceId, const int mipCount = -6) const;
+			FileExportList _TGAExportList;
 			int FindMatchingIndex(const uint64 streamIndex, const int streamDBNumber, const std::vector<StreamDBFile>& streamDBFiles) const;
 			void SearchStreamDBFilesForIndex(FileExportItem& streamDBData, const std::vector<StreamDBFile>& streamDBFiles) const;
+
+			// Debug Functions
+			void PrintMatchesToCSV(std::vector<FileExportItem>& fileExportList) const;
+			void PrintUnmatchedToCSV(std::vector<FileExportItem>& fileExportList) const;
 	};
 }

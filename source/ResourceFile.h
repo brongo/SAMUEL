@@ -96,13 +96,13 @@ namespace HAYDEN
             byte* GetCompressedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const;
             EmbeddedTGAHeader ReadTGAHeader(const std::vector<byte> tgaDecompressedHeader) const;
 
-            // Helper functions for organization purposes - not meant to be called individually
+            // Helper functions for constructor
             void ReadFileHeader(FILE* f);
             void ReadStringOffsets(FILE* f);
             void ReadPathIndexes(FILE* f);
             void ReadEntryData(FILE* f);
 
-            // Preferred Constructor, calls helper functions above
+            // Preferred constructor, calls helper functions above
             ResourceFile(const std::string filename, const int loadPriority);
 
             

@@ -2,7 +2,7 @@
 
 namespace HAYDEN
 {
-    // Parse a TGA Header file.
+    // Parse TGA Header file.
     EmbeddedTGAHeader ResourceFile::ReadTGAHeader(const std::vector<byte> tgaDecompressedHeader) const
     {
         EmbeddedTGAHeader tgaHeader;
@@ -15,7 +15,7 @@ namespace HAYDEN
         return tgaHeader;
     }
 
-    // Reads a compressed file embedded in .resources into binary filestream.
+    // Reads embedded file headers into filestream
     byte* ResourceFile::GetCompressedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const
     {
         byte* compressedData = NULL;
@@ -26,7 +26,7 @@ namespace HAYDEN
         return compressedData;
     }
 
-    // Helper functions for organization purposes - not meant to be called individually
+    // Helper functions for constructor
     void ResourceFile::ReadFileHeader(FILE* f)
     {
         byte buff4[4];

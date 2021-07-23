@@ -2,27 +2,54 @@
 
 namespace HAYDEN
 {
-    // Decompress & Parse TGA Headers embedded in .resources file. Called by ExportAll().
-    std::vector<EmbeddedTGAHeader> FileExporter::ReadEmbeddedTGAHeaders(const ResourceFile& resourceFile)
+    // FileExportList Functions
+    void FileExportList::GetResourceEntries(const ResourceFile& resourceFile)
     {
-        std::vector<EmbeddedTGAHeader> embeddedTGAHeaders;
+        // Iterate through currently loaded .resource entries to find supported files
+        for (uint64 i = 0; i < resourceFile.numFileEntries; i++)
+        {
+            ResourceEntry thisEntry = resourceFile.resourceEntries[i];
+
+            // for now we only want version == 21 (images)
+            if (thisEntry.version != _FileType)
+                continue;
+
+            // skips entries with no data to extract
+            if (thisEntry.dataSizeCompressed == 0)
+                continue;
+
+            // skips entries with "lightprobes" path
+            if (thisEntry.name.rfind("/lightprobes/") != -1)
+                continue;
+
+            FileExportItem exportItem;
+            exportItem.resourceFileName = thisEntry.name;
+            exportItem.resourceFileOffset = thisEntry.dataOffset;
+            exportItem.resourceFileCompressedSize = thisEntry.dataSizeCompressed;
+            exportItem.resourceFileDecompressedSize = thisEntry.dataSizeDecompressed;
+            exportItem.resourceFileHash = thisEntry.hash;
+
+            _ExportItems.push_back(exportItem);
+        }
+        return;
+    }
+    void FileExportList::ParseEmbeddedTGAHeaders(const ResourceFile& resourceFile)
+    {
+        // Open .resource file containing embedded TGA data.
         FILE* f = fopen(resourceFile.filename.c_str(), "rb");
         if (f == NULL)
         {
             printf("Error: failed to open %s for reading.\n", resourceFile.filename.c_str());
-            return embeddedTGAHeaders;
+            return;
         }
-
-        // Reads embedded TGA Headers for the data needed to locate file in .streamdb
-        for (uint64 i = 0; i < fileExportList.size(); i++)
+        
+        // read compressed file headers into memory
+        for (uint64 i = 0; i < _ExportItems.size(); i++)
         {
-            FileExportItem& thisFile = fileExportList[i];
-
-            // go to file offset and read compressed file header into memory
+            FileExportItem& thisFile = _ExportItems[i];
             byte* compressedData = resourceFile.GetCompressedFileHeader(f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
 
             // check if decompression is necessary
-            // FIXME - duplicate code in if/else, refactor this
             if (thisFile.resourceFileCompressedSize != thisFile.resourceFileDecompressedSize)
             {
                 // decompress with Oodle DLL
@@ -32,52 +59,19 @@ namespace HAYDEN
                     continue; // error
 
                 EmbeddedTGAHeader embeddedTGAHeader = resourceFile.ReadTGAHeader(decompressedData);
-                embeddedTGAHeaders.push_back(embeddedTGAHeader);
+                _TGAHeaderData.push_back(embeddedTGAHeader);
             }
             else
             {
                 std::vector<byte> decompressedData(*compressedData, *compressedData + thisFile.resourceFileCompressedSize);
                 EmbeddedTGAHeader embeddedTGAHeader = resourceFile.ReadTGAHeader(decompressedData);
-                embeddedTGAHeaders.push_back(embeddedTGAHeader);
+                _TGAHeaderData.push_back(embeddedTGAHeader);
             }        
         }
-
         fclose(f);
-        return embeddedTGAHeaders;
-    }
-
-    // Helper function called by SearchStreamDBFilesForIndex().
-    int FileExporter::FindMatchingIndex(const uint64 streamDBIndex, const int streamDBNumber, const std::vector<StreamDBFile>& streamDBFiles) const
-    {
-        for (int i = 0; i < streamDBFiles[streamDBNumber].indexEntryCount; i++)
-        {
-            if (streamDBFiles[streamDBNumber].indexEntryList[i].hashIndex != streamDBIndex)
-                continue;
-
-            return i;
-        }
-        return -1;
-    }
-
-    // Loop through export list and match streamDBIndexes against .streamdb files in memory. Called by ExportAll().
-    void FileExporter::SearchStreamDBFilesForIndex(FileExportItem& streamDBData, const std::vector<StreamDBFile>& streamDBFiles) const
-    {
-        for (int i = 0; i < streamDBFiles.size(); i++)
-        {
-            int matchIndex = FindMatchingIndex(streamDBData.streamDBIndex, i, streamDBFiles);
-            if (matchIndex != -1)
-            {
-                streamDBData.streamDBNumber = i;
-                streamDBData.streamDBFileName = streamDBFiles[i].fileName;
-                streamDBData.streamDBFileOffset = streamDBFiles[i].indexEntryList[matchIndex].fileOffset * (uint64)16;
-                return;
-            }
-        }
         return;
     }
-
-    // Converts ResourceID to StreamDBIndex. Called by ExportAll().
-    uint64 FileExporter::CalculateStreamDBIndex(const uint64 resourceId, const int mipCount) const
+    uint64 FileExportList::CalculateStreamDBIndex(const uint64 resourceId, const int mipCount) const
     {
         // Get hex bytes string
         std::string hexBytes = intToHex(resourceId);
@@ -101,78 +95,134 @@ namespace HAYDEN
         // Convert hex string back to uint64 and return
         return hexToInt64(hexBytes);
     }
-
-    // Builds list of files to export from SAMUEL. Called by ExportAll().
-    void FileExporter::BuildFileExportList(const ResourceFile& resourceFile)
+    void FileExportList::GetStreamDBIndexAndSize()
     {
-        // Iterate through currently loaded .resource entries to find supported files
-        for (uint64 i = 0; i < resourceFile.numFileEntries; i++)
+        for (int i = 0; i < _ExportItems.size(); i++)
         {
-            ResourceEntry thisEntry = resourceFile.resourceEntries[i];
-
-            // for now we only want version == 21 (images)
-            if (thisEntry.version != 21)
-                continue;
-
-            // skips entries with no data to extract
-            if (thisEntry.dataSizeCompressed == 0)
-                continue;
-
-            // skips entries with "lightprobes" path
-            if (thisEntry.name.rfind("/lightprobes/") != -1)
-                continue;
-
-            FileExportItem exportItem;
-            exportItem.resourceFileName = thisEntry.name;
-            exportItem.resourceFileOffset = thisEntry.dataOffset;
-            exportItem.resourceFileCompressedSize = thisEntry.dataSizeCompressed;
-            exportItem.resourceFileDecompressedSize = thisEntry.dataSizeDecompressed;
-            exportItem.resourceFileHash = thisEntry.hash;
-
-            fileExportList.push_back(exportItem);
-        }
-        return;
-    }
-
-    void FileExporter::Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles)
-    {
-        BuildFileExportList(resourceFile);
-
-        // Get embedded TGA data needed to locate files in .streamdb.
-        std::vector<EmbeddedTGAHeader> embeddedTGAHeaders = ReadEmbeddedTGAHeaders(resourceFile);
-
-        for (int i = 0; i < fileExportList.size(); i++)
-        {
-            FileExportItem& thisFile = fileExportList[i];
+            FileExportItem& thisFile = _ExportItems[i];
 
             endianSwap(thisFile.resourceFileHash);
-            uint64 streamDBIndex = CalculateStreamDBIndex(thisFile.resourceFileHash, embeddedTGAHeaders[i].numMips);
+            uint64 streamDBIndex = CalculateStreamDBIndex(thisFile.resourceFileHash, _TGAHeaderData[i].numMips);
             endianSwap(streamDBIndex);
 
             // populate streamdbData
             thisFile.streamDBIndex = streamDBIndex;
-            thisFile.streamDBSizeDecompressed = embeddedTGAHeaders[i].decompressedSize;
-            thisFile.streamDBSizeCompressed = embeddedTGAHeaders[i].compressedSize;
+            thisFile.streamDBSizeDecompressed = _TGAHeaderData[i].decompressedSize;
+            thisFile.streamDBSizeCompressed = _TGAHeaderData[i].compressedSize;
 
             // FIXME, should get compressionType from .resources
-            if (embeddedTGAHeaders[i].isCompressed == 1)
+            if (_TGAHeaderData[i].isCompressed == 1)
                 thisFile.streamDBCompressionType = 2;
         }
+        return;
+    }
 
-        // Loop through streamdbData and decompress files
+    // Constructs FileExportList
+    FileExportList::FileExportList(const ResourceFile& resourceFile, int fileType)
+    {
+        _FileType = fileType;
+        _ResourceFileName = resourceFile.filename;
+        GetResourceEntries(resourceFile);
+        ParseEmbeddedTGAHeaders(resourceFile);
+        GetStreamDBIndexAndSize();
+        return;
+    }
+
+    // FileExporter Functions
+    int FileExporter::FindMatchingIndex(const uint64 streamDBIndex, const int streamDBNumber, const std::vector<StreamDBFile>& streamDBFiles) const
+    {
+        for (int i = 0; i < streamDBFiles[streamDBNumber].indexEntryCount; i++)
+        {
+            if (streamDBFiles[streamDBNumber].indexEntryList[i].hashIndex != streamDBIndex)
+                continue;
+
+            return i;
+        }
+        return -1;
+    }
+    void FileExporter::SearchStreamDBFilesForIndex(FileExportItem& streamDBData, const std::vector<StreamDBFile>& streamDBFiles) const
+    {
+        for (int i = 0; i < streamDBFiles.size(); i++)
+        {
+            int matchIndex = FindMatchingIndex(streamDBData.streamDBIndex, i, streamDBFiles);
+            if (matchIndex != -1)
+            {
+                streamDBData.streamDBNumber = i;
+                streamDBData.streamDBFileName = streamDBFiles[i].fileName;
+                streamDBData.streamDBFileOffset = streamDBFiles[i].indexEntryList[matchIndex].fileOffset * (uint64)16;
+                return;
+            }
+        }
+        return;
+    }
+    void FileExporter::PrintMatchesToCSV(std::vector<FileExportItem>& fileExportList) const
+    {
+        std::ofstream outputMatched("matched_tmp", std::ios::app);
         for (int i = 0; i < fileExportList.size(); i++)
         {
+            FileExportItem& thisEntry = fileExportList[i];
+            if (thisEntry.streamDBNumber == -1)
+                continue;
+
+            std::string output;
+            output += "\"" + thisEntry.resourceFileName + "\",";
+            output += std::to_string(thisEntry.streamDBIndex) + ",";
+            output += std::to_string(thisEntry.streamDBFileOffset) + ",";
+            output += std::to_string(thisEntry.streamDBSizeCompressed) + ",";
+            output += std::to_string(thisEntry.streamDBSizeDecompressed) + ",";
+            output += std::to_string(thisEntry.streamDBCompressionType) + ",";
+            output += std::to_string(thisEntry.streamDBNumber) + ",";
+            output += "\"" + thisEntry.streamDBFileName + "\"" + "\n";
+            outputMatched.write(output.c_str(), output.length());
+        }
+        return;
+    }
+    void FileExporter::PrintUnmatchedToCSV(std::vector<FileExportItem>& fileExportList) const
+    {
+        std::ofstream outputUnmatched("unmatched_tmp", std::ios::app);
+        for (int i = 0; i < fileExportList.size(); i++)
+        {
+            FileExportItem& thisEntry = fileExportList[i];
+            if (thisEntry.streamDBNumber != -1)
+                continue;
+
+            std::string output;
+            output += "\"" + thisEntry.resourceFileName + "\",";
+            output += std::to_string(thisEntry.streamDBIndex) + ",";
+            output += std::to_string(thisEntry.streamDBFileOffset) + ",";
+            output += std::to_string(thisEntry.streamDBSizeCompressed) + ",";
+            output += std::to_string(thisEntry.streamDBSizeDecompressed) + ",";
+            output += std::to_string(thisEntry.streamDBCompressionType) + ",";
+            output += std::to_string(thisEntry.streamDBNumber) + "\n";
+            outputUnmatched.write(output.c_str(), output.length());
+        }
+        return;
+    }
+
+    // Constructs FileExporter, collects data needed for export.
+    void FileExporter::Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles)
+    {
+        _TGAExportList = FileExportList(resourceFile, 21);
+        std::vector<FileExportItem> tgaFilesToExport = _TGAExportList.GetFileExportItems();
+
+        // Loop through streamdbData and decompress files
+        for (int i = 0; i < tgaFilesToExport.size(); i++)
+        {
             // First pass
-            SearchStreamDBFilesForIndex(fileExportList[i], streamDBFiles);
+            SearchStreamDBFilesForIndex(tgaFilesToExport[i], streamDBFiles);
 
             // Second pass for images that aren't found. 
             // This catches some wierd UI files whose hash indexes are off by 1.
-            if (fileExportList[i].streamDBNumber == -1)
+            if (tgaFilesToExport[i].streamDBNumber == -1)
             {
-                fileExportList[i].streamDBIndex--;
-                SearchStreamDBFilesForIndex(fileExportList[i], streamDBFiles);
+                tgaFilesToExport[i].streamDBIndex--;
+                SearchStreamDBFilesForIndex(tgaFilesToExport[i], streamDBFiles);
             }
         }
+        
+        // For debugging
+        PrintMatchesToCSV(tgaFilesToExport);
+        PrintUnmatchedToCSV(tgaFilesToExport);
         return;
     }
 }

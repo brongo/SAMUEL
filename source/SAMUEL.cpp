@@ -5,7 +5,6 @@ namespace fs = std::filesystem;
 
 namespace HAYDEN
 {
-    // Reads packagemapspec.json data into SAMUEL. Called by Init().
     void SAMUEL::LoadPackageMapSpec()
     {
         try
@@ -26,8 +25,6 @@ namespace HAYDEN
             return;
         }
     }
-
-    // Update SAMUEL's list of .streamdb files to search. Called by LoadResource().
     void SAMUEL::UpdateStreamDBFileList(const std::string resourceFileName)
     {
         std::vector<std::string> appendList;
@@ -53,8 +50,6 @@ namespace HAYDEN
         }
         return;
     }
-    
-    // Read .streamdb file data into SAMUEL. Called by LoadResource().
     void SAMUEL::ReadStreamDBFiles()
     {
         for (auto i = _StreamDBFileList.begin(); i != _StreamDBFileList.end(); ++i)
@@ -72,55 +67,6 @@ namespace HAYDEN
             StreamDBFile streamDBFile(fsPath);
             _StreamDBFileData.push_back(streamDBFile);
         }
-    }
-
-    // Debugging functions.
-    void SAMUEL::PrintMatchesToCSV() const
-    {
-        std::vector<FileExportItem> fileExportList = _Exporter.GetFileExportList();
-        std::ofstream outputMatched("matched_tmp", std::ios::app);
-
-        for (int i = 0; i < fileExportList.size(); i++)
-        {
-            FileExportItem& thisEntry = fileExportList[i];
-            if (thisEntry.streamDBNumber == -1)
-                continue;
-
-            std::string output;
-            output += "\"" + thisEntry.resourceFileName + "\",";
-            output += std::to_string(thisEntry.streamDBIndex) + ",";
-            output += std::to_string(thisEntry.streamDBFileOffset) + ",";
-            output += std::to_string(thisEntry.streamDBSizeCompressed) + ",";
-            output += std::to_string(thisEntry.streamDBSizeDecompressed) + ",";
-            output += std::to_string(thisEntry.streamDBCompressionType) + ",";
-            output += std::to_string(thisEntry.streamDBNumber) + ",";
-            output += "\"" + thisEntry.streamDBFileName + "\"" + "\n";
-            outputMatched.write(output.c_str(), output.length());
-        }
-        return;
-    }
-    void SAMUEL::PrintUnmatchedToCSV() const
-    {
-        std::vector<FileExportItem> fileExportList = _Exporter.GetFileExportList();
-        std::ofstream outputUnmatched("unmatched_tmp", std::ios::app);
-
-        for (int i = 0; i < fileExportList.size(); i++)
-        {
-            FileExportItem& thisEntry = fileExportList[i];
-            if (thisEntry.streamDBNumber != -1)
-                continue;
-
-            std::string output;
-            output += "\"" + thisEntry.resourceFileName + "\",";
-            output += std::to_string(thisEntry.streamDBIndex) + ",";
-            output += std::to_string(thisEntry.streamDBFileOffset) + ",";
-            output += std::to_string(thisEntry.streamDBSizeCompressed) + ",";
-            output += std::to_string(thisEntry.streamDBSizeDecompressed) + ",";
-            output += std::to_string(thisEntry.streamDBCompressionType) + ",";
-            output += std::to_string(thisEntry.streamDBNumber) + "\n";
-            outputUnmatched.write(output.c_str(), output.length());
-        }
-        return;
     }
 
     // Public API functions - SAMUEL
@@ -163,12 +109,7 @@ namespace HAYDEN
     }
     void SAMUEL::ExportAll()
     {
-        // Initialize file exporter
         _Exporter.Init(_ResourceFile, _StreamDBFileData);
-
-        // For Debugging
-        PrintMatchesToCSV();
-        PrintUnmatchedToCSV();
         return;
     }
     void SAMUEL::Init(const std::string basePath)
@@ -199,15 +140,9 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // Program Init
     SAMUEL SAM;
     SAM.Init(argv[2]);
-
-    // API function - call this when user selects .resource file to load.
     SAM.LoadResource(argv[1]);
-
-    // API function - call this when user clicks "Export All" button.
     SAM.ExportAll();
-
     return 0;
 }

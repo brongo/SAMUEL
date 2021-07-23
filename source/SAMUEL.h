@@ -17,15 +17,11 @@ namespace HAYDEN
 	class SAMUEL
 	{
 		public:
-			
-			// Public API Functions
 			void Init(const std::string basePath);
 			void LoadResource(const std::string fileName);
 			void ExportAll();
 
 		private:
-
-			// Private Variables
 			std::string _basePath;
 			std::vector<std::string> _StreamDBFileList;
 			std::vector<StreamDBFile> _StreamDBFileData; 
@@ -33,16 +29,12 @@ namespace HAYDEN
 			PackageMapSpec _PackageMapSpec;
 			FileExporter _Exporter;
 
-			// Init Functions
+			// Called by Init()
 			void SetBasePath(const std::string basePath) { _basePath = basePath; }
 			void LoadPackageMapSpec();
 
-			// Helper Functions - LoadResource()
+			// Called by LoadResource()
 			void UpdateStreamDBFileList(const std::string resourceFileName);
 			void ReadStreamDBFiles();
-
-			// Debug Functions
-			void PrintMatchesToCSV() const;
-			void PrintUnmatchedToCSV() const;
 	};
 }
