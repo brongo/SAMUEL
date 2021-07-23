@@ -22,7 +22,7 @@ namespace HAYDEN
         return x;
     }
 
-    std::vector<byte> oodleDecompress(std::vector<byte> compressedData, const uint64 compressedSize, const uint64 decompressedSize)
+    std::vector<byte> oodleDecompress(std::vector<byte> compressedData, const uint64 decompressedSize)
     {
         std::vector<byte> output(decompressedSize + SAFE_SPACE);
         uint64 outbytes;
@@ -43,7 +43,7 @@ namespace HAYDEN
         }
 
         // Decompress using Oodle DLL
-        outbytes = OodLZ_Decompress(compressedData.data(), compressedSize, output.data(), decompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        outbytes = OodLZ_Decompress(compressedData.data(), compressedData.size(), output.data(), decompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         
         if (!outbytes)
         {

@@ -53,7 +53,7 @@ namespace HAYDEN
             if (thisFile.resourceFileCompressedSize != thisFile.resourceFileDecompressedSize)
             {
                 // decompress with Oodle DLL
-                auto decompressedData = oodleDecompress(compressedData, thisFile.resourceFileCompressedSize, thisFile.resourceFileDecompressedSize);
+                auto decompressedData = oodleDecompress(compressedData, thisFile.resourceFileDecompressedSize);
                 if (decompressedData.empty())
                     continue; // error
 
