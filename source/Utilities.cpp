@@ -22,7 +22,7 @@ namespace HAYDEN
         return x;
     }
 
-    std::vector<byte> oodleDecompress(byte* compressedData, const uint64 compressedSize, const uint64 decompressedSize)
+    std::vector<byte> oodleDecompress(std::vector<byte> compressedData, const uint64 compressedSize, const uint64 decompressedSize)
     {
         std::vector<byte> output(decompressedSize + SAFE_SPACE);
         uint64 outbytes;
@@ -38,16 +38,16 @@ namespace HAYDEN
 
         if (!OodLZ_Decompress)
         {
-            printf("Error: failed to load oo2core_8_win64.dll.\n\n");
+            fprintf(stderr, "Error: failed to load oo2core_8_win64.dll.\n\n");
             return std::vector<byte>();
         }
 
         // Decompress using Oodle DLL
-        outbytes = OodLZ_Decompress(compressedData, compressedSize, output.data(), decompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        outbytes = OodLZ_Decompress(compressedData.data(), compressedSize, output.data(), decompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         
         if (!outbytes)
         {
-            printf("Error: failed to decompress with Oodle DLL.\n\n");
+            fprintf(stderr, "Error: failed to decompress with Oodle DLL.\n\n");
             return std::vector<byte>();
         }
 
