@@ -110,6 +110,7 @@ namespace HAYDEN
     void SAMUEL::ExportAll()
     {
         _Exporter.Init(_ResourceFile, _StreamDBFileData);
+        _Exporter.ExportTGAFiles(_StreamDBFileData);
         return;
     }
     void SAMUEL::Init(const std::string basePath)
@@ -136,7 +137,7 @@ int main(int argc, char* argv[])
     printf("SAMUEL v0.1 by SamPT\n");
 
     if (argc < 2) {
-        printf("USAGE: SAMUEL resourceFile basePath\n");
+        printf("USAGE: SAMUEL /path/to/resourceFile \n");
         return 1;
     }
 

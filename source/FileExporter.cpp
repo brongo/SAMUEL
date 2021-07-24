@@ -115,45 +115,64 @@ namespace HAYDEN
         }
         return;
     }
+    void FileExportList::GetStreamDBFileOffsets(const std::vector<StreamDBFile>& streamDBFiles)
+    {
+        for (int i = 0; i < _ExportItems.size(); i++)
+        {
+            // Searches every .streamdb file for a matching streamDBIndex
+            FileExportItem& thisFile = _ExportItems[i];
+            for (int j = 0; j < streamDBFiles.size(); j++)
+            {
+                uint64 fileOffset = streamDBFiles[j].GetFileOffsetInStreamDB(thisFile.streamDBIndex, thisFile.streamDBSizeCompressed);
+                
+                // index matched, size too small, increment index by 1 and check again.
+                if (fileOffset == -2)
+                    fileOffset = streamDBFiles[j].GetFileOffsetInStreamDB(thisFile.streamDBIndex + 1, thisFile.streamDBSizeCompressed);
+                
+                if (fileOffset == -1)
+                    continue;
+
+                thisFile.streamDBNumber = j;
+                thisFile.streamDBFileName = streamDBFiles[j].fileName;
+                thisFile.streamDBFileOffset = fileOffset;
+                break;
+            }
+
+            // match found, go to next file
+            if (thisFile.streamDBNumber != -1)
+                continue;
+
+            // Second pass for images that aren't found. 
+            // This catches some wierd UI files whose streamDBIndex is off by 1.
+            thisFile.streamDBIndex--;
+            for (int j = 0; j < streamDBFiles.size(); j++)
+            {
+                uint64 fileOffset = streamDBFiles[j].GetFileOffsetInStreamDB(thisFile.streamDBIndex, thisFile.streamDBSizeCompressed);
+                if (fileOffset == -1)
+                    continue;
+
+                thisFile.streamDBNumber = j;
+                thisFile.streamDBFileName = streamDBFiles[j].fileName;
+                thisFile.streamDBFileOffset = fileOffset;
+                break;
+            }
+        }
+        return;
+    }
 
     // Constructs FileExportList
-    FileExportList::FileExportList(const ResourceFile& resourceFile, int fileType)
+    FileExportList::FileExportList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, int fileType)
     {
         _FileType = fileType;
         _ResourceFileName = resourceFile.filename;
         GetResourceEntries(resourceFile);
         ParseEmbeddedTGAHeaders(resourceFile);
         GetStreamDBIndexAndSize();
+        GetStreamDBFileOffsets(streamDBFiles);
         return;
     }
 
-    // FileExporter Functions
-    int FileExporter::FindMatchingIndex(const uint64 streamDBIndex, const int streamDBNumber, const std::vector<StreamDBFile>& streamDBFiles) const
-    {
-        for (int i = 0; i < streamDBFiles[streamDBNumber].indexEntryCount; i++)
-        {
-            if (streamDBFiles[streamDBNumber].indexEntryList[i].hashIndex != streamDBIndex)
-                continue;
-
-            return i;
-        }
-        return -1;
-    }
-    void FileExporter::SearchStreamDBFilesForIndex(FileExportItem& streamDBData, const std::vector<StreamDBFile>& streamDBFiles) const
-    {
-        for (int i = 0; i < streamDBFiles.size(); i++)
-        {
-            int matchIndex = FindMatchingIndex(streamDBData.streamDBIndex, i, streamDBFiles);
-            if (matchIndex != -1)
-            {
-                streamDBData.streamDBNumber = i;
-                streamDBData.streamDBFileName = streamDBFiles[i].fileName;
-                streamDBData.streamDBFileOffset = streamDBFiles[i].indexEntryList[matchIndex].fileOffset * (uint64)16;
-                return;
-            }
-        }
-        return;
-    }
+    // FileExporter - Debug Functions
     void FileExporter::PrintMatchesToCSV(std::vector<FileExportItem>& fileExportList) const
     {
         std::ofstream outputMatched("matched_tmp", std::ios::app);
@@ -198,27 +217,56 @@ namespace HAYDEN
         return;
     }
 
+    // FileExporter - Export Functions
+    void FileExporter::ExportTGAFiles(const std::vector<StreamDBFile>& streamDBFiles)
+    {
+        std::vector<FileExportItem> tgaFilesToExport = _TGAExportList.GetFileExportItems();
+        for (int i = 0; i < tgaFilesToExport.size(); i++)
+        {
+            FileExportItem& thisFile = tgaFilesToExport[i];
+            
+            // Don't try to export resources that weren't found
+            if (thisFile.streamDBNumber == -1)
+                continue;
+
+            const StreamDBFile& thisStreamDBFile = streamDBFiles[thisFile.streamDBNumber];
+
+            std::ifstream f;
+            f.open(thisFile.streamDBFileName, std::ios::in | std::ios::binary);
+
+            auto fileData = thisStreamDBFile.GetEmbeddedFile(f, thisFile.streamDBFileOffset, thisFile.streamDBSizeCompressed);
+            f.close();
+        
+            // check if decompression is necessary
+            if (thisFile.streamDBSizeCompressed != thisFile.streamDBSizeDecompressed)
+            {
+                // decompress with Oodle DLL
+                fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
+                if (fileData.empty())
+                    continue; // error
+            }
+
+            // TODO/FIXME
+            // Can't just write this to file
+            // Need to parse filepath and create the folders/filename correctly.
+            
+            // FILE* outFile = fopen(thisFile.resourceFileName.c_str(), "wb");
+            // if (outFile == NULL)
+            //   continue; // error
+
+            // fwrite(fileData.data(), fileData.size(), 1, outFile);
+            // printf("Test");
+            continue;
+        }
+        return;
+    }
+
     // Constructs FileExporter, collects data needed for export.
     void FileExporter::Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles)
     {
-        _TGAExportList = FileExportList(resourceFile, 21);
+        _TGAExportList = FileExportList(resourceFile, streamDBFiles, 21);
         std::vector<FileExportItem> tgaFilesToExport = _TGAExportList.GetFileExportItems();
-
-        // Loop through streamdbData and decompress files
-        for (int i = 0; i < tgaFilesToExport.size(); i++)
-        {
-            // First pass
-            SearchStreamDBFilesForIndex(tgaFilesToExport[i], streamDBFiles);
-
-            // Second pass for images that aren't found. 
-            // This catches some wierd UI files whose hash indexes are off by 1.
-            if (tgaFilesToExport[i].streamDBNumber == -1)
-            {
-                tgaFilesToExport[i].streamDBIndex--;
-                SearchStreamDBFilesForIndex(tgaFilesToExport[i], streamDBFiles);
-            }
-        }
-        
+ 
         // For debugging
         PrintMatchesToCSV(tgaFilesToExport);
         PrintUnmatchedToCSV(tgaFilesToExport);

@@ -19,7 +19,7 @@ namespace HAYDEN
     {
         public:
             uint64 hashIndex;
-            uint32 fileOffset;
+            uint64 fileOffset;
             uint32 compressedSize;
     };
 
@@ -36,7 +36,11 @@ namespace HAYDEN
             // Default Constructor
             StreamDBFile() {};
 
-            // Helper functions for organization purposes - not meant to be called individually
+            // Utility functions
+            uint64 GetFileOffsetInStreamDB(const uint64 streamDBIndex, const uint64 compressedSize) const;
+            std::vector<byte> StreamDBFile::GetEmbeddedFile(std::ifstream& f, const uint64 fileOffset, const uint64 compressedSize) const;
+
+            // Helper functions for constructor
             void readStreamDBHeader(FILE* f);
             void readStreamDBEntries(FILE* f);
 
