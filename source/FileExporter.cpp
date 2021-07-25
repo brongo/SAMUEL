@@ -172,6 +172,30 @@ namespace HAYDEN
         return;
     }
 
+    // FileExporter - Subroutines
+    std::vector<byte> FileExporter::GetBinaryFileFromStreamDB(const FileExportItem& fileExportInfo, const StreamDBFile& streamDBFile)
+    {
+        std::ifstream f;
+        f.open(fileExportInfo.streamDBFileName, std::ios::in | std::ios::binary);
+        auto fileData = streamDBFile.GetEmbeddedFile(f, fileExportInfo.streamDBFileOffset, fileExportInfo.streamDBSizeCompressed);
+        f.close();
+
+        return fileData;
+    }
+    std::vector<byte> FileExporter::ConstructDDSFileHeader()
+    {
+        DDSHeader defaultDDS;
+        auto ptr = reinterpret_cast<byte*>(&defaultDDS);
+        auto buffer = std::vector<byte>(ptr, ptr + sizeof(defaultDDS));
+        return buffer;
+    }
+    fs::path FileExporter::BuildOutputPath(const std::string filePath)
+    {
+        fs::path outputPath = _OutDir / fs::path(filePath);
+        outputPath.make_preferred();
+        return outputPath;
+    }
+
     // FileExporter - Debug Functions
     void FileExporter::PrintMatchesToCSV(std::vector<FileExportItem>& fileExportList) const
     {
@@ -223,47 +247,55 @@ namespace HAYDEN
         std::vector<FileExportItem> tgaFilesToExport = _TGAExportList.GetFileExportItems();
         for (int i = 0; i < tgaFilesToExport.size(); i++)
         {
-            FileExportItem& thisFile = tgaFilesToExport[i];
-            
             // Don't try to export resources that weren't found
-            if (thisFile.streamDBNumber == -1)
+            if (tgaFilesToExport[i].streamDBNumber == -1)
                 continue;
 
+            FileExportItem& thisFile = tgaFilesToExport[i];
             const StreamDBFile& thisStreamDBFile = streamDBFiles[thisFile.streamDBNumber];
 
-            std::ifstream f;
-            f.open(thisFile.streamDBFileName, std::ios::in | std::ios::binary);
+            // get binary file data from streamdb
+            std::vector<byte> fileData = GetBinaryFileFromStreamDB(thisFile, thisStreamDBFile);
 
-            auto fileData = thisStreamDBFile.GetEmbeddedFile(f, thisFile.streamDBFileOffset, thisFile.streamDBSizeCompressed);
-            f.close();
-        
             // check if decompression is necessary
             if (thisFile.streamDBSizeCompressed != thisFile.streamDBSizeDecompressed)
             {
-                // decompress with Oodle DLL
                 fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
                 if (fileData.empty())
                     continue; // error
             }
 
-            // TODO/FIXME
-            // Can't just write this to file
-            // Need to parse filepath and create the folders/filename correctly.
-            
-            // FILE* outFile = fopen(thisFile.resourceFileName.c_str(), "wb");
-            // if (outFile == NULL)
-            //   continue; // error
+            // construct DDS file header
+            // std::vector<byte> ddsFileHeader = ConstructDDSFileHeader(); 
 
-            // fwrite(fileData.data(), fileData.size(), 1, outFile);
-            // printf("Test");
+            // parse filepath and create folders if necessary
+            fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
+            fs::path folderPath = fullPath;
+            folderPath.remove_filename();
+
+            if (!fs::exists(folderPath))
+            {
+                if (!fs::create_directories(folderPath));
+                    continue;  // error: failed to create output directories
+            }
+            
+            FILE* outFile = fopen(fullPath.string().c_str(), "wb");
+            if (outFile == NULL)
+                continue; // error
+
+            // fwrite(ddsFileHeader.data(), ddsFileHeader.size(), 1, outFile);
+            fwrite(fileData.data(), fileData.size(), 1, outFile);
+            fclose(outFile);
+            printf("Test");
             continue;
         }
         return;
     }
 
     // Constructs FileExporter, collects data needed for export.
-    void FileExporter::Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles)
+    void FileExporter::Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, std::string outputDirectory)
     {
+        _OutDir = outputDirectory;
         _TGAExportList = FileExportList(resourceFile, streamDBFiles, 21);
         std::vector<FileExportItem> tgaFilesToExport = _TGAExportList.GetFileExportItems();
  

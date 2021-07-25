@@ -6,13 +6,37 @@
 
 namespace HAYDEN
 {
+    // filepath parse functions
+    std::string getPathWithoutFileName(std::string filename)
+    {
+        return filename.substr(0, filename.rfind(fs::path::preferred_separator));
+    }
+    std::string getFilenameFromPath(std::string path)
+    {
+        size_t splitPos = path.rfind(fs::path::preferred_separator);
+        return path.substr(splitPos + 1, path.length() - splitPos);
+    }
+    std::string getParentFolderFromPath(std::string path)
+    {
+        return path.substr(0, path.find(fs::path::preferred_separator));
+    }
+    std::string dropFileExtension(std::string filename)
+    {
+        return filename.substr(0, filename.rfind("."));
+    }
+    std::string dropFirstDirectoryFromPath(std::string path)
+    {
+        size_t splitPos = path.find(fs::path::preferred_separator);
+        return path.substr(splitPos + 1, path.length() - splitPos);
+    }
+
+    // hex <-> decimal conversions and endian functions
     void endianSwap(uint64& value) 
     {
         value = ((value & 0x00000000FFFFFFFFull) << 32) | ((value & 0xFFFFFFFF00000000ull) >> 32);
         value = ((value & 0x0000FFFF0000FFFFull) << 16) | ((value & 0xFFFF0000FFFF0000ull) >> 16);
         value = ((value & 0x00FF00FF00FF00FFull) << 8) | ((value & 0xFF00FF00FF00FF00ull) >> 8);
     }
-
     uint64_t hexToInt64(const std::string hex) 
     {
         uint64_t x;
@@ -22,6 +46,7 @@ namespace HAYDEN
         return x;
     }
 
+    // oodle functions
     std::vector<byte> oodleDecompress(std::vector<byte> compressedData, const uint64 decompressedSize)
     {
         std::vector<byte> output(decompressedSize + SAFE_SPACE);

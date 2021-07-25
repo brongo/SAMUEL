@@ -107,9 +107,9 @@ namespace HAYDEN
         }
         return;
     }
-    void SAMUEL::ExportAll()
+    void SAMUEL::ExportAll(std::string outputDirectory)
     {
-        _Exporter.Init(_ResourceFile, _StreamDBFileData);
+        _Exporter.Init(_ResourceFile, _StreamDBFileData, outputDirectory);
         _Exporter.ExportTGAFiles(_StreamDBFileData);
         return;
     }
@@ -136,8 +136,8 @@ int main(int argc, char* argv[])
 {
     printf("SAMUEL v0.1 by SamPT\n");
 
-    if (argc < 2) {
-        printf("USAGE: SAMUEL /path/to/resourceFile \n");
+    if (argc < 1) {
+        printf("USAGE: SAMUEL /path/to/resourceFile outputDirectory \n");
         return 1;
     }
 
@@ -152,6 +152,6 @@ int main(int argc, char* argv[])
     SAMUEL SAM;
     SAM.Init(basePath);
     SAM.LoadResource(resourcePath);
-    SAM.ExportAll();
+    SAM.ExportAll(argv[2]);
     return 0;
 }

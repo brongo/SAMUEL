@@ -19,7 +19,7 @@ namespace HAYDEN
 		public:
 			void Init(const std::string basePath);
 			void LoadResource(const std::string fileName);
-			void ExportAll();
+			void ExportAll(const std::string outputDirectory);
 
 		private:
 			std::string _basePath;
