@@ -56,8 +56,6 @@ namespace HAYDEN
 
 		private:
 			FileExportList _TGAExportList;
-			int FindMatchingIndex(const uint64 streamIndex, const int streamDBNumber, const std::vector<StreamDBFile>& streamDBFiles) const;
-			void SearchStreamDBFilesForIndex(FileExportItem& streamDBData, const std::vector<StreamDBFile>& streamDBFiles) const;
 
 			// Debug Functions
 			void PrintMatchesToCSV(std::vector<FileExportItem>& fileExportList) const;
