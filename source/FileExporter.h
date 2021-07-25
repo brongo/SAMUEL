@@ -30,7 +30,7 @@ namespace HAYDEN
 	{
 		public:
 			FileExportList() {};
-			FileExportList(const ResourceFile& resourceFile, int fileType);
+			FileExportList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, int fileType);
 			std::vector<FileExportItem> GetFileExportItems() { return _ExportItems; }
 
 		private:
@@ -43,6 +43,7 @@ namespace HAYDEN
 			void GetResourceEntries(const ResourceFile& resourceFile);
 			void ParseEmbeddedTGAHeaders(const ResourceFile& resourceFile); 
 			void GetStreamDBIndexAndSize();	
+			void GetStreamDBFileOffsets(const std::vector<StreamDBFile>& streamDBFiles);
 			uint64 CalculateStreamDBIndex(const uint64 resourceId, const int mipCount = -6) const;			
 	};
 
@@ -51,6 +52,7 @@ namespace HAYDEN
 		public:
 			FileExporter() {};
 			void Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles);
+			void ExportTGAFiles(const std::vector<StreamDBFile>& streamDBFiles);
 
 		private:
 			FileExportList _TGAExportList;

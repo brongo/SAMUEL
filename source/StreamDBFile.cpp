@@ -2,7 +2,36 @@
 
 namespace HAYDEN
 {
-    // Read binary filestream, populate StreamDBFile object (header).
+    // Utility functions
+    uint64 StreamDBFile::GetFileOffsetInStreamDB(const uint64 streamDBIndex, const uint64 compressedSize) const
+    {
+        for (int i = 0; i < indexEntryCount; i++)
+        {
+            if (indexEntryList[i].hashIndex != streamDBIndex)
+                continue;
+
+            // make sure the compressedSize matches too
+            if (indexEntryList[i].compressedSize == compressedSize)
+                return indexEntryList[i].fileOffset;
+
+            // special return value indicating index matches, but size is too small
+            if (indexEntryList[i].compressedSize < compressedSize)
+                return -2;
+        }
+        return -1;
+    }
+    std::vector<byte> StreamDBFile::GetEmbeddedFile(std::ifstream& f, const uint64 fileOffset, const uint64 compressedSize) const
+    {
+        std::vector<byte> compressedData(compressedSize);
+        f.seekg(fileOffset, std::ios_base::beg);
+        f.read(reinterpret_cast<char*>(compressedData.data()), compressedSize);
+
+        // validate number of bytes read, 0 if failed
+        compressedData.resize(f.gcount());
+        return compressedData;
+    }
+
+    // Helper functions for constructor
     void StreamDBFile::readStreamDBHeader(FILE* f)
     {
         byte buff4[4];
@@ -18,8 +47,6 @@ namespace HAYDEN
         indexStartOffset = ftell(f);
         return;
     }
-
-    // Read binary filestream, populate StreamDBFile object (entries).
     void StreamDBFile::readStreamDBEntries(FILE* f)
     {
         byte buff4[4];
@@ -32,7 +59,9 @@ namespace HAYDEN
             indexEntryList[i].hashIndex = *(uint64*)buff8;
 
             fread(buff4, 1, 4, f);
-            indexEntryList[i].fileOffset = 16 * (*(uint32*)buff4);
+            uint64 fileOffset = *(uint32*)buff4;
+            fileOffset = fileOffset * 16;
+            indexEntryList[i].fileOffset = fileOffset;
 
             fread(buff4, 1, 4, f);
             indexEntryList[i].compressedSize = *(uint32*)buff4;
@@ -40,7 +69,7 @@ namespace HAYDEN
         return;
     }
 
-    // Constructor. Calls all functions above.
+    // Preferred Constructor, calls helper functions above
     StreamDBFile::StreamDBFile(const fs::path& path)
     {
         fileName = path.string();
