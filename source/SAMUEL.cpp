@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
 {
     printf("SAMUEL v0.1 by SamPT\n");
 
-    if (argc < 1) {
+    if (argc < 3) {
         printf("USAGE: SAMUEL /path/to/resourceFile outputDirectory \n");
         return 1;
     }
