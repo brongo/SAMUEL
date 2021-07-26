@@ -7,7 +7,10 @@ namespace HAYDEN
     {
         EmbeddedTGAHeader tgaHeader;
 
+        tgaHeader.imageType = *(uint32*)(tgaDecompressedHeader.data() + 41);
         tgaHeader.numMips = *(uint32*)(tgaDecompressedHeader.data() + 59);
+        tgaHeader.pixelWidth = *(uint32*)(tgaDecompressedHeader.data() + 71);
+        tgaHeader.pixelHeight = *(uint32*)(tgaDecompressedHeader.data() + 75);
         tgaHeader.decompressedSize = *(uint32*)(tgaDecompressedHeader.data() + 83);
         tgaHeader.isCompressed = *(int*)(tgaDecompressedHeader.data() + 87);
         tgaHeader.compressedSize = *(uint32*)(tgaDecompressedHeader.data() + 91);

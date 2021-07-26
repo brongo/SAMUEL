@@ -42,6 +42,7 @@ namespace HAYDEN
     }
     uint64_t hexToInt64(const std::string hex); 
     void endianSwap(uint64& value); 
+    std::vector<byte> intToByteArray(int x);
     
     // oodle functions
     std::vector<byte> oodleDecompress(std::vector<byte> compressedData, const uint64 decompressedSize);

@@ -45,7 +45,12 @@ namespace HAYDEN
         stream >> x;
         return x;
     }
-
+    std::vector<byte> intToByteArray(int x)
+    {
+        std::vector<byte> bytes(reinterpret_cast<byte*>(&x),
+            reinterpret_cast<byte*>(&x) + sizeof x);
+        return bytes;
+    }
     // oodle functions
     std::vector<byte> oodleDecompress(std::vector<byte> compressedData, const uint64 decompressedSize)
     {

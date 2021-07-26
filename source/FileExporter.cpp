@@ -109,6 +109,10 @@ namespace HAYDEN
             thisFile.streamDBSizeDecompressed = _TGAHeaderData[i].decompressedSize;
             thisFile.streamDBSizeCompressed = _TGAHeaderData[i].compressedSize;
 
+            // get tga width and height
+            thisFile.tgaPixelHeight = _TGAHeaderData[i].pixelHeight;
+            thisFile.tgaPixelWidth = _TGAHeaderData[i].pixelWidth;
+
             // FIXME, should get compressionType from .resources
             if (_TGAHeaderData[i].isCompressed == 1)
                 thisFile.streamDBCompressionType = 2;
@@ -182,11 +186,21 @@ namespace HAYDEN
 
         return fileData;
     }
-    std::vector<byte> FileExporter::ConstructDDSFileHeader()
+    std::vector<byte> FileExporter::ConstructDDSFileHeader(uint32 width, uint32 height, uint32 decompressedSize)
     {
         DDSHeader defaultDDS;
         auto ptr = reinterpret_cast<byte*>(&defaultDDS);
         auto buffer = std::vector<byte>(ptr, ptr + sizeof(defaultDDS));
+
+        auto bytes = intToByteArray(width);
+        std::copy(bytes.begin(), bytes.end(), buffer.begin() + 12);
+
+        bytes = intToByteArray(height);
+        std::copy(bytes.begin(), bytes.end(), buffer.begin() + 16);
+
+        bytes = intToByteArray(decompressedSize);
+        std::copy(bytes.begin(), bytes.end(), buffer.begin() + 20);
+
         return buffer;
     }
     fs::path FileExporter::BuildOutputPath(const std::string filePath)
@@ -266,7 +280,7 @@ namespace HAYDEN
             }
 
             // construct DDS file header
-            // std::vector<byte> ddsFileHeader = ConstructDDSFileHeader(); 
+            std::vector<byte> ddsFileHeader = ConstructDDSFileHeader(thisFile.tgaPixelWidth, thisFile.tgaPixelHeight, thisFile.streamDBSizeDecompressed);
 
             // parse filepath and create folders if necessary
             fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
@@ -283,10 +297,9 @@ namespace HAYDEN
             if (outFile == NULL)
                 continue; // error
 
-            // fwrite(ddsFileHeader.data(), ddsFileHeader.size(), 1, outFile);
+            fwrite(ddsFileHeader.data(), ddsFileHeader.size(), 1, outFile);
             fwrite(fileData.data(), fileData.size(), 1, outFile);
             fclose(outFile);
-            printf("Test");
             continue;
         }
         return;

@@ -53,6 +53,9 @@ namespace HAYDEN
 			uint64 streamDBSizeDecompressed = 0;
 			int streamDBCompressionType = 0;
 			int streamDBNumber = -1;
+			uint32 tgaPixelWidth = 0;
+			uint32 tgaPixelHeight = 0;
+			uint32 tgaImageType = 0;
 	};
 
 	class FileExportList
@@ -89,7 +92,7 @@ namespace HAYDEN
 
 			// FileExporter Subroutines
 			std::vector<byte> GetBinaryFileFromStreamDB(const FileExportItem& fileExportInfo, const StreamDBFile& streamDBFile);
-			std::vector<byte> ConstructDDSFileHeader();
+			std::vector<byte> ConstructDDSFileHeader(uint32 width, uint32 height, uint32 decompressedSize);
 			fs::path BuildOutputPath(const std::string filepath);
 
 

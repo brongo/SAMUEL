@@ -22,6 +22,9 @@ namespace HAYDEN
             int isCompressed = 0;
             uint32 compressedSize = 0;
             uint32 decompressedSize = 0;
+            uint32 pixelWidth = 0;
+            uint32 pixelHeight = 0;
+            uint32 imageType = 0;
     };
 
     class ResourceEntry
