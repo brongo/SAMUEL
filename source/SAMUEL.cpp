@@ -111,6 +111,7 @@ namespace HAYDEN
     {
         _Exporter.Init(_ResourceFile, _StreamDBFileData, outputDirectory);
         _Exporter.ExportTGAFiles(_StreamDBFileData);
+        _Exporter.ExportMD6Files(_StreamDBFileData);
         return;
     }
     void SAMUEL::Init(const std::string basePath)

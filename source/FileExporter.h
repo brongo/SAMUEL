@@ -70,13 +70,18 @@ namespace HAYDEN
 			std::string _ResourceFileName;
 			std::vector<FileExportItem> _ExportItems;
 			std::vector<EmbeddedTGAHeader> _TGAHeaderData;
+			std::vector<EmbeddedMD6Header> _MD6HeaderData;
+
+			// Subroutines
+			uint64 CalculateStreamDBIndex(const uint64 resourceId, const int mipCount = -6) const;
+			std::vector<byte> DecompressEmbeddedFileHeader(std::vector<byte> embeddedHeader, const uint64 decompressedSize);
 
 			// Helper functions for FileExportList constructor
 			void GetResourceEntries(const ResourceFile& resourceFile);
-			void ParseEmbeddedTGAHeaders(const ResourceFile& resourceFile); 
+			void ParseEmbeddedFileHeaders(const ResourceFile& resourceFile);
 			void GetStreamDBIndexAndSize();	
-			void GetStreamDBFileOffsets(const std::vector<StreamDBFile>& streamDBFiles);
-			uint64 CalculateStreamDBIndex(const uint64 resourceId, const int mipCount = -6) const;			
+			void GetStreamDBFileOffsets(const std::vector<StreamDBFile>& streamDBFiles);		
+			
 	};
 
 	class FileExporter
@@ -85,10 +90,12 @@ namespace HAYDEN
 			FileExporter() {};
 			void Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, std::string outDirectory);
 			void ExportTGAFiles(const std::vector<StreamDBFile>& streamDBFiles);
+			void ExportMD6Files(const std::vector<StreamDBFile>& streamDBFiles);
 
 		private:
 			std::string _OutDir;
 			FileExportList _TGAExportList;
+			FileExportList _MD6ExportList;
 
 			// FileExporter Subroutines
 			std::vector<byte> GetBinaryFileFromStreamDB(const FileExportItem& fileExportInfo, const StreamDBFile& streamDBFile);

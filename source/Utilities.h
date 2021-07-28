@@ -25,13 +25,6 @@ namespace fs = std::filesystem;
 
 namespace HAYDEN
 {
-    // filepath parse functions
-    std::string getPathWithoutFileName(std::string path);
-    std::string getFilenameFromPath(std::string path);
-    std::string getParentFolderFromPath(std::string path);
-    std::string dropFileExtension(std::string filename);
-    std::string dropFirstDirectoryFromPath(std::string path);
-
     // hex <-> decimal conversions and endian functions
     template <typename T>
     std::string intToHex(const T num)

@@ -2,73 +2,15 @@
 
 namespace HAYDEN
 {
-    // FileExportList Functions
-    void FileExportList::GetResourceEntries(const ResourceFile& resourceFile)
+    // FileExportList - Subroutines
+    std::vector<byte> FileExportList::DecompressEmbeddedFileHeader(std::vector<byte> embeddedHeader, const uint64 decompressedSize)
     {
-        // Iterate through currently loaded .resource entries to find supported files
-        for (uint64 i = 0; i < resourceFile.numFileEntries; i++)
+        if (embeddedHeader.size() != decompressedSize)
         {
-            ResourceEntry thisEntry = resourceFile.resourceEntries[i];
-
-            // for now we only want version == 21 (images)
-            if (thisEntry.version != _FileType)
-                continue;
-
-            // skips entries with no data to extract
-            if (thisEntry.dataSizeCompressed == 0)
-                continue;
-
-            // skips entries with "lightprobes" path
-            if (thisEntry.name.rfind("/lightprobes/") != -1)
-                continue;
-
-            FileExportItem exportItem;
-            exportItem.resourceFileName = thisEntry.name;
-            exportItem.resourceFileOffset = thisEntry.dataOffset;
-            exportItem.resourceFileCompressedSize = thisEntry.dataSizeCompressed;
-            exportItem.resourceFileDecompressedSize = thisEntry.dataSizeDecompressed;
-            exportItem.resourceFileHash = thisEntry.hash;
-
-            _ExportItems.push_back(exportItem);
+            std::vector<byte> decompressedHeader = oodleDecompress(embeddedHeader, decompressedSize);
+            return decompressedHeader;
         }
-        return;
-    }
-    void FileExportList::ParseEmbeddedTGAHeaders(const ResourceFile& resourceFile)
-    {
-        // Open .resource file containing embedded TGA data.
-        FILE* f = fopen(resourceFile.filename.c_str(), "rb");
-        if (f == NULL)
-        {
-            fprintf(stderr, "Error: failed to open %s for reading.\n", resourceFile.filename.c_str());
-            return;
-        }
-        
-        // read compressed file headers into memory
-        for (uint64 i = 0; i < _ExportItems.size(); i++)
-        {
-            FileExportItem& thisFile = _ExportItems[i];
-            auto compressedData = resourceFile.GetEmbeddedFileHeader(f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
-
-            // check if decompression is necessary
-            if (thisFile.resourceFileCompressedSize != thisFile.resourceFileDecompressedSize)
-            {
-                // decompress with Oodle DLL
-                auto decompressedData = oodleDecompress(compressedData, thisFile.resourceFileDecompressedSize);
-                if (decompressedData.empty())
-                    continue; // error
-
-                EmbeddedTGAHeader embeddedTGAHeader = resourceFile.ReadTGAHeader(decompressedData);
-                _TGAHeaderData.push_back(embeddedTGAHeader);
-            }
-            else
-            {
-                std::vector<byte> decompressedData(compressedData.begin(), compressedData.begin() + thisFile.resourceFileCompressedSize);
-                EmbeddedTGAHeader embeddedTGAHeader = resourceFile.ReadTGAHeader(decompressedData);
-                _TGAHeaderData.push_back(embeddedTGAHeader);
-            }        
-        }
-        fclose(f);
-        return;
+        return embeddedHeader;
     }
     uint64 FileExportList::CalculateStreamDBIndex(const uint64 resourceId, const int mipCount) const
     {
@@ -94,28 +36,107 @@ namespace HAYDEN
         // Convert hex string back to uint64 and return
         return hexToInt64(hexBytes);
     }
+
+    // FileExportList - Helper functions for FileExportList constructor
+    void FileExportList::GetResourceEntries(const ResourceFile& resourceFile)
+    {
+        // Iterate through currently loaded .resource entries to find supported files
+        for (uint64 i = 0; i < resourceFile.numFileEntries; i++)
+        {
+            ResourceEntry thisEntry = resourceFile.resourceEntries[i];
+
+            // each instance of FileExportList is for a different filetype. 21 = .tga, 31 = .md6mesh
+            if (thisEntry.version != _FileType)
+                continue;
+
+            // skips entries with no data to extract
+            if (thisEntry.dataSizeCompressed == 0)
+                continue;
+
+            // skips entries with "lightprobes" path
+            if (thisEntry.name.rfind("/lightprobes/") != -1)
+                continue;
+
+            FileExportItem exportItem;
+            exportItem.resourceFileName = thisEntry.name;
+            exportItem.resourceFileOffset = thisEntry.dataOffset;
+            exportItem.resourceFileCompressedSize = thisEntry.dataSizeCompressed;
+            exportItem.resourceFileDecompressedSize = thisEntry.dataSizeDecompressed;
+            exportItem.resourceFileHash = thisEntry.hash;
+
+            _ExportItems.push_back(exportItem);
+        }
+        return;
+    }
+    void FileExportList::ParseEmbeddedFileHeaders(const ResourceFile& resourceFile)
+    {
+        // Open .resource file containing embedded TGA data.
+        FILE* f = fopen(resourceFile.filename.c_str(), "rb");
+        if (f == NULL)
+        {
+            fprintf(stderr, "Error: failed to open %s for reading.\n", resourceFile.filename.c_str());
+            return;
+        }
+        
+        // read compressed file headers into memory
+        for (uint64 i = 0; i < _ExportItems.size(); i++)
+        {
+            FileExportItem& thisFile = _ExportItems[i];
+            std::vector<byte> embeddedHeader = resourceFile.GetEmbeddedFileHeader(f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
+            std::vector<byte> decompressedHeader = DecompressEmbeddedFileHeader(embeddedHeader, thisFile.resourceFileDecompressedSize);
+
+            if (decompressedHeader.empty())
+                continue; // decompression error
+        
+            if (_FileType == 21)
+            {
+                EmbeddedTGAHeader embeddedTGAHeader = resourceFile.ReadTGAHeader(decompressedHeader);
+                _TGAHeaderData.push_back(embeddedTGAHeader);
+            }
+
+            if (_FileType == 31)
+            {
+                EmbeddedMD6Header embeddedMD6Header = resourceFile.ReadMD6Header(decompressedHeader);
+                _MD6HeaderData.push_back(embeddedMD6Header);
+            }
+        }
+        fclose(f);
+        return;
+    }
     void FileExportList::GetStreamDBIndexAndSize()
     {
         for (int i = 0; i < _ExportItems.size(); i++)
         {
             FileExportItem& thisFile = _ExportItems[i];
+            int numMips = -6;
 
-            endianSwap(thisFile.resourceFileHash);
-            uint64 streamDBIndex = CalculateStreamDBIndex(thisFile.resourceFileHash, _TGAHeaderData[i].numMips);
-            endianSwap(streamDBIndex);
+            // tga data
+            if (_FileType == 21)
+            {
+                numMips = _TGAHeaderData[i].numMips;
+                thisFile.streamDBSizeDecompressed = _TGAHeaderData[i].decompressedSize;
+                thisFile.streamDBSizeCompressed = _TGAHeaderData[i].compressedSize;
+                thisFile.tgaPixelHeight = _TGAHeaderData[i].pixelHeight;
+                thisFile.tgaPixelWidth = _TGAHeaderData[i].pixelWidth;
 
-            // populate streamdbData
-            thisFile.streamDBIndex = streamDBIndex;
-            thisFile.streamDBSizeDecompressed = _TGAHeaderData[i].decompressedSize;
-            thisFile.streamDBSizeCompressed = _TGAHeaderData[i].compressedSize;
-
-            // get tga width and height
-            thisFile.tgaPixelHeight = _TGAHeaderData[i].pixelHeight;
-            thisFile.tgaPixelWidth = _TGAHeaderData[i].pixelWidth;
-
-            // FIXME, should get compressionType from .resources
-            if (_TGAHeaderData[i].isCompressed == 1)
+                // FIXME, should get compressionType from .resources
+                if (_TGAHeaderData[i].isCompressed == 1)
+                    thisFile.streamDBCompressionType = 2;
+            }
+               
+            // md6mesh data
+            if (_FileType == 31)
+            {
+                thisFile.streamDBSizeDecompressed = _MD6HeaderData[i].decompressedSize;
+                thisFile.streamDBSizeCompressed = _MD6HeaderData[i].compressedSize;
                 thisFile.streamDBCompressionType = 2;
+            }
+
+            // Convert resourceID to streamDBIndex
+            endianSwap(thisFile.resourceFileHash);
+            uint64 streamDBIndex = CalculateStreamDBIndex(thisFile.resourceFileHash, numMips);
+            endianSwap(streamDBIndex);
+            thisFile.streamDBIndex = streamDBIndex;
         }
         return;
     }
@@ -170,7 +191,7 @@ namespace HAYDEN
         _FileType = fileType;
         _ResourceFileName = resourceFile.filename;
         GetResourceEntries(resourceFile);
-        ParseEmbeddedTGAHeaders(resourceFile);
+        ParseEmbeddedFileHeaders(resourceFile);
         GetStreamDBIndexAndSize();
         GetStreamDBFileOffsets(streamDBFiles);
         return;
@@ -213,7 +234,7 @@ namespace HAYDEN
     // FileExporter - Debug Functions
     void FileExporter::PrintMatchesToCSV(std::vector<FileExportItem>& fileExportList) const
     {
-        std::ofstream outputMatched("matched_tmp", std::ios::app);
+        std::ofstream outputMatched("matched.csv", std::ios::app);
         for (int i = 0; i < fileExportList.size(); i++)
         {
             FileExportItem& thisEntry = fileExportList[i];
@@ -235,7 +256,7 @@ namespace HAYDEN
     }
     void FileExporter::PrintUnmatchedToCSV(std::vector<FileExportItem>& fileExportList) const
     {
-        std::ofstream outputUnmatched("unmatched_tmp", std::ios::app);
+        std::ofstream outputUnmatched("unmatched.csv", std::ios::app);
         for (int i = 0; i < fileExportList.size(); i++)
         {
             FileExportItem& thisEntry = fileExportList[i];
@@ -258,12 +279,21 @@ namespace HAYDEN
     // FileExporter - Export Functions
     void FileExporter::ExportTGAFiles(const std::vector<StreamDBFile>& streamDBFiles)
     {
+        int notFound = 0;
+        int errorCount = 0;
+        
         std::vector<FileExportItem> tgaFilesToExport = _TGAExportList.GetFileExportItems();
+        printf("Now exporting %llu TGA files.\n", tgaFilesToExport.size());
+        
         for (int i = 0; i < tgaFilesToExport.size(); i++)
         {
             // Don't try to export resources that weren't found
             if (tgaFilesToExport[i].streamDBNumber == -1)
+            {
+                // printf("File not found, skipping: %s \n", tgaFilesToExport[i].resourceFileName.c_str());
+                notFound++;
                 continue;
+            }
 
             FileExportItem& thisFile = tgaFilesToExport[i];
             const StreamDBFile& thisStreamDBFile = streamDBFiles[thisFile.streamDBNumber];
@@ -276,7 +306,11 @@ namespace HAYDEN
             {
                 fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
                 if (fileData.empty())
-                    continue; // error
+                {
+                    printf("Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
+                    errorCount++;
+                    continue;
+                }
             }
 
             // construct DDS file header
@@ -288,20 +322,79 @@ namespace HAYDEN
             folderPath.remove_filename();
 
             if (!fs::exists(folderPath))
-            {
-                if (!fs::create_directories(folderPath));
-                    continue;  // error: failed to create output directories
-            }
+                if (!fs::create_directories(folderPath)) {}
             
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
             if (outFile == NULL)
-                continue; // error
+            {
+                printf("Failed to open file for writing: %s \n", fullPath.string().c_str());
+                errorCount++;
+                continue;
+            }
 
             fwrite(ddsFileHeader.data(), ddsFileHeader.size(), 1, outFile);
             fwrite(fileData.data(), fileData.size(), 1, outFile);
             fclose(outFile);
-            continue;
         }
+        printf("Wrote %llu TGA files, %d not found, %d errors. \n", tgaFilesToExport.size(), notFound, errorCount);
+        return;
+    }
+    void FileExporter::ExportMD6Files(const std::vector<StreamDBFile>& streamDBFiles)
+    {
+        int notFound = 0;
+        int errorCount = 0;
+
+        std::vector<FileExportItem> md6FilesToExport = _MD6ExportList.GetFileExportItems();
+        printf("Now exporting %llu MD6 files.\n", md6FilesToExport.size());
+        
+        for (int i = 0; i < md6FilesToExport.size(); i++)
+        {
+            // Don't try to export resources that weren't found
+            if (md6FilesToExport[i].streamDBNumber == -1)
+            {
+                // printf("File not found, skipping: %s \n", md6FilesToExport[i].resourceFileName.c_str());
+                notFound++;
+                continue;
+            }
+
+            FileExportItem& thisFile = md6FilesToExport[i];
+            const StreamDBFile& thisStreamDBFile = streamDBFiles[thisFile.streamDBNumber];
+
+            // get binary file data from streamdb
+            std::vector<byte> fileData = GetBinaryFileFromStreamDB(thisFile, thisStreamDBFile);
+
+            // check if decompression is necessary
+            if (thisFile.streamDBSizeCompressed != thisFile.streamDBSizeDecompressed)
+            {
+                fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
+                if (fileData.empty())
+                {
+                    printf("Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
+                    errorCount++;
+                    continue;
+                }
+            }
+
+            // parse filepath and create folders if necessary
+            fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
+            fs::path folderPath = fullPath;
+            folderPath.remove_filename();
+
+            if (!fs::exists(folderPath))
+                if (!fs::create_directories(folderPath)) {}
+
+            FILE* outFile = fopen(fullPath.string().c_str(), "wb");
+            if (outFile == NULL)
+            {
+                printf("Failed to open file for writing: %s \n", fullPath.string().c_str());
+                errorCount++;
+                continue;
+            }
+
+            fwrite(fileData.data(), fileData.size(), 1, outFile);
+            fclose(outFile);
+        }
+        printf("Wrote %llu MD6 files, %d not found, %d errors. \n", md6FilesToExport.size(), notFound, errorCount);
         return;
     }
 
@@ -310,11 +403,18 @@ namespace HAYDEN
     {
         _OutDir = outputDirectory;
         _TGAExportList = FileExportList(resourceFile, streamDBFiles, 21);
+        _MD6ExportList = FileExportList(resourceFile, streamDBFiles, 31);
         std::vector<FileExportItem> tgaFilesToExport = _TGAExportList.GetFileExportItems();
- 
-        // For debugging
+        std::vector<FileExportItem> md6FilesToExport = _MD6ExportList.GetFileExportItems();
+
+        // debug tga export
         PrintMatchesToCSV(tgaFilesToExport);
         PrintUnmatchedToCSV(tgaFilesToExport);
+
+        // debug md6 export
+        PrintMatchesToCSV(md6FilesToExport);
+        PrintUnmatchedToCSV(md6FilesToExport);
+
         return;
     }
 }

@@ -6,30 +6,6 @@
 
 namespace HAYDEN
 {
-    // filepath parse functions
-    std::string getPathWithoutFileName(std::string filename)
-    {
-        return filename.substr(0, filename.rfind(fs::path::preferred_separator));
-    }
-    std::string getFilenameFromPath(std::string path)
-    {
-        size_t splitPos = path.rfind(fs::path::preferred_separator);
-        return path.substr(splitPos + 1, path.length() - splitPos);
-    }
-    std::string getParentFolderFromPath(std::string path)
-    {
-        return path.substr(0, path.find(fs::path::preferred_separator));
-    }
-    std::string dropFileExtension(std::string filename)
-    {
-        return filename.substr(0, filename.rfind("."));
-    }
-    std::string dropFirstDirectoryFromPath(std::string path)
-    {
-        size_t splitPos = path.find(fs::path::preferred_separator);
-        return path.substr(splitPos + 1, path.length() - splitPos);
-    }
-
     // hex <-> decimal conversions and endian functions
     void endianSwap(uint64& value) 
     {

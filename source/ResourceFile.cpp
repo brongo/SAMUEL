@@ -7,15 +7,26 @@ namespace HAYDEN
     {
         EmbeddedTGAHeader tgaHeader;
 
-        tgaHeader.imageType = *(uint32*)(tgaDecompressedHeader.data() + 41);
-        tgaHeader.numMips = *(uint32*)(tgaDecompressedHeader.data() + 59);
-        tgaHeader.pixelWidth = *(uint32*)(tgaDecompressedHeader.data() + 71);
-        tgaHeader.pixelHeight = *(uint32*)(tgaDecompressedHeader.data() + 75);
-        tgaHeader.decompressedSize = *(uint32*)(tgaDecompressedHeader.data() + 83);
+        tgaHeader.imageType = *(int*)(tgaDecompressedHeader.data() + 41);
+        tgaHeader.numMips = *(int*)(tgaDecompressedHeader.data() + 59);
+        tgaHeader.pixelWidth = *(int*)(tgaDecompressedHeader.data() + 71);
+        tgaHeader.pixelHeight = *(int*)(tgaDecompressedHeader.data() + 75);
+        tgaHeader.decompressedSize = *(int*)(tgaDecompressedHeader.data() + 83);
         tgaHeader.isCompressed = *(int*)(tgaDecompressedHeader.data() + 87);
-        tgaHeader.compressedSize = *(uint32*)(tgaDecompressedHeader.data() + 91);
+        tgaHeader.compressedSize = *(int*)(tgaDecompressedHeader.data() + 91);
 
         return tgaHeader;
+    }
+    EmbeddedMD6Header ResourceFile::ReadMD6Header(const std::vector<byte> md6DecompressedHeader) const
+    {
+        EmbeddedMD6Header md6Header;
+
+        md6Header.cumulativeStreamDBSize = *(int*)(md6DecompressedHeader.data() + (md6DecompressedHeader.size() - 4));
+        md6Header.numFilesInStreamDB = *(int*)(md6DecompressedHeader.data() + (md6DecompressedHeader.size() - 16));
+        md6Header.decompressedSize = *(int*)(md6DecompressedHeader.data() + (md6DecompressedHeader.size() - 76));
+        md6Header.compressedSize = *(int*)(md6DecompressedHeader.data() + (md6DecompressedHeader.size() - 72));
+
+        return md6Header;
     }
     std::vector<byte> ResourceFile::GetEmbeddedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const
     {

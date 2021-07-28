@@ -20,11 +20,20 @@ namespace HAYDEN
         public:
             int numMips = 0;
             int isCompressed = 0;
-            uint32 compressedSize = 0;
-            uint32 decompressedSize = 0;
-            uint32 pixelWidth = 0;
-            uint32 pixelHeight = 0;
-            uint32 imageType = 0;
+            int compressedSize = 0;
+            int decompressedSize = 0;
+            int pixelWidth = 0;
+            int pixelHeight = 0;
+            int imageType = 0;
+    };
+
+    class EmbeddedMD6Header
+    {
+        public:
+            int numFilesInStreamDB = 0;
+            int cumulativeStreamDBSize = 0;
+            int compressedSize = 0;
+            int decompressedSize = 0;
     };
 
     class ResourceEntry
@@ -98,6 +107,7 @@ namespace HAYDEN
             // Utility functions
             std::vector<byte> GetEmbeddedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const;
             EmbeddedTGAHeader ReadTGAHeader(const std::vector<byte> tgaDecompressedHeader) const;
+            EmbeddedMD6Header ReadMD6Header(const std::vector<byte> md6DecompressedHeader) const;
 
             // Helper functions for constructor
             void ReadFileHeader(FILE* f);
