@@ -30,11 +30,19 @@ namespace HAYDEN
     class EmbeddedMD6Header
     {
         public:
-            int numFilesInStreamDB = 0;
             int cumulativeStreamDBSize = 0;
             int compressedSize = 0;
             int decompressedSize = 0;
     };
+
+    class EmbeddedLWOHeader
+    {
+        public:
+            int cumulativeStreamDBSize = 0;
+            int compressedSize = 0;
+            int decompressedSize = 0;
+    };
+
 
     class ResourceEntry
     {
@@ -108,6 +116,7 @@ namespace HAYDEN
             std::vector<byte> GetEmbeddedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const;
             EmbeddedTGAHeader ReadTGAHeader(const std::vector<byte> tgaDecompressedHeader) const;
             EmbeddedMD6Header ReadMD6Header(const std::vector<byte> md6DecompressedHeader) const;
+            EmbeddedLWOHeader ReadLWOHeader(const std::vector<byte> lwoDecompressedHeader) const;
 
             // Helper functions for constructor
             void ReadFileHeader(FILE* f);

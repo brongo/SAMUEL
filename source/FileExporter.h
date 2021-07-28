@@ -71,6 +71,7 @@ namespace HAYDEN
 			std::vector<FileExportItem> _ExportItems;
 			std::vector<EmbeddedTGAHeader> _TGAHeaderData;
 			std::vector<EmbeddedMD6Header> _MD6HeaderData;
+			std::vector<EmbeddedLWOHeader> _LWOHeaderData;
 
 			// Subroutines
 			uint64 CalculateStreamDBIndex(const uint64 resourceId, const int mipCount = -6) const;
@@ -91,11 +92,13 @@ namespace HAYDEN
 			void Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, std::string outDirectory);
 			void ExportTGAFiles(const std::vector<StreamDBFile>& streamDBFiles);
 			void ExportMD6Files(const std::vector<StreamDBFile>& streamDBFiles);
+			void ExportLWOFiles(const std::vector<StreamDBFile>& streamDBFiles);
 
 		private:
 			std::string _OutDir;
 			FileExportList _TGAExportList;
 			FileExportList _MD6ExportList;
+			FileExportList _LWOExportList;
 
 			// FileExporter Subroutines
 			std::vector<byte> GetBinaryFileFromStreamDB(const FileExportItem& fileExportInfo, const StreamDBFile& streamDBFile);

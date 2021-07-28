@@ -99,6 +99,12 @@ namespace HAYDEN
                 EmbeddedMD6Header embeddedMD6Header = resourceFile.ReadMD6Header(decompressedHeader);
                 _MD6HeaderData.push_back(embeddedMD6Header);
             }
+
+            if (_FileType == 67)
+            {
+                EmbeddedLWOHeader embeddedLWOHeader = resourceFile.ReadLWOHeader(decompressedHeader);
+                _LWOHeaderData.push_back(embeddedLWOHeader);
+            }
         }
         fclose(f);
         return;
@@ -129,6 +135,14 @@ namespace HAYDEN
             {
                 thisFile.streamDBSizeDecompressed = _MD6HeaderData[i].decompressedSize;
                 thisFile.streamDBSizeCompressed = _MD6HeaderData[i].compressedSize;
+                thisFile.streamDBCompressionType = 2;
+            }
+
+            // lwo data
+            if (_FileType == 67)
+            {
+                thisFile.streamDBSizeDecompressed = _LWOHeaderData[i].decompressedSize;
+                thisFile.streamDBSizeCompressed = _LWOHeaderData[i].compressedSize;
                 thisFile.streamDBCompressionType = 2;
             }
 
@@ -397,6 +411,64 @@ namespace HAYDEN
         printf("Wrote %llu MD6 files, %d not found, %d errors. \n", md6FilesToExport.size(), notFound, errorCount);
         return;
     }
+    void FileExporter::ExportLWOFiles(const std::vector<StreamDBFile>& streamDBFiles)
+    {
+        int notFound = 0;
+        int errorCount = 0;
+
+        std::vector<FileExportItem> lwoFilesToExport = _LWOExportList.GetFileExportItems();
+        printf("Now exporting %llu LWO files.\n", lwoFilesToExport.size());
+
+        for (int i = 0; i < lwoFilesToExport.size(); i++)
+        {
+            // Don't try to export resources that weren't found
+            if (lwoFilesToExport[i].streamDBNumber == -1)
+            {
+                // printf("File not found, skipping: %s \n", lwoFilesToExport[i].resourceFileName.c_str());
+                notFound++;
+                continue;
+            }
+
+            FileExportItem& thisFile = lwoFilesToExport[i];
+            const StreamDBFile& thisStreamDBFile = streamDBFiles[thisFile.streamDBNumber];
+
+            // get binary file data from streamdb
+            std::vector<byte> fileData = GetBinaryFileFromStreamDB(thisFile, thisStreamDBFile);
+
+            // check if decompression is necessary
+            if (thisFile.streamDBSizeCompressed != thisFile.streamDBSizeDecompressed)
+            {
+                fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
+                if (fileData.empty())
+                {
+                    printf("Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
+                    errorCount++;
+                    continue;
+                }
+            }
+
+            // parse filepath and create folders if necessary
+            fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
+            fs::path folderPath = fullPath;
+            folderPath.remove_filename();
+
+            if (!fs::exists(folderPath))
+                if (!fs::create_directories(folderPath)) {}
+
+            FILE* outFile = fopen(fullPath.string().c_str(), "wb");
+            if (outFile == NULL)
+            {
+                printf("Failed to open file for writing: %s \n", fullPath.string().c_str());
+                errorCount++;
+                continue;
+            }
+
+            fwrite(fileData.data(), fileData.size(), 1, outFile);
+            fclose(outFile);
+        }
+        printf("Wrote %llu LWO files, %d not found, %d errors. \n", lwoFilesToExport.size(), notFound, errorCount);
+        return;
+    }
 
     // Constructs FileExporter, collects data needed for export.
     void FileExporter::Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, std::string outputDirectory)
@@ -404,8 +476,10 @@ namespace HAYDEN
         _OutDir = outputDirectory;
         _TGAExportList = FileExportList(resourceFile, streamDBFiles, 21);
         _MD6ExportList = FileExportList(resourceFile, streamDBFiles, 31);
+        _LWOExportList = FileExportList(resourceFile, streamDBFiles, 67);
         std::vector<FileExportItem> tgaFilesToExport = _TGAExportList.GetFileExportItems();
         std::vector<FileExportItem> md6FilesToExport = _MD6ExportList.GetFileExportItems();
+        std::vector<FileExportItem> lwoFilesToExport = _LWOExportList.GetFileExportItems();
 
         // debug tga export
         PrintMatchesToCSV(tgaFilesToExport);
@@ -414,6 +488,10 @@ namespace HAYDEN
         // debug md6 export
         PrintMatchesToCSV(md6FilesToExport);
         PrintUnmatchedToCSV(md6FilesToExport);
+
+        // debug lwo export
+        PrintMatchesToCSV(lwoFilesToExport);
+        PrintUnmatchedToCSV(lwoFilesToExport);
 
         return;
     }

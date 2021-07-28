@@ -22,11 +22,45 @@ namespace HAYDEN
         EmbeddedMD6Header md6Header;
 
         md6Header.cumulativeStreamDBSize = *(int*)(md6DecompressedHeader.data() + (md6DecompressedHeader.size() - 4));
-        md6Header.numFilesInStreamDB = *(int*)(md6DecompressedHeader.data() + (md6DecompressedHeader.size() - 16));
         md6Header.decompressedSize = *(int*)(md6DecompressedHeader.data() + (md6DecompressedHeader.size() - 76));
         md6Header.compressedSize = *(int*)(md6DecompressedHeader.data() + (md6DecompressedHeader.size() - 72));
 
         return md6Header;
+    }
+    EmbeddedLWOHeader ResourceFile::ReadLWOHeader(const std::vector<byte> lwoDecompressedHeader) const
+    {
+        // The LWO format is very inconsistent about where it stores the streamdb info.
+        // For now, only reliable way is to read 4 bytes at a time until we determine the structure size.
+        // Structure size is the distance between cumulativeStreamDBSize (last 4 bytes in file), and the first time that data is repeated.
+
+        EmbeddedLWOHeader lwoHeader;
+        lwoHeader.cumulativeStreamDBSize = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - 4));
+
+        int buffer = 0;
+        int seekDistance = 4;
+        
+        // find the next instance where lwoHeader.cumulativeStreamDBSize appears. This is the struct size.
+        while ((buffer != lwoHeader.cumulativeStreamDBSize) && (seekDistance < lwoDecompressedHeader.size() - 4))
+        {
+            seekDistance += 4;
+            buffer = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - seekDistance));
+        }
+
+        // Now we know the struct size, seek backwards by struct size until we find 0x0000.
+        int structSize = seekDistance - 4;
+        while ((buffer != 0) && (seekDistance < lwoDecompressedHeader.size() - 4))
+        {
+            seekDistance += structSize;
+            buffer = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - seekDistance));
+        }
+
+        // now we've found the point where cumulative compressed size is zero, so this is the start of LOD entries.
+        int entryStart = seekDistance;
+
+        // get decompressed & compressed sizes relative to entryStart.
+        lwoHeader.decompressedSize = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - (entryStart + 8)));
+        lwoHeader.compressedSize = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - (entryStart + 4)));
+        return lwoHeader;
     }
     std::vector<byte> ResourceFile::GetEmbeddedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const
     {
