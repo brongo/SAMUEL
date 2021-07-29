@@ -499,6 +499,25 @@ namespace HAYDEN
         PrintMatchesToCSV(lwoFilesToExport);
         PrintUnmatchedToCSV(lwoFilesToExport);
 
+        // get total size of files to export
+        size_t totalExportSize = 0;
+
+        for (const auto& fileExport : _TGAExportList.GetFileExportItems())
+            totalExportSize += fileExport.streamDBSizeDecompressed;
+
+        for (const auto& fileExport : _MD6ExportList.GetFileExportItems())
+            totalExportSize += fileExport.streamDBSizeDecompressed;
+
+        for (const auto& fileExport : _LWOExportList.GetFileExportItems())
+            totalExportSize += fileExport.streamDBSizeDecompressed;
+
+        if (fs::space(fs::current_path()).available < totalExportSize)
+        {
+            fprintf(stderr, "Error: Not enough space in disk.\n");
+            fprintf(stderr, "Exporting from this file requires at least %.2lf MB of free space.\n", (double)totalExportSize / (1024 * 1024));
+            exit(1);
+        }
+
         return;
     }
 }
