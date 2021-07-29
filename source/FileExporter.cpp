@@ -18,17 +18,15 @@ namespace HAYDEN
         std::string hexBytes = intToHex(resourceId);
 
         // Reverse each byte
-        for (int i = 0; i < hexBytes.size(); i += 2) {
+        for (int i = 0; i < hexBytes.size(); i += 2)
             std::swap(hexBytes[i], hexBytes[i + (int64)1]);
-        }
 
         // Shift digits to the right
         hexBytes = hexBytes.substr(hexBytes.size() - 1) + hexBytes.substr(0, hexBytes.size() - 1);
 
         // Reverse each byte again
-        for (int i = 0; i < hexBytes.size(); i += 2) {
+        for (int i = 0; i < hexBytes.size(); i += 2)
             std::swap(hexBytes[i], hexBytes[i + (int64)1]);
-        }
 
         // Get second digit based on mip count
         hexBytes[1] = intToHex((char)(6 + mipCount))[1];

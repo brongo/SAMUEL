@@ -12,7 +12,8 @@ namespace HAYDEN
         jsonxx::Array files = packageMapSpecJson.get<jsonxx::Array>("files");
         Files.reserve(files.size());
 
-        for (int32_t i = 0; i < files.size(); i++) {
+        for (int32_t i = 0; i < files.size(); i++)
+        {
             jsonxx::Object file = files.get<jsonxx::Object>(i);
             packageMapSpecFile.Name = file.get<jsonxx::String>("name");
             Files.push_back(packageMapSpecFile);
@@ -22,7 +23,8 @@ namespace HAYDEN
         jsonxx::Array mapFileRefs = packageMapSpecJson.get<jsonxx::Array>("mapFileRefs");
         MapFileRefs.reserve(mapFileRefs.size());
 
-        for (int32_t i = 0; i < mapFileRefs.size(); i++) {
+        for (int32_t i = 0; i < mapFileRefs.size(); i++)
+        {
             jsonxx::Object mapFileRef = mapFileRefs.get<jsonxx::Object>(i);
             packageMapSpecMapFileRef.File = mapFileRef.get<jsonxx::Number>("file");
             packageMapSpecMapFileRef.Map = mapFileRef.get<jsonxx::Number>("map");
@@ -33,7 +35,8 @@ namespace HAYDEN
         jsonxx::Array maps = packageMapSpecJson.get<jsonxx::Array>("maps");
         Maps.reserve(maps.size());
 
-        for (int32_t i = 0; i < maps.size(); i++) {
+        for (int32_t i = 0; i < maps.size(); i++)
+        {
             jsonxx::Object map = maps.get<jsonxx::Object>(i);
             packageMapSpecMap.Name = map.get<jsonxx::String>("name");
             Maps.push_back(packageMapSpecMap);
@@ -48,20 +51,23 @@ namespace HAYDEN
         jsonxx::Array mapFileRefs;
         jsonxx::Array maps;
 
-        for (auto& file : Files) {
+        for (auto& file : Files)
+        {
             jsonxx::Object jsonFile;
             jsonFile << "name" << file.Name;
             files << jsonFile;
         }
 
-        for (auto& mapFileRef : MapFileRefs) {
+        for (auto& mapFileRef : MapFileRefs)
+        {
             jsonxx::Object jsonMapFileRef;
             jsonMapFileRef << "file" << mapFileRef.File;
             jsonMapFileRef << "map" << mapFileRef.Map;
             mapFileRefs << jsonMapFileRef;
         }
 
-        for (auto& map : Maps) {
+        for (auto& map : Maps)
+        {
             jsonxx::Object jsonMap;
             jsonMap << "name" << map.Name;
             maps << jsonMap;
