@@ -18,17 +18,15 @@ namespace HAYDEN
         std::string hexBytes = intToHex(resourceId);
 
         // Reverse each byte
-        for (int i = 0; i < hexBytes.size(); i += 2) {
+        for (int i = 0; i < hexBytes.size(); i += 2)
             std::swap(hexBytes[i], hexBytes[i + (int64)1]);
-        }
 
         // Shift digits to the right
         hexBytes = hexBytes.substr(hexBytes.size() - 1) + hexBytes.substr(0, hexBytes.size() - 1);
 
         // Reverse each byte again
-        for (int i = 0; i < hexBytes.size(); i += 2) {
+        for (int i = 0; i < hexBytes.size(); i += 2)
             std::swap(hexBytes[i], hexBytes[i + (int64)1]);
-        }
 
         // Get second digit based on mip count
         hexBytes[1] = intToHex((char)(6 + mipCount))[1];
@@ -312,7 +310,7 @@ namespace HAYDEN
             // Don't try to export resources that weren't found
             if (tgaFilesToExport[i].streamDBNumber == -1)
             {
-                // printf("File not found, skipping: %s \n", tgaFilesToExport[i].resourceFileName.c_str());
+                // fprintf(stderr, "Error: File not found, skipping: %s \n", tgaFilesToExport[i].resourceFileName.c_str());
                 notFound++;
                 continue;
             }
@@ -329,7 +327,7 @@ namespace HAYDEN
                 fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
                 if (fileData.empty())
                 {
-                    printf("Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
+                    fprintf(stderr, "Error: Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
                     errorCount++;
                     continue;
                 }
@@ -349,7 +347,7 @@ namespace HAYDEN
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
             if (outFile == NULL)
             {
-                printf("Failed to open file for writing: %s \n", fullPath.string().c_str());
+                fprintf(stderr, "Error: Failed to open file for writing: %s \n", fullPath.string().c_str());
                 errorCount++;
                 continue;
             }
@@ -374,7 +372,7 @@ namespace HAYDEN
             // Don't try to export resources that weren't found
             if (md6FilesToExport[i].streamDBNumber == -1)
             {
-                // printf("File not found, skipping: %s \n", md6FilesToExport[i].resourceFileName.c_str());
+                // fprintf(stderr, "Error: File not found, skipping: %s \n", md6FilesToExport[i].resourceFileName.c_str());
                 notFound++;
                 continue;
             }
@@ -391,7 +389,7 @@ namespace HAYDEN
                 fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
                 if (fileData.empty())
                 {
-                    printf("Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
+                    fprintf(stderr, "Error: Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
                     errorCount++;
                     continue;
                 }
@@ -408,7 +406,7 @@ namespace HAYDEN
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
             if (outFile == NULL)
             {
-                printf("Failed to open file for writing: %s \n", fullPath.string().c_str());
+                fprintf(stderr, "Error: Failed to open file for writing: %s \n", fullPath.string().c_str());
                 errorCount++;
                 continue;
             }
@@ -432,7 +430,7 @@ namespace HAYDEN
             // Don't try to export resources that weren't found
             if (lwoFilesToExport[i].streamDBNumber == -1)
             {
-                // printf("File not found, skipping: %s \n", lwoFilesToExport[i].resourceFileName.c_str());
+                // fprintf(stderr, "Error: File not found, skipping: %s \n", lwoFilesToExport[i].resourceFileName.c_str());
                 notFound++;
                 continue;
             }
@@ -449,7 +447,7 @@ namespace HAYDEN
                 fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
                 if (fileData.empty())
                 {
-                    printf("Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
+                    fprintf(stderr, "Error: Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
                     errorCount++;
                     continue;
                 }
@@ -466,7 +464,7 @@ namespace HAYDEN
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
             if (outFile == NULL)
             {
-                printf("Failed to open file for writing: %s \n", fullPath.string().c_str());
+                fprintf(stderr, "Error: Failed to open file for writing: %s \n", fullPath.string().c_str());
                 errorCount++;
                 continue;
             }
@@ -500,6 +498,25 @@ namespace HAYDEN
         // debug lwo export
         PrintMatchesToCSV(lwoFilesToExport);
         PrintUnmatchedToCSV(lwoFilesToExport);
+
+        // get total size of files to export
+        size_t totalExportSize = 0;
+
+        for (const auto& fileExport : _TGAExportList.GetFileExportItems())
+            totalExportSize += fileExport.streamDBSizeDecompressed;
+
+        for (const auto& fileExport : _MD6ExportList.GetFileExportItems())
+            totalExportSize += fileExport.streamDBSizeDecompressed;
+
+        for (const auto& fileExport : _LWOExportList.GetFileExportItems())
+            totalExportSize += fileExport.streamDBSizeDecompressed;
+
+        if (fs::space(fs::current_path()).available < totalExportSize)
+        {
+            fprintf(stderr, "Error: Not enough space in disk.\n");
+            fprintf(stderr, "Exporting from this file requires at least %.2lf MB of free space.\n", (double)totalExportSize / (1024 * 1024));
+            exit(1);
+        }
 
         return;
     }
