@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
     std::string basePath = resourcePath.substr(0, baseIndex + 4);
 
     // Get export path from argv[0]
-    std::string exportPath = fs::absolute(argv[0]).parent_path().replace_filename("exports").string();
+    std::string exportPath = fs::absolute(argv[0]).replace_filename("exports").string();
 
     SAMUEL SAM;
     SAM.Init(basePath);
