@@ -117,13 +117,15 @@ namespace HAYDEN
     }
     void SAMUEL::Init(const std::string basePath)
     {
-        if (!fs::exists("oo2core_8_win64.dll")) {
+        if (!fs::exists("oo2core_8_win64.dll"))
+        {
             fprintf(stderr, "Error: Could not find oo2core_8_win64.dll in the current directory.\n");
             exit(1);
         }
 
 #ifdef __linux__
-        if (!fs::exists("liblinoodle.so")) {
+        if (!fs::exists("liblinoodle.so"))
+        {
             fprintf(stderr, "Error: Could not find liblinoodle.so in the current directory.\n");
             exit(1);
         }
@@ -138,22 +140,27 @@ int main(int argc, char* argv[])
 {
     printf("SAMUEL v0.1 by SamPT\n");
 
-    if (argc < 3) {
-        printf("USAGE: SAMUEL /path/to/resourceFile outputDirectory \n");
+    if (argc < 2)
+    {
+        printf("USAGE: SAMUEL /path/to/resourceFile\n");
         return 1;
     }
 
     // Get base path from resource path
     std::string resourcePath(argv[1]);
     auto baseIndex = resourcePath.find("base");
-    if (baseIndex == std::string::npos) {
+    if (baseIndex == -1)
+    {
         fprintf(stderr, "Error: Failed to get game's base path.\n");
     }
     std::string basePath = resourcePath.substr(0, baseIndex + 4);
 
+    // Get export path from argv[0]
+    std::string exportPath = fs::absolute(argv[0]).replace_filename("exports").string();
+
     SAMUEL SAM;
     SAM.Init(basePath);
     SAM.LoadResource(resourcePath);
-    SAM.ExportAll(argv[2]);
+    SAM.ExportAll(exportPath);
     return 0;
 }
