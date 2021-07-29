@@ -53,9 +53,17 @@ namespace HAYDEN
             if (thisEntry.dataSizeCompressed == 0)
                 continue;
 
-            // skips entries with "lightprobes" path
-            if (thisEntry.name.rfind("/lightprobes/") != -1)
-                continue;
+            // skip unsupported images
+            if (thisEntry.version == 21)
+            {
+                // skip entries with "lightprobes" path
+                if (thisEntry.name.rfind("/lightprobes/") != -1)
+                    continue;
+
+                // skip wierd minmip files
+                if (thisEntry.name.rfind("$minmip=") != -1)
+                    continue;
+            }
 
             FileExportItem exportItem;
             exportItem.resourceFileName = thisEntry.name;
@@ -337,7 +345,7 @@ namespace HAYDEN
 
             if (!fs::exists(folderPath))
                 if (!fs::create_directories(folderPath)) {}
-            
+
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
             if (outFile == NULL)
             {

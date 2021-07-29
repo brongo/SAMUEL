@@ -38,7 +38,7 @@ namespace HAYDEN
 
             // Utility functions
             uint64 GetFileOffsetInStreamDB(const uint64 streamDBIndex, const uint64 compressedSize) const;
-            std::vector<byte> StreamDBFile::GetEmbeddedFile(std::ifstream& f, const uint64 fileOffset, const uint64 compressedSize) const;
+            std::vector<byte> GetEmbeddedFile(std::ifstream& f, const uint64 fileOffset, const uint64 compressedSize) const;
 
             // Helper functions for constructor
             void readStreamDBHeader(FILE* f);
