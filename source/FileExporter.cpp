@@ -310,7 +310,7 @@ namespace HAYDEN
             // Don't try to export resources that weren't found
             if (tgaFilesToExport[i].streamDBNumber == -1)
             {
-                // printf("File not found, skipping: %s \n", tgaFilesToExport[i].resourceFileName.c_str());
+                // fprintf(stderr, "Error: File not found, skipping: %s \n", tgaFilesToExport[i].resourceFileName.c_str());
                 notFound++;
                 continue;
             }
@@ -327,7 +327,7 @@ namespace HAYDEN
                 fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
                 if (fileData.empty())
                 {
-                    printf("Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
+                    fprintf(stderr, "Error: Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
                     errorCount++;
                     continue;
                 }
@@ -347,7 +347,7 @@ namespace HAYDEN
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
             if (outFile == NULL)
             {
-                printf("Failed to open file for writing: %s \n", fullPath.string().c_str());
+                fprintf(stderr, "Error: Failed to open file for writing: %s \n", fullPath.string().c_str());
                 errorCount++;
                 continue;
             }
@@ -372,7 +372,7 @@ namespace HAYDEN
             // Don't try to export resources that weren't found
             if (md6FilesToExport[i].streamDBNumber == -1)
             {
-                // printf("File not found, skipping: %s \n", md6FilesToExport[i].resourceFileName.c_str());
+                // fprintf(stderr, "Error: File not found, skipping: %s \n", md6FilesToExport[i].resourceFileName.c_str());
                 notFound++;
                 continue;
             }
@@ -389,7 +389,7 @@ namespace HAYDEN
                 fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
                 if (fileData.empty())
                 {
-                    printf("Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
+                    fprintf(stderr, "Error: Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
                     errorCount++;
                     continue;
                 }
@@ -406,7 +406,7 @@ namespace HAYDEN
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
             if (outFile == NULL)
             {
-                printf("Failed to open file for writing: %s \n", fullPath.string().c_str());
+                fprintf(stderr, "Error: Failed to open file for writing: %s \n", fullPath.string().c_str());
                 errorCount++;
                 continue;
             }
@@ -430,7 +430,7 @@ namespace HAYDEN
             // Don't try to export resources that weren't found
             if (lwoFilesToExport[i].streamDBNumber == -1)
             {
-                // printf("File not found, skipping: %s \n", lwoFilesToExport[i].resourceFileName.c_str());
+                // fprintf(stderr, "Error: File not found, skipping: %s \n", lwoFilesToExport[i].resourceFileName.c_str());
                 notFound++;
                 continue;
             }
@@ -447,7 +447,7 @@ namespace HAYDEN
                 fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
                 if (fileData.empty())
                 {
-                    printf("Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
+                    fprintf(stderr, "Error: Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
                     errorCount++;
                     continue;
                 }
@@ -464,7 +464,7 @@ namespace HAYDEN
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
             if (outFile == NULL)
             {
-                printf("Failed to open file for writing: %s \n", fullPath.string().c_str());
+                fprintf(stderr, "Error: Failed to open file for writing: %s \n", fullPath.string().c_str());
                 errorCount++;
                 continue;
             }
