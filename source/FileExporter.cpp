@@ -53,7 +53,7 @@ namespace HAYDEN
 
             // skip unsupported images
             if (thisEntry.version == 21)
-            {
+            {                 
                 // skip entries with "lightprobes" path
                 if (thisEntry.name.rfind("/lightprobes/") != -1)
                     continue;
@@ -130,6 +130,7 @@ namespace HAYDEN
                 thisFile.streamDBSizeCompressed = _TGAHeaderData[i].compressedSize;
                 thisFile.tgaPixelHeight = _TGAHeaderData[i].pixelHeight;
                 thisFile.tgaPixelWidth = _TGAHeaderData[i].pixelWidth;
+                thisFile.tgaImageType = _TGAHeaderData[i].imageType;
 
                 // FIXME, should get compressionType from .resources
                 if (_TGAHeaderData[i].isCompressed == 1)
@@ -227,23 +228,6 @@ namespace HAYDEN
 
         return fileData;
     }
-    std::vector<byte> FileExporter::ConstructDDSFileHeader(uint32 width, uint32 height, uint32 decompressedSize)
-    {
-        DDSHeader defaultDDS;
-        auto ptr = reinterpret_cast<byte*>(&defaultDDS);
-        auto buffer = std::vector<byte>(ptr, ptr + sizeof(defaultDDS));
-
-        auto bytes = intToByteArray(width);
-        std::copy(bytes.begin(), bytes.end(), buffer.begin() + 12);
-
-        bytes = intToByteArray(height);
-        std::copy(bytes.begin(), bytes.end(), buffer.begin() + 16);
-
-        bytes = intToByteArray(decompressedSize);
-        std::copy(bytes.begin(), bytes.end(), buffer.begin() + 20);
-
-        return buffer;
-    }
     fs::path FileExporter::BuildOutputPath(const std::string filePath)
     {
         fs::path outputPath = _OutDir / fs::path(filePath);
@@ -263,13 +247,16 @@ namespace HAYDEN
 
             std::string output;
             output += "\"" + thisEntry.resourceFileName + "\",";
-            output += std::to_string(thisEntry.streamDBIndex) + ",";
-            output += std::to_string(thisEntry.streamDBFileOffset) + ",";
+            //output += std::to_string(thisEntry.streamDBIndex) + ",";
+            //output += std::to_string(thisEntry.streamDBFileOffset) + ",";
             output += std::to_string(thisEntry.streamDBSizeCompressed) + ",";
             output += std::to_string(thisEntry.streamDBSizeDecompressed) + ",";
             output += std::to_string(thisEntry.streamDBCompressionType) + ",";
-            output += std::to_string(thisEntry.streamDBNumber) + ",";
-            output += "\"" + thisEntry.streamDBFileName + "\"" + "\n";
+            output += std::to_string(thisEntry.tgaImageType) + ",";
+            output += std::to_string(thisEntry.tgaPixelWidth) + ",";
+            output += std::to_string(thisEntry.tgaPixelHeight) + "," + "\n";
+            //output += std::to_string(thisEntry.streamDBNumber) + ",";
+            //output += "\"" + thisEntry.streamDBFileName + "\"" + "\n";
             outputMatched.write(output.c_str(), output.length());
         }
         return;
@@ -334,7 +321,8 @@ namespace HAYDEN
             }
 
             // construct DDS file header
-            std::vector<byte> ddsFileHeader = ConstructDDSFileHeader(thisFile.tgaPixelWidth, thisFile.tgaPixelHeight, thisFile.streamDBSizeDecompressed);
+            DDSHeaderBuilder ddsBuilder(thisFile.tgaPixelWidth, thisFile.tgaPixelHeight, thisFile.streamDBSizeDecompressed, thisFile.tgaImageType);
+            std::vector<byte> ddsFileHeader = ddsBuilder.ConvertToByteVector();
 
             // parse filepath and create folders if necessary
             fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);

@@ -3,6 +3,7 @@
 #include <vector>
 #include <filesystem>
 
+#include "DDSHeader.h"
 #include "PackageMapSpec.h"
 #include "ResourceFile.h"
 #include "StreamDBFile.h"
@@ -12,32 +13,6 @@ namespace fs = std::filesystem;
 
 namespace HAYDEN
 {
-	struct DDSHeader
-	{
-		byte magic[4]	= { 0x44, 0x44, 0x53, 0x20 };	// DDS 
-		byte hsize[4]	= { 0x7C, 0x00, 0x00, 0x00 };	// 124
-		byte flags[4]	= { 0x07, 0x10, 0x0A, 0x00 };	// DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_MIPMAPCOUNT | DDSD_LINEARSIZE
-		byte height[4]	= { 0x00, 0x01, 0x00, 0x00 };	// 256
-		byte width[4]	= { 0x00, 0x01, 0x00, 0x00 };	// 256
-		byte pitch[4]	= { 0x00, 0x80, 0x00, 0x00 };	// 32768
-		byte depth[4]	= { 0x01, 0x00, 0x00, 0x00 };
-		byte nmips[4]	= { 0x01, 0x00, 0x00, 0x00 };	
-		byte unused[44] = { 0 };
-		byte size[4]	= { 0x20, 0x00, 0x00, 0x00 };	// 32
-		byte flags2[4]	= { 0x04, 0x00, 0x00, 0x00 };	// DDPF_FOURCC
-		byte type[4]	= { 0x44, 0x58, 0x54, 0x31 };	// DXT1
-		byte RGBbits[4] = { 0 };
-		byte rBitMsk[4] = { 0 };
-		byte gBitMsk[4] = { 0 };
-		byte bBitMsk[4] = { 0 };
-		byte aBitMsk[4] = { 0 };
-		byte caps[4]	= { 0x00, 0x10, 0x00, 0x00 };	// DDSCAPS_TEXTURE
-		byte caps2[4]	= { 0 };
-		byte caps3[4]	= { 0 };
-		byte caps4[4]	= { 0 };
-		byte unused2[4] = { 0 };
-	};
-
 	class FileExportItem
 	{
 		public:
@@ -102,9 +77,7 @@ namespace HAYDEN
 
 			// FileExporter Subroutines
 			std::vector<byte> GetBinaryFileFromStreamDB(const FileExportItem& fileExportInfo, const StreamDBFile& streamDBFile);
-			std::vector<byte> ConstructDDSFileHeader(uint32 width, uint32 height, uint32 decompressedSize);
 			fs::path BuildOutputPath(const std::string filepath);
-
 
 			// Debug Functions
 			void PrintMatchesToCSV(std::vector<FileExportItem>& fileExportList) const;
