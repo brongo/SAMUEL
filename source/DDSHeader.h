@@ -45,12 +45,29 @@ namespace HAYDEN
 		const int miscFlag2 = 0;		// DDS_ALPHA_MODE_UNKNOWN
 	};
 
+	enum ImageType
+    {
+        FMT_BC1_ZERO_ALPHA = 54,
+        FMT_BC7_SRGB = 35,
+        FMT_BC3_SRGB = 34,
+        FMT_BC1_SRGB = 33,
+        FMT_BC5_LINEAR = 25, 
+        FMT_BC4_LINEAR = 24, 
+        FMT_BC7_LINEAR = 23, 
+        FMT_BC6H_UF16 = 22, 
+        FMT_BC3_LINEAR = 11, 
+        FMT_BC1_LINEAR = 10,
+        FMT_RG8 = 7, 
+        FMT_ALPHA = 5, 
+        FMT_RGBA8 = 3
+    };
+
 	class DDSHeaderBuilder
 	{	
 		public:
-			int ComputePitch(int width, int height, int decompressedSize, int imageType);
+			int ComputePitch(int width, int height, int decompressedSize, enum ImageType imageType);
 			std::vector<byte> ConvertToByteVector();
-			DDSHeaderBuilder(int width, int height, int decompressedSize, int imageType);
+			DDSHeaderBuilder(int width, int height, int decompressedSize, enum ImageType imageType);
 			
 		private:
 			DDSHeader _DDSHeader;
