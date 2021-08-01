@@ -324,7 +324,7 @@ namespace HAYDEN
             }
 
             // construct DDS file header
-            DDSHeaderBuilder ddsBuilder(thisFile.tgaPixelWidth, thisFile.tgaPixelHeight, thisFile.streamDBSizeDecompressed, thisFile.tgaImageType);
+            DDSHeaderBuilder ddsBuilder(thisFile.tgaPixelWidth, thisFile.tgaPixelHeight, thisFile.streamDBSizeDecompressed, static_cast<ImageType>(thisFile.tgaImageType));
             std::vector<byte> ddsFileHeader = ddsBuilder.ConvertToByteVector();
 
             // parse filepath and create folders if necessary

@@ -37,29 +37,29 @@ namespace HAYDEN
         lwoHeader.cumulativeStreamDBSize = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - 4));
 
         int buffer = 0;
+        int entryStart = 0; 
+        int structSize = 0; 
         int seekDistance = 4;
         
-        // find the next instance where lwoHeader.cumulativeStreamDBSize appears. This is the struct size.
+        // Find the next instance where lwoHeader.cumulativeStreamDBSize appears. This is the struct size.
         while ((buffer != lwoHeader.cumulativeStreamDBSize) && (seekDistance < lwoDecompressedHeader.size() - 4))
         {
             seekDistance += 4;
             buffer = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - seekDistance));
         }
+        structSize = seekDistance - 4;
 
-        // Now we know the struct size, seek backwards by struct size until we find 0x0000.
-        int structSize = seekDistance - 4;
+        // Seek backwards by struct size until we find 0x0000. This is the start of LOD entries.
         while ((buffer != 0) && (seekDistance < lwoDecompressedHeader.size() - 4))
         {
             seekDistance += structSize;
             buffer = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - seekDistance));
         }
+        entryStart = seekDistance;
 
-        // now we've found the point where cumulative compressed size is zero, so this is the start of LOD entries.
-        int entryStart = seekDistance;
-
-        // get decompressed & compressed sizes relative to entryStart.
-        lwoHeader.decompressedSize = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - (entryStart + 8)));
-        lwoHeader.compressedSize = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - (entryStart + 4)));
+        // Get decompressed & compressed sizes relative to entryStart.
+        lwoHeader.decompressedSize = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - (entryStart + 8i64)));
+        lwoHeader.compressedSize = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - (entryStart + 4i64)));
         return lwoHeader;
     }
     std::vector<byte> ResourceFile::GetEmbeddedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const

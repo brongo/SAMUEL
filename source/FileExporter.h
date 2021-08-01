@@ -28,9 +28,9 @@ namespace HAYDEN
 			uint64 streamDBSizeDecompressed = 0;
 			int streamDBCompressionType = 0;
 			int streamDBNumber = -1;
-			uint32 tgaPixelWidth = 0;
-			uint32 tgaPixelHeight = 0;
-			uint32 tgaImageType = 0;
+			int tgaPixelWidth = 0;
+			int tgaPixelHeight = 0;
+			int tgaImageType = 0;
 	};
 
 	class FileExportList
