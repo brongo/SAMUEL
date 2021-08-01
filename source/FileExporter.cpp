@@ -504,7 +504,7 @@ namespace HAYDEN
         if (fs::space(fs::current_path()).available < totalExportSize)
         {
             fprintf(stderr, "Error: Not enough space in disk.\n");
-            fprintf(stderr, "Exporting from this file requires at least %.2lf MB of free space.\n", (double)totalExportSize / (1024i64 * 1024i64));
+            fprintf(stderr, "Exporting from this file requires at least %.2lf MB of free space.\n", (double)totalExportSize / (1024 * 1024));
             exit(1);
         }
         return;
