@@ -54,6 +54,10 @@ namespace HAYDEN
             // skip unsupported images
             if (thisEntry.version == 21)
             {                 
+                // get specific file for debugging
+                // if (thisEntry.name.rfind("gsky_e2m4_boss_cloud_lightning_mask") == -1)
+                    // continue;
+
                 // skip entries with "lightprobes" path
                 if (thisEntry.name.rfind("/lightprobes/") != -1)
                     continue;
@@ -297,7 +301,6 @@ namespace HAYDEN
             // Don't try to export resources that weren't found
             if (tgaFilesToExport[i].streamDBNumber == -1)
             {
-                // fprintf(stderr, "Error: File not found, skipping: %s \n", tgaFilesToExport[i].resourceFileName.c_str());
                 notFound++;
                 continue;
             }
@@ -305,7 +308,7 @@ namespace HAYDEN
             FileExportItem& thisFile = tgaFilesToExport[i];
             const StreamDBFile& thisStreamDBFile = streamDBFiles[thisFile.streamDBNumber];
 
-            // get binary file data from streamdb
+            // get binary file from streamdb
             std::vector<byte> fileData = GetBinaryFileFromStreamDB(thisFile, thisStreamDBFile);
 
             // check if decompression is necessary
@@ -325,6 +328,7 @@ namespace HAYDEN
             std::vector<byte> ddsFileHeader = ddsBuilder.ConvertToByteVector();
 
             // parse filepath and create folders if necessary
+            thisFile.resourceFileName += ".dds";
             fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
             fs::path folderPath = fullPath;
             folderPath.remove_filename();
@@ -360,7 +364,6 @@ namespace HAYDEN
             // Don't try to export resources that weren't found
             if (md6FilesToExport[i].streamDBNumber == -1)
             {
-                // fprintf(stderr, "Error: File not found, skipping: %s \n", md6FilesToExport[i].resourceFileName.c_str());
                 notFound++;
                 continue;
             }
@@ -418,7 +421,6 @@ namespace HAYDEN
             // Don't try to export resources that weren't found
             if (lwoFilesToExport[i].streamDBNumber == -1)
             {
-                // fprintf(stderr, "Error: File not found, skipping: %s \n", lwoFilesToExport[i].resourceFileName.c_str());
                 notFound++;
                 continue;
             }
@@ -480,12 +482,12 @@ namespace HAYDEN
         PrintUnmatchedToCSV(tgaFilesToExport);
 
         // debug md6 export
-        PrintMatchesToCSV(md6FilesToExport);
-        PrintUnmatchedToCSV(md6FilesToExport);
+        // PrintMatchesToCSV(md6FilesToExport);
+        // PrintUnmatchedToCSV(md6FilesToExport);
 
         // debug lwo export
-        PrintMatchesToCSV(lwoFilesToExport);
-        PrintUnmatchedToCSV(lwoFilesToExport);
+        // PrintMatchesToCSV(lwoFilesToExport);
+        // PrintUnmatchedToCSV(lwoFilesToExport);
 
         // get total size of files to export
         size_t totalExportSize = 0;
@@ -502,10 +504,9 @@ namespace HAYDEN
         if (fs::space(fs::current_path()).available < totalExportSize)
         {
             fprintf(stderr, "Error: Not enough space in disk.\n");
-            fprintf(stderr, "Exporting from this file requires at least %.2lf MB of free space.\n", (double)totalExportSize / (1024 * 1024));
+            fprintf(stderr, "Exporting from this file requires at least %.2lf MB of free space.\n", (double)totalExportSize / (1024i64 * 1024i64));
             exit(1);
         }
-
         return;
     }
 }
