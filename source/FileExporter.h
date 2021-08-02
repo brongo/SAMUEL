@@ -31,6 +31,7 @@ namespace HAYDEN
 			int tgaPixelWidth = 0;
 			int tgaPixelHeight = 0;
 			int tgaImageType = 0;
+			bool isStreamed = 1;
 	};
 
 	class FileExportList
@@ -39,6 +40,7 @@ namespace HAYDEN
 			FileExportList() {};
 			FileExportList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, int fileType);
 			std::vector<FileExportItem> GetFileExportItems() { return _ExportItems; }
+			std::vector<byte> GetTGAFileData(int i) { return _TGAHeaderData[i].unstreamedFileData; }
 
 		private:
 			int _FileType = 0;

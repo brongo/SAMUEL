@@ -54,16 +54,20 @@ namespace HAYDEN
             // skip unsupported images
             if (thisEntry.version == 21)
             {                 
-                // get specific file for debugging
-                // if (thisEntry.name.rfind("gsky_e2m4_boss_cloud_lightning_mask") == -1)
-                    // continue;
-
                 // skip entries with "lightprobes" path
                 if (thisEntry.name.rfind("/lightprobes/") != -1)
                     continue;
+            }
 
-                // skip wierd minmip files
-                if (thisEntry.name.rfind("$minmip=") != -1)
+            // skip unsupported models
+            if (thisEntry.version == 67)
+            {
+                // skips world files (e.g. world_b403a83e93ccd372)
+                if (thisEntry.name.rfind("world_") != -1 && (thisEntry.name.find("maps/game") != -1))
+                    continue;
+
+                // skips .bmodel files
+                if (thisEntry.name.rfind(".bmodel") != -1)
                     continue;
             }
 
@@ -128,17 +132,19 @@ namespace HAYDEN
 
             // tga data
             if (_FileType == 21)
-            {
-                numMips = _TGAHeaderData[i].numMips;
+            {              
+                numMips = _TGAHeaderData[i].streamDBMipCount;
                 thisFile.streamDBSizeDecompressed = _TGAHeaderData[i].decompressedSize;
                 thisFile.streamDBSizeCompressed = _TGAHeaderData[i].compressedSize;
                 thisFile.tgaPixelHeight = _TGAHeaderData[i].pixelHeight;
                 thisFile.tgaPixelWidth = _TGAHeaderData[i].pixelWidth;
                 thisFile.tgaImageType = _TGAHeaderData[i].imageType;
 
-                // FIXME, should get compressionType from .resources
                 if (_TGAHeaderData[i].isCompressed == 1)
                     thisFile.streamDBCompressionType = 2;
+
+                if (_TGAHeaderData[i].isStreamed == 0 && _TGAHeaderData[i].isCompressed == 0)
+                    thisFile.isStreamed = 0;
             }
                
             // md6mesh data
@@ -169,6 +175,9 @@ namespace HAYDEN
     {
         for (int i = 0; i < _ExportItems.size(); i++)
         {
+            if (_ExportItems[i].isStreamed == 0)
+                continue;
+                
             // Searches every .streamdb file for a matching streamDBIndex
             FileExportItem& thisFile = _ExportItems[i];
             for (int j = 0; j < streamDBFiles.size(); j++)
@@ -246,7 +255,7 @@ namespace HAYDEN
         for (int i = 0; i < fileExportList.size(); i++)
         {
             FileExportItem& thisEntry = fileExportList[i];
-            if (thisEntry.streamDBNumber == -1)
+            if (thisEntry.streamDBNumber == -1 && thisEntry.isStreamed == 1)
                 continue;
 
             std::string output;
@@ -271,17 +280,21 @@ namespace HAYDEN
         for (int i = 0; i < fileExportList.size(); i++)
         {
             FileExportItem& thisEntry = fileExportList[i];
-            if (thisEntry.streamDBNumber != -1)
+            if (thisEntry.streamDBNumber != -1 || thisEntry.isStreamed == 0)
                 continue;
 
             std::string output;
             output += "\"" + thisEntry.resourceFileName + "\",";
-            output += std::to_string(thisEntry.streamDBIndex) + ",";
-            output += std::to_string(thisEntry.streamDBFileOffset) + ",";
+            //output += std::to_string(thisEntry.streamDBIndex) + ",";
+            //output += std::to_string(thisEntry.streamDBFileOffset) + ",";
             output += std::to_string(thisEntry.streamDBSizeCompressed) + ",";
             output += std::to_string(thisEntry.streamDBSizeDecompressed) + ",";
             output += std::to_string(thisEntry.streamDBCompressionType) + ",";
-            output += std::to_string(thisEntry.streamDBNumber) + "\n";
+            output += std::to_string(thisEntry.tgaImageType) + ",";
+            output += std::to_string(thisEntry.tgaPixelWidth) + ",";
+            output += std::to_string(thisEntry.tgaPixelHeight) + "," + "\n";
+            //output += std::to_string(thisEntry.streamDBNumber) + ",";
+            //output += "\"" + thisEntry.streamDBFileName + "\"" + "\n";
             outputUnmatched.write(output.c_str(), output.length());
         }
         return;
@@ -298,31 +311,38 @@ namespace HAYDEN
         
         for (int i = 0; i < tgaFilesToExport.size(); i++)
         {
-            // Don't try to export resources that weren't found
-            if (tgaFilesToExport[i].streamDBNumber == -1)
+            std::vector<byte> fileData;
+            FileExportItem& thisFile = tgaFilesToExport[i];
+
+            if (thisFile.streamDBNumber == -1 && thisFile.isStreamed == 1)
             {
                 notFound++;
                 continue;
             }
 
-            FileExportItem& thisFile = tgaFilesToExport[i];
-            const StreamDBFile& thisStreamDBFile = streamDBFiles[thisFile.streamDBNumber];
-
-            // get binary file from streamdb
-            std::vector<byte> fileData = GetBinaryFileFromStreamDB(thisFile, thisStreamDBFile);
-
-            // check if decompression is necessary
-            if (thisFile.streamDBSizeCompressed != thisFile.streamDBSizeDecompressed)
+            // streamed files: get data from .streamdb, decompress if needed.
+            if (thisFile.isStreamed == 1)
             {
-                fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
-                if (fileData.empty())
+                const StreamDBFile& thisStreamDBFile = streamDBFiles[thisFile.streamDBNumber];
+                fileData = GetBinaryFileFromStreamDB(thisFile, thisStreamDBFile);
+
+                // check if compressed
+                if (thisFile.streamDBSizeCompressed != thisFile.streamDBSizeDecompressed)
                 {
-                    fprintf(stderr, "Error: Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
-                    errorCount++;
-                    continue;
+                    fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
+                    if (fileData.empty())
+                    {
+                        fprintf(stderr, "Error: Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
+                        errorCount++;
+                        continue;
+                    }
                 }
             }
 
+            // non-streamed files: get data from embedded TGA file we parsed already
+            if (thisFile.isStreamed == 0)
+                fileData = _TGAExportList.GetTGAFileData(i);
+            
             // construct DDS file header
             DDSHeaderBuilder ddsBuilder(thisFile.tgaPixelWidth, thisFile.tgaPixelHeight, thisFile.streamDBSizeDecompressed, static_cast<ImageType>(thisFile.tgaImageType));
             std::vector<byte> ddsFileHeader = ddsBuilder.ConvertToByteVector();
@@ -501,12 +521,14 @@ namespace HAYDEN
         for (const auto& fileExport : _LWOExportList.GetFileExportItems())
             totalExportSize += fileExport.streamDBSizeDecompressed;
 
+        /*
         if (fs::space(fs::current_path()).available < totalExportSize)
         {
             fprintf(stderr, "Error: Not enough space in disk.\n");
             fprintf(stderr, "Exporting from this file requires at least %.2lf MB of free space.\n", (double)totalExportSize / (1024 * 1024));
             exit(1);
         }
+        */
         return;
     }
 }

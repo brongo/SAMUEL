@@ -18,13 +18,16 @@ namespace HAYDEN
     class EmbeddedTGAHeader
     {
         public:
-            int numMips = 0;
+            byte isStreamed = 0;
+            int textureMaterialKind = 0;
+            int streamDBMipCount = 0;
             int isCompressed = 0;
             int compressedSize = 0;
             int decompressedSize = 0;
             int pixelWidth = 0;
             int pixelHeight = 0;
             int imageType = 0;
+            std::vector<byte> unstreamedFileData;
     };
 
     class EmbeddedMD6Header
