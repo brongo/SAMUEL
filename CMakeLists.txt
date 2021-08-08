@@ -31,10 +31,10 @@ set(PROJECT_SOURCES
         ./source/core/Utilities.h
         ./vendor/jsonxx/jsonxx.cc
         ./vendor/jsonxx/jsonxx.h
-        ./source/Qt/mainwindow.ui
-        ./source/Qt/mainwindow.cpp
-        ./source/Qt/mainwindow.h
-        ./source/Qt/main.cpp
+        ./source/qt/mainwindow.ui
+        ./source/qt/mainwindow.cpp
+        ./source/qt/mainwindow.h
+        ./source/qt/main.cpp
 
 )
 

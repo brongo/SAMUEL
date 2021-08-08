@@ -1,4 +1,4 @@
-#ifdef __linux__
+#ifndef _WIN32
 #include <dlfcn.h>
 #endif
 
