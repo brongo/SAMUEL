@@ -3,9 +3,9 @@ SAMUEL.exe
 
 # Project-specific
 oo2core_8_win64.dll
-unmatched_tmp
-matched_tmp
-tmpTGAHeader
+
+# User Settings
+CMakeLists.txt.user
 
 # Build results
 [Dd]ebug/
