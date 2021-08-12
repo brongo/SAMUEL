@@ -5,12 +5,58 @@ namespace fs = std::filesystem;
 
 namespace HAYDEN
 {
+    // Private functions - SAMUEL
+    void SAMUEL::ThrowError(bool isFatal, std::string errorMessage, std::string errorDetail)
+    {
+        _LastErrorMessage = errorMessage;
+        _LastErrorDetail = errorDetail;
+
+        if (isFatal)
+            _HasFatalError = 1;
+
+        std::string consoleMsg = _LastErrorMessage + " " + _LastErrorDetail + "\n";
+        fprintf(stderr, "%s", consoleMsg.c_str());
+        return;
+    }
+    bool SAMUEL::FindOodleDLL()
+    {
+        if (!fs::exists("oo2core_8_win64.dll"))
+        {
+            ThrowError(1, "Error: Could not find oo2core_8_win64.dll in the current directory.");
+            return 0;
+        }
+
+        #ifdef __linux__
+        if (!fs::exists("liblinoodle.so"))
+        {
+            ThrowError(1, "Error: Could not find liblinoodle.so in the current directory.");
+            return 0;
+        }
+        #endif
+
+        return 1;
+    };
+    bool SAMUEL::FindBasePath(const std::string resourcePath)
+    {
+        // Get base path from resource path
+        auto baseIndex = resourcePath.find("base");
+        if (baseIndex == -1)
+        {
+            ThrowError(1,
+                "Failed to load .resource file.",
+                "The .resource file must be located in your Doom Eternal \"base\" directory or its subdirectories."
+            );
+            return 0;
+        }
+        _BasePath = resourcePath.substr(0, baseIndex + 4);
+        return 1;
+    }
     void SAMUEL::LoadPackageMapSpec()
     {
         try
         {
             // read input filestream into stringstream
-            std::ifstream inputStream = std::ifstream(_basePath + (char)fs::path::preferred_separator + "packagemapspec.json");
+            std::ifstream inputStream = std::ifstream(_BasePath + (char)fs::path::preferred_separator + "packagemapspec.json");
             std::stringstream strStream;
             strStream << inputStream.rdbuf();
 
@@ -28,7 +74,7 @@ namespace HAYDEN
     void SAMUEL::UpdateStreamDBFileList(const std::string resourceFileName)
     {
         std::vector<std::string> appendList;
-        appendList = _PackageMapSpec.GetFilesByResourceName(_basePath + (char)fs::path::preferred_separator + resourceFileName);
+        appendList = _PackageMapSpec.GetFilesByResourceName(_BasePath + (char)fs::path::preferred_separator + resourceFileName);
 
         // remove any files without .streamdb extension
         for (int i = 0; i < appendList.size(); i++)
@@ -55,7 +101,7 @@ namespace HAYDEN
         for (auto i = _StreamDBFileList.begin(); i != _StreamDBFileList.end(); ++i)
         {
             // build filepath
-            std::string filePath = _basePath + (char)fs::path::preferred_separator + *i;
+            std::string filePath = _BasePath + (char)fs::path::preferred_separator + *i;
 
             // make sure this is a .streamdb file before parsing
             size_t strPos = filePath.rfind(".streamdb");
@@ -107,7 +153,7 @@ namespace HAYDEN
         }
         return;
     }
-    void SAMUEL::ExportAll(std::string outputDirectory)
+    void SAMUEL::ExportAll(const std::string outputDirectory)
     {
         _Exporter.Init(_ResourceFile, _StreamDBFileData, outputDirectory);
         _Exporter.ExportTGAFiles(_StreamDBFileData);
@@ -115,54 +161,26 @@ namespace HAYDEN
         // _Exporter.ExportLWOFiles(_StreamDBFileData);
         return;
     }
-    void SAMUEL::Init(const std::string basePath)
+    void SAMUEL::ExportSelected(const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList)
     {
-        if (!fs::exists("oo2core_8_win64.dll"))
-        {
-            fprintf(stderr, "Error: Could not find oo2core_8_win64.dll in the current directory.\n");
-            exit(1);
-        }
-
-#ifdef __linux__
-        if (!fs::exists("liblinoodle.so"))
-        {
-            fprintf(stderr, "Error: Could not find liblinoodle.so in the current directory.\n");
-            exit(1);
-        }
-#endif
-
-        SetBasePath(basePath);
-        LoadPackageMapSpec();
+        _Exporter.InitFromList(_ResourceFile, _StreamDBFileData, outputDirectory, userSelectedFileList);
+        _Exporter.ExportTGAFiles(_StreamDBFileData);
+        _Exporter.ExportMD6Files(_StreamDBFileData);
+        _Exporter.ExportLWOFiles(_StreamDBFileData);
+        return;
     }
-}
-
-/*
-int main(int argc, char* argv[])
-{
-    printf("SAMUEL v0.1 by SamPT\n");
-
-    if (argc < 2)
+    bool SAMUEL::CheckDependencies()
     {
-        printf("USAGE: SAMUEL /path/to/resourceFile\n");
+        if (!FindOodleDLL())
+            return 0;
         return 1;
     }
+    bool SAMUEL::Init(const std::string resourcePath)
+    {     
+        if (!FindBasePath(resourcePath))
+            return 0;
 
-    // Get base path from resource path
-    std::string resourcePath(argv[1]);
-    auto baseIndex = resourcePath.find("base");
-    if (baseIndex == -1)
-    {
-        fprintf(stderr, "Error: Failed to get game's base path.\n");
+        LoadPackageMapSpec();
+        return 1;
     }
-    std::string basePath = resourcePath.substr(0, baseIndex + 4);
-
-    // Get export path from argv[0]
-    std::string exportPath = fs::absolute(argv[0]).replace_filename("exports").string();
-
-    SAMUEL SAM;
-    SAM.Init(basePath);
-    SAM.LoadResource(resourcePath);
-    SAM.ExportAll(exportPath);
-    return 0;
 }
-*/

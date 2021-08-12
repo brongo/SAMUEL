@@ -38,7 +38,7 @@ namespace HAYDEN
 	{
 		public:
 			FileExportList() {};
-			FileExportList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, int fileType);
+            FileExportList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, int fileType, std::vector<std::string> selectedFileNames = std::vector<std::string>(), bool exportFromList = 0);
 			std::vector<FileExportItem> GetFileExportItems() { return _ExportItems; }
 			std::vector<byte> GetTGAFileData(int i) { return _TGAHeaderData[i].unstreamedFileData; }
 
@@ -55,7 +55,7 @@ namespace HAYDEN
 			std::vector<byte> DecompressEmbeddedFileHeader(std::vector<byte> embeddedHeader, const uint64 decompressedSize);
 
 			// Helper functions for FileExportList constructor
-			void GetResourceEntries(const ResourceFile& resourceFile);
+            void GetResourceEntries(const ResourceFile& resourceFile, std::vector<std::string> selectedFileNames = std::vector<std::string>(), bool exportFromList = 0);
 			void ParseEmbeddedFileHeaders(const ResourceFile& resourceFile);
 			void GetStreamDBIndexAndSize();	
 			void GetStreamDBFileOffsets(const std::vector<StreamDBFile>& streamDBFiles);		
@@ -66,7 +66,8 @@ namespace HAYDEN
 	{
 		public:
 			FileExporter() {};
-			void Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, std::string outDirectory);
+            void Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory);
+            void InitFromList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList);
 			void ExportTGAFiles(const std::vector<StreamDBFile>& streamDBFiles);
 			void ExportMD6Files(const std::vector<StreamDBFile>& streamDBFiles);
 			void ExportLWOFiles(const std::vector<StreamDBFile>& streamDBFiles);

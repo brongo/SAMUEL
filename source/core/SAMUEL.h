@@ -17,20 +17,32 @@ namespace HAYDEN
 	class SAMUEL
 	{
 		public:
-			void Init(const std::string basePath);
+            bool CheckDependencies();
+            bool Init(const std::string resourcePath);
 			void LoadResource(const std::string fileName);
 			void ExportAll(const std::string outputDirectory);
+            void ExportSelected(const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList);
+            std::string GetLastErrorMessage() { return _LastErrorMessage; }
+            std::string GetLastErrorDetail() { return _LastErrorDetail; }
+            ResourceFile GetResourceFile() { return _ResourceFile; }
 
 		private:
-			std::string _basePath;
+            bool _HasFatalError = 0;
+            std::string _LastErrorMessage;
+            std::string _LastErrorDetail;
+            std::string _BasePath;
 			std::vector<std::string> _StreamDBFileList;
 			std::vector<StreamDBFile> _StreamDBFileData; 
 			ResourceFile _ResourceFile;
 			PackageMapSpec _PackageMapSpec;
 			FileExporter _Exporter;
 
+            // Outputs to stderr, but also stores error message for passing to another application (Qt, etc).
+            void ThrowError(bool isFatal, std::string errorMessage, std::string errorDetail = "");
+
 			// Called by Init()
-			void SetBasePath(const std::string basePath) { _basePath = basePath; }
+            bool FindOodleDLL();
+            bool FindBasePath(const std::string resourcePath);
 			void LoadPackageMapSpec();
 
 			// Called by LoadResource()

@@ -36,16 +36,28 @@ namespace HAYDEN
     }
 
     // FileExportList - Helper functions for FileExportList constructor
-    void FileExportList::GetResourceEntries(const ResourceFile& resourceFile)
+    void FileExportList::GetResourceEntries(const ResourceFile& resourceFile, std::vector<std::string> selectedFileNames, bool exportFromList)
     {
         // Iterate through currently loaded .resource entries to find supported files
         for (uint64 i = 0; i < resourceFile.numFileEntries; i++)
         {
             ResourceEntry thisEntry = resourceFile.resourceEntries[i];
 
+            // Can't export from empty list
+            if (exportFromList && selectedFileNames.size() == 0)
+                return;
+
             // each instance of FileExportList is for a different filetype. 21 = .tga, 31 = .md6mesh
             if (thisEntry.version != _FileType)
                 continue;
+
+            // only get selected file names, if list was provided
+            if (exportFromList && selectedFileNames.size() > 0)
+            {
+                auto it = std::find(selectedFileNames.begin(), selectedFileNames.end(), thisEntry.name);
+                if (it == selectedFileNames.end())
+                    continue;
+            }
 
             // skips entries with no data to extract
             if (thisEntry.dataSizeCompressed == 0)
@@ -220,11 +232,11 @@ namespace HAYDEN
     }
 
     // Constructs FileExportList
-    FileExportList::FileExportList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, int fileType)
+    FileExportList::FileExportList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, int fileType, std::vector<std::string> selectedFileNames, bool exportFromList)
     {
         _FileType = fileType;
         _ResourceFileName = resourceFile.filename;
-        GetResourceEntries(resourceFile);
+        GetResourceEntries(resourceFile, selectedFileNames, exportFromList);
         ParseEmbeddedFileHeaders(resourceFile);
         GetStreamDBIndexAndSize();
         GetStreamDBFileOffsets(streamDBFiles);
@@ -487,7 +499,7 @@ namespace HAYDEN
     }
 
     // Constructs FileExporter, collects data needed for export.
-    void FileExporter::Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, std::string outputDirectory)
+    void FileExporter::Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory)
     {
         _OutDir = outputDirectory;
         _TGAExportList = FileExportList(resourceFile, streamDBFiles, 21);
@@ -528,6 +540,72 @@ namespace HAYDEN
             exit(1);
         }
 
+        return;
+    }
+    void FileExporter::InitFromList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList)
+    {
+        std::vector<std::string> userSelectedTGAFiles;
+        std::vector<std::string> userSelectedMD6Files;
+        std::vector<std::string> userSelectedLWOFiles;
+
+        // build separate lists for each file type.
+        for (int i = 0; i < userSelectedFileList.size(); i++)
+        {
+            int fileType = std::stoi(userSelectedFileList[i][2]);
+            switch (fileType)
+            {
+                case 21:
+                    userSelectedTGAFiles.push_back(userSelectedFileList[i][0]);
+                    break;
+                case 31:
+                    userSelectedMD6Files.push_back(userSelectedFileList[i][0]);
+                    break;
+                case 67:
+                    userSelectedLWOFiles.push_back(userSelectedFileList[i][0]);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        _OutDir = outputDirectory;
+        _TGAExportList = FileExportList(resourceFile, streamDBFiles, 21, userSelectedTGAFiles, 1);
+        _MD6ExportList = FileExportList(resourceFile, streamDBFiles, 31, userSelectedMD6Files, 1);
+        _LWOExportList = FileExportList(resourceFile, streamDBFiles, 67, userSelectedLWOFiles, 1);
+        std::vector<FileExportItem> tgaFilesToExport = _TGAExportList.GetFileExportItems();
+        std::vector<FileExportItem> md6FilesToExport = _MD6ExportList.GetFileExportItems();
+        std::vector<FileExportItem> lwoFilesToExport = _LWOExportList.GetFileExportItems();
+
+        // debug tga export
+        // PrintMatchesToCSV(tgaFilesToExport);
+        // PrintUnmatchedToCSV(tgaFilesToExport);
+
+        // debug md6 export
+        // PrintMatchesToCSV(md6FilesToExport);
+        // PrintUnmatchedToCSV(md6FilesToExport);
+
+        // debug lwo export
+        // PrintMatchesToCSV(lwoFilesToExport);
+        // PrintUnmatchedToCSV(lwoFilesToExport);
+
+        // get total size of files to export
+        size_t totalExportSize = 0;
+
+        for (const auto& fileExport : _TGAExportList.GetFileExportItems())
+            totalExportSize += fileExport.streamDBSizeDecompressed;
+
+        for (const auto& fileExport : _MD6ExportList.GetFileExportItems())
+            totalExportSize += fileExport.streamDBSizeDecompressed;
+
+        for (const auto& fileExport : _LWOExportList.GetFileExportItems())
+            totalExportSize += fileExport.streamDBSizeDecompressed;
+
+        if (fs::space(fs::current_path()).available < totalExportSize)
+        {
+            fprintf(stderr, "Error: Not enough space in disk.\n");
+            fprintf(stderr, "Exporting from this file requires at least %.2lf MB of free space.\n", (double)totalExportSize / (1024 * 1024));
+            exit(1);
+        }
         return;
     }
 }
