@@ -29,17 +29,18 @@ set(PROJECT_SOURCES
         ./source/core/StreamDBFile.h
         ./source/core/Utilities.cpp
         ./source/core/Utilities.h
-        ./vendor/jsonxx/jsonxx.cc
-        ./vendor/jsonxx/jsonxx.h
         ./source/qt/mainwindow.ui
         ./source/qt/mainwindow.cpp
         ./source/qt/mainwindow.h
         ./source/qt/main.cpp
+        ./vendor/jsonxx/jsonxx.cc
+        ./vendor/jsonxx/jsonxx.h
 
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(SAMUEL
+        WIN32
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
     )
