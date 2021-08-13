@@ -92,6 +92,9 @@ void MainWindow::PopulateGUIResourceTable()
         ui->tableWidget->setItem(row_count, 2, tableResourceVersion);
         ui->tableWidget->setItem(row_count, 3, tableResourceStatus);
     }
+
+    QHeaderView* tableHeader = ui->tableWidget->horizontalHeader();
+    tableHeader->setSectionResizeMode(0, QHeaderView::Stretch);
     return;
 }
 

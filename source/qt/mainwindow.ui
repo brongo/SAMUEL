@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>930</width>
-    <height>618</height>
+    <width>832</width>
+    <height>534</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,121 +17,216 @@
    <bool>false</bool>
   </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="layoutDirection">
     <enum>Qt::LeftToRight</enum>
    </property>
-   <widget class="QPushButton" name="btnLoadResource">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>550</y>
-      <width>150</width>
-      <height>36</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Load Resource</string>
-    </property>
-   </widget>
-   <widget class="QTableWidget" name="tableWidget">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>20</y>
-      <width>891</width>
-      <height>521</height>
-     </rect>
-    </property>
-    <property name="alternatingRowColors">
-     <bool>true</bool>
-    </property>
-    <property name="selectionBehavior">
-     <enum>QAbstractItemView::SelectRows</enum>
-    </property>
-    <property name="sortingEnabled">
-     <bool>true</bool>
-    </property>
-    <property name="wordWrap">
-     <bool>false</bool>
-    </property>
-    <attribute name="horizontalHeaderMinimumSectionSize">
-     <number>60</number>
-    </attribute>
-    <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
-     <bool>false</bool>
-    </attribute>
-    <attribute name="horizontalHeaderStretchLastSection">
-     <bool>false</bool>
-    </attribute>
-    <attribute name="verticalHeaderVisible">
-     <bool>false</bool>
-    </attribute>
-    <attribute name="verticalHeaderMinimumSectionSize">
-     <number>18</number>
-    </attribute>
-    <attribute name="verticalHeaderDefaultSectionSize">
-     <number>18</number>
-    </attribute>
-    <column>
-     <property name="text">
-      <string>Name</string>
-     </property>
-    </column>
-    <column>
-     <property name="text">
-      <string>Type</string>
-     </property>
-    </column>
-    <column>
-     <property name="text">
-      <string>Version</string>
-     </property>
-    </column>
-    <column>
-     <property name="text">
-      <string>Status</string>
-     </property>
-    </column>
-   </widget>
-   <widget class="QPushButton" name="btnExportSelected">
-    <property name="geometry">
-     <rect>
-      <x>190</x>
-      <y>550</y>
-      <width>150</width>
-      <height>36</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Export Selected</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="btnExportAll">
-    <property name="geometry">
-     <rect>
-      <x>360</x>
-      <y>550</y>
-      <width>150</width>
-      <height>36</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Export All</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="btnSettings">
-    <property name="geometry">
-     <rect>
-      <x>760</x>
-      <y>550</y>
-      <width>150</width>
-      <height>36</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Settings</string>
-    </property>
-   </widget>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0" colspan="4">
+     <widget class="QTableWidget" name="tableWidget">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Sunken</enum>
+      </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOn</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="sizeAdjustPolicy">
+       <enum>QAbstractScrollArea::AdjustIgnored</enum>
+      </property>
+      <property name="autoScroll">
+       <bool>false</bool>
+      </property>
+      <property name="editTriggers">
+       <set>QAbstractItemView::NoEditTriggers</set>
+      </property>
+      <property name="dragDropOverwriteMode">
+       <bool>false</bool>
+      </property>
+      <property name="alternatingRowColors">
+       <bool>true</bool>
+      </property>
+      <property name="selectionBehavior">
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+      <property name="sortingEnabled">
+       <bool>true</bool>
+      </property>
+      <property name="wordWrap">
+       <bool>false</bool>
+      </property>
+      <attribute name="horizontalHeaderMinimumSectionSize">
+       <number>60</number>
+      </attribute>
+      <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="horizontalHeaderStretchLastSection">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="verticalHeaderVisible">
+       <bool>false</bool>
+      </attribute>
+      <attribute name="verticalHeaderMinimumSectionSize">
+       <number>18</number>
+      </attribute>
+      <attribute name="verticalHeaderDefaultSectionSize">
+       <number>18</number>
+      </attribute>
+      <column>
+       <property name="text">
+        <string>Name</string>
+       </property>
+       <property name="toolTip">
+        <string/>
+       </property>
+       <property name="whatsThis">
+        <string/>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Type</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Version</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Status</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="1" column="0" alignment="Qt::AlignLeft">
+     <widget class="QPushButton" name="btnLoadResource">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>140</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>200</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="baseSize">
+       <size>
+        <width>200</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Load Resource</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1" alignment="Qt::AlignLeft">
+     <widget class="QPushButton" name="btnExportSelected">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>140</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>200</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Export Selected</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2" alignment="Qt::AlignLeft">
+     <widget class="QPushButton" name="btnExportAll">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+        <horstretch>1</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>140</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>200</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Export All</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="3" alignment="Qt::AlignRight">
+     <widget class="QPushButton" name="btnSettings">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>140</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>200</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>Settings</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
    <zorder>tableWidget</zorder>
    <zorder>btnExportSelected</zorder>
    <zorder>btnExportAll</zorder>
@@ -143,8 +238,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>930</width>
-     <height>21</height>
+     <width>832</width>
+     <height>22</height>
     </rect>
    </property>
   </widget>
