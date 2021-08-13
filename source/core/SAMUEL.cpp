@@ -157,8 +157,8 @@ namespace HAYDEN
     {
         _Exporter.Init(_ResourceFile, _StreamDBFileData, outputDirectory);
         _Exporter.ExportTGAFiles(_StreamDBFileData);
-        // _Exporter.ExportMD6Files(_StreamDBFileData);
-        // _Exporter.ExportLWOFiles(_StreamDBFileData);
+        _Exporter.ExportMD6Files(_StreamDBFileData);
+        _Exporter.ExportLWOFiles(_StreamDBFileData);
         return;
     }
     void SAMUEL::ExportSelected(const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList)
