@@ -38,11 +38,14 @@ set(PROJECT_SOURCES
 
 )
 
+set(APP_ICON_RESOURCE_WINDOWS "./resources/icon.rc")
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(SAMUEL
         WIN32
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        ${APP_ICON_RESOURCE_WINDOWS}
     )
 else()
     if(ANDROID)
@@ -52,6 +55,7 @@ else()
     else()
         add_executable(SAMUEL
             ${PROJECT_SOURCES}
+            ${APP_ICON_RESOURCE_WINDOWS}
         )
     endif()
 endif()
