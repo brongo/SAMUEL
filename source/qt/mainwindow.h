@@ -32,6 +32,7 @@ class MainWindow : public QMainWindow
     private:
         QMessageBox _LoadStatusBox;
         QMessageBox _ExportStatusBox;
+        QThread* _LoadResourceThread;
         QThread* _ExportThread;
         std::string _ApplicationPath;
         std::string _ExportPath;

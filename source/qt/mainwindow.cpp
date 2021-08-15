@@ -9,7 +9,10 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
 MainWindow::~MainWindow()
 {
     if (!_ExportThread->isFinished())
-        _ExportThread->wait();
+        _ExportThread->terminate();
+    if (!_LoadResourceThread->isFinished())
+        _LoadResourceThread->terminate();
+
     delete ui;
 }
 void MainWindow::ThrowFatalError(std::string errorMessage, std::string errorDetail)
@@ -199,9 +202,9 @@ void MainWindow::on_btnLoadResource_clicked()
         ui->btnSettings->setEnabled(false);
         ui->tableWidget->setEnabled(false);
 
-        QThread* loadResourceThread = QThread::create([this]() { SAM.LoadResource(_ResourcePath); });
+        _LoadResourceThread = QThread::create([this]() { SAM.LoadResource(_ResourcePath); });
 
-        connect(loadResourceThread, &QThread::finished, this, [this]() {
+        connect(_LoadResourceThread, &QThread::finished, this, [this]() {
             // Populate the GUI
             PopulateGUIResourceTable();
 
@@ -230,9 +233,9 @@ void MainWindow::on_btnLoadResource_clicked()
             return;
         }
 
-        loadResourceThread->start();
+        _LoadResourceThread->start();
 
         if (ShowLoadStatus() == 0x00400000) // CANCEL
-            loadResourceThread->terminate();
+            _LoadResourceThread->terminate();
     }
 }
