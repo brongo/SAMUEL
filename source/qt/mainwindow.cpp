@@ -109,7 +109,6 @@ int MainWindow::ConfirmExportAll()
 int MainWindow::ShowLoadStatus()
 {
     _LoadStatusBox.setStandardButtons(QMessageBox::Cancel);
-    _LoadStatusBox.setIcon(QMessageBox::Information);
     _LoadStatusBox.setText("Loading resource, please wait...");
     int result = 0;
     result = _LoadStatusBox.exec();
@@ -118,7 +117,6 @@ int MainWindow::ShowLoadStatus()
 int MainWindow::ShowExportStatus()
 {
     _ExportStatusBox.setStandardButtons(QMessageBox::Cancel);
-    _ExportStatusBox.setIcon(QMessageBox::Information);
     _ExportStatusBox.setText("Export in progress, please wait...");
     int result = 0;
     result = _ExportStatusBox.exec();
