@@ -27,7 +27,6 @@ class MainWindow : public QMainWindow
         void on_btnLoadResource_clicked();
         void on_btnExportAll_clicked();
         void on_btnExportSelected_clicked();
-        void on_btnSettings_clicked();
 
     private:
         QMessageBox _LoadStatusBox;

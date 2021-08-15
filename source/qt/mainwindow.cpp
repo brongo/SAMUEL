@@ -5,6 +5,8 @@
 MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->btnExportAll->setEnabled(false);
+    ui->btnExportSelected->setEnabled(false);
 }
 MainWindow::~MainWindow()
 {
@@ -92,7 +94,7 @@ void MainWindow::PopulateGUIResourceTable()
 int MainWindow::ConfirmExportAll()
 {
     const QString qErrorMessage = "Do you really want to export *everything* in this resource file?";
-    const QString qErrorDetail = "This can take up to 20-30 minutes.";
+    const QString qErrorDetail = "For some .resource files this can take up to 20-30 minutes, and require 25GB+ of free space.";
 
     QMessageBox msgBox;
     msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
@@ -122,12 +124,8 @@ int MainWindow::ShowExportStatus()
     result = _ExportStatusBox.exec();
     return result;
 }
+
 // Private Slots
-void MainWindow::on_btnSettings_clicked()
-{
-    ThrowError("We do a little trolling.");
-    return;
-}
 void MainWindow::on_btnExportAll_clicked()
 {
     if (!_ResourceFileIsLoaded)
@@ -141,17 +139,24 @@ void MainWindow::on_btnExportAll_clicked()
         ui->btnExportAll->setEnabled(false);
         ui->btnExportSelected->setEnabled(false);
         ui->btnLoadResource->setEnabled(false);
-        ui->btnSettings->setEnabled(false);
         ui->tableWidget->setEnabled(false);
 
         _ExportThread = QThread::create(&HAYDEN::SAMUEL::ExportAll, &SAM, _ExportPath);
 
-        connect(_ExportThread, &QThread::finished, this, [this]() {
+        connect(_ExportThread, &QThread::finished, this, [this]() {   
+
+            // Update status to "Exported"
+            int rowCount = ui->tableWidget->rowCount();
+            for (int64 i = 0; i < rowCount; i++)
+            {
+                QTableWidgetItem *tableItem = ui->tableWidget->item(i,3);
+                tableItem->setText("Exported");
+            }
+
             // Re enable the GUI
             ui->btnExportAll->setEnabled(true);
             ui->btnExportSelected->setEnabled(true);
             ui->btnLoadResource->setEnabled(true);
-            ui->btnSettings->setEnabled(true);
             ui->tableWidget->setEnabled(true);
 
             // Close progress box if open
@@ -170,6 +175,13 @@ void MainWindow::on_btnExportSelected_clicked()
 {
     // Get selected items in QList
     QList<QTableWidgetItem *> itemExportQList = ui->tableWidget->selectedItems();
+
+    // Abort if no selection
+    if (itemExportQList.size() == 0)
+    {
+        ThrowError("No items were selected for export.");
+        return;
+    }
 
     // Convert to vector, get text for selected rows
     std::vector<std::vector<std::string>> itemExportRows;
@@ -199,15 +211,16 @@ void MainWindow::on_btnLoadResource_clicked()
         ui->btnExportAll->setEnabled(false);
         ui->btnExportSelected->setEnabled(false);
         ui->btnLoadResource->setEnabled(false);
-        ui->btnSettings->setEnabled(false);
         ui->tableWidget->setEnabled(false);
+        ui->tableWidget->setSortingEnabled(false);
 
         _ApplicationPath = QCoreApplication::applicationFilePath().toStdString();
         _ExportPath = fs::absolute(_ApplicationPath).replace_filename("exports").string();
         _ResourcePath = fileName.toStdString();
         _LoadResourceThread = QThread::create(&HAYDEN::SAMUEL::LoadResource, &SAM, _ResourcePath);
 
-        connect(_LoadResourceThread, &QThread::finished, this, [this]() {
+        connect(_LoadResourceThread, &QThread::finished, this, [this]() {          
+
             // Populate the GUI
             PopulateGUIResourceTable();
 
@@ -215,8 +228,8 @@ void MainWindow::on_btnLoadResource_clicked()
             ui->btnExportAll->setEnabled(true);
             ui->btnExportSelected->setEnabled(true);
             ui->btnLoadResource->setEnabled(true);
-            ui->btnSettings->setEnabled(true);
             ui->tableWidget->setEnabled(true);
+            ui->tableWidget->setSortingEnabled(true);
 
             // Close progress box if open
             if (_LoadStatusBox.isVisible())

@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>832</width>
-    <height>534</height>
+    <width>824</width>
+    <height>535</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>SAMUEL</string>
   </property>
   <property name="autoFillBackground">
    <bool>false</bool>
@@ -176,7 +176,7 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="2" alignment="Qt::AlignLeft">
+    <item row="1" column="3" alignment="Qt::AlignRight">
      <widget class="QPushButton" name="btnExportAll">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -201,45 +201,19 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="3" alignment="Qt::AlignRight">
-     <widget class="QPushButton" name="btnSettings">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="minimumSize">
-       <size>
-        <width>140</width>
-        <height>40</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>200</width>
-        <height>40</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Settings</string>
-      </property>
-     </widget>
-    </item>
    </layout>
    <zorder>tableWidget</zorder>
    <zorder>btnExportSelected</zorder>
-   <zorder>btnExportAll</zorder>
-   <zorder>btnSettings</zorder>
    <zorder>btnLoadResource</zorder>
+   <zorder>btnExportAll</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>832</width>
-     <height>22</height>
+     <width>824</width>
+     <height>21</height>
     </rect>
    </property>
   </widget>
