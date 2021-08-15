@@ -207,6 +207,17 @@ void MainWindow::on_btnLoadResource_clicked()
     const QString fileName = QFileDialog::getOpenFileName(this);
     if (!fileName.isEmpty())
     {
+        _ApplicationPath = QCoreApplication::applicationFilePath().toStdString();
+        _ExportPath = fs::absolute(_ApplicationPath).replace_filename("exports").string();
+        _ResourcePath = fileName.toStdString();
+
+        // Load BasePath and PackageMapSpec Data into SAMUEL
+        if (!SAM.Init(_ResourcePath))
+        {
+            ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
+            return;
+        }
+
         // Grey out/disable the buttons
         ui->btnExportAll->setEnabled(false);
         ui->btnExportSelected->setEnabled(false);
@@ -214,36 +225,36 @@ void MainWindow::on_btnLoadResource_clicked()
         ui->tableWidget->setEnabled(false);
         ui->tableWidget->setSortingEnabled(false);
 
-        _ApplicationPath = QCoreApplication::applicationFilePath().toStdString();
-        _ExportPath = fs::absolute(_ApplicationPath).replace_filename("exports").string();
-        _ResourcePath = fileName.toStdString();
+        // Load resource data in separate thread
         _LoadResourceThread = QThread::create(&HAYDEN::SAMUEL::LoadResource, &SAM, _ResourcePath);
 
-        connect(_LoadResourceThread, &QThread::finished, this, [this]() {          
-
-            // Populate the GUI
-            PopulateGUIResourceTable();
-
-            // Re enable the GUI
-            ui->btnExportAll->setEnabled(true);
-            ui->btnExportSelected->setEnabled(true);
-            ui->btnLoadResource->setEnabled(true);
-            ui->tableWidget->setEnabled(true);
-            ui->tableWidget->setSortingEnabled(true);
-
+        connect(_LoadResourceThread, &QThread::finished, this, [this]()
+        {
             // Close progress box if open
             if (_LoadStatusBox.isVisible())
                 _LoadStatusBox.close();
 
-            _ResourceFileIsLoaded = 1;
-        });
+            // Failed to load resource, display error
+            if (SAM.GetResourceErrorCode() == 1)
+                ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
 
-        // Load Resource Data into SAMUEL
-        if (!SAM.Init(_ResourcePath))
-        {
-            ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
-            return;
-        }
+            // Loaded resource successfully
+            if (SAM.GetResourceErrorCode() == 0)
+            {
+                // Populate the GUI
+                PopulateGUIResourceTable();
+
+                // Enable Export buttons
+                ui->btnExportAll->setEnabled(true);
+                ui->btnExportSelected->setEnabled(true);
+                _ResourceFileIsLoaded = 1;
+            }
+
+            // Re enable the GUI
+            ui->btnLoadResource->setEnabled(true);
+            ui->tableWidget->setEnabled(true);
+            ui->tableWidget->setSortingEnabled(true);          
+        });
 
         _LoadResourceThread->start();
 
