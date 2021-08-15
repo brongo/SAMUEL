@@ -10,7 +10,7 @@ MainWindow::~MainWindow()
 {
     if (_ExportThread != NULL && _ExportThread->isRunning())
         _ExportThread->terminate();
-    if (_LoadResourceThread != NULL && !_LoadResourceThread->isRunning())
+    if (_LoadResourceThread != NULL && _LoadResourceThread->isRunning())
         _LoadResourceThread->terminate();
 
     delete ui;
