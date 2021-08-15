@@ -144,7 +144,7 @@ void MainWindow::on_btnExportAll_clicked()
         ui->btnSettings->setEnabled(false);
         ui->tableWidget->setEnabled(false);
 
-        _ExportThread = QThread::create([this]() { SAM.ExportAll(_ExportPath); });
+        _ExportThread = QThread::create(&HAYDEN::SAMUEL::ExportAll, &SAM, _ExportPath);
 
         connect(_ExportThread, &QThread::finished, this, [this]() {
             // Re enable the GUI
@@ -202,7 +202,10 @@ void MainWindow::on_btnLoadResource_clicked()
         ui->btnSettings->setEnabled(false);
         ui->tableWidget->setEnabled(false);
 
-        _LoadResourceThread = QThread::create([this]() { SAM.LoadResource(_ResourcePath); });
+        _ApplicationPath = QCoreApplication::applicationFilePath().toStdString();
+        _ExportPath = fs::absolute(_ApplicationPath).replace_filename("exports").string();
+        _ResourcePath = fileName.toStdString();
+        _LoadResourceThread = QThread::create(&HAYDEN::SAMUEL::LoadResource, &SAM, _ResourcePath);
 
         connect(_LoadResourceThread, &QThread::finished, this, [this]() {
             // Populate the GUI
@@ -221,10 +224,6 @@ void MainWindow::on_btnLoadResource_clicked()
 
             _ResourceFileIsLoaded = 1;
         });
-
-        _ApplicationPath = QCoreApplication::applicationFilePath().toStdString();
-        _ExportPath = fs::absolute(_ApplicationPath).replace_filename("exports").string();
-        _ResourcePath = fileName.toStdString();
 
         // Load Resource Data into SAMUEL
         if (!SAM.Init(_ResourcePath))
