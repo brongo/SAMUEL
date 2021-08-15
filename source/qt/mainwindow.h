@@ -1,9 +1,12 @@
+#pragma once
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QMessageBox>
+
+#include <thread>
 
 #include "../core/SAMUEL.h"
 
@@ -28,6 +31,8 @@ class MainWindow : public QMainWindow
         void on_btnSettings_clicked();
 
     private:
+        QMessageBox _ExportStatusBox;
+        std::thread _ExportThread;
         std::string _ApplicationPath;
         std::string _ExportPath;
         std::string _ResourcePath;
@@ -37,7 +42,10 @@ class MainWindow : public QMainWindow
         Ui::MainWindow *ui;
 
         int  ConfirmExportAll();
+        int  ShowExportStatus();
         void PopulateGUIResourceTable();
+        void ExportInThread(HAYDEN::SAMUEL& SAM, const std::string exportPath);
+
 };
 
 #endif // MAINWINDOW_H

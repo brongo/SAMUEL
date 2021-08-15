@@ -1,15 +1,17 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
+// Public Functions
 MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 }
 MainWindow::~MainWindow()
 {
+    if (_ExportThread.joinable())
+        _ExportThread.join();
     delete ui;
 }
-
 void MainWindow::ThrowFatalError(std::string errorMessage, std::string errorDetail)
 {
     const QString qErrorMessage = QString::fromStdString(errorMessage);
@@ -34,21 +36,8 @@ void MainWindow::ThrowError(std::string errorMessage, std::string errorDetail)
     msgBox.exec();
     return;
 }
-int MainWindow::ConfirmExportAll() 
-{
-    const QString qErrorMessage = "Do you really want to export *everything* in this resource file?";
-    const QString qErrorDetail = "This will take some time.";
 
-    QMessageBox msgBox;
-    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-    msgBox.setDefaultButton(QMessageBox::Ok);
-    msgBox.setIcon(QMessageBox::Warning);
-    msgBox.setText(qErrorMessage);
-    msgBox.setInformativeText(qErrorDetail);
-    int result = 0;
-    result = msgBox.exec();
-    return result;
-}
+// Private Functions
 void MainWindow::PopulateGUIResourceTable()
 {
     // Clear any existing contents
@@ -97,7 +86,58 @@ void MainWindow::PopulateGUIResourceTable()
     tableHeader->setSectionResizeMode(0, QHeaderView::Stretch);
     return;
 }
+int MainWindow::ConfirmExportAll()
+{
+    const QString qErrorMessage = "Do you really want to export *everything* in this resource file?";
+    const QString qErrorDetail = "This can take up to 20-30 minutes.";
 
+    QMessageBox msgBox;
+    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Ok);
+    msgBox.setIcon(QMessageBox::Warning);
+    msgBox.setText(qErrorMessage);
+    msgBox.setInformativeText(qErrorDetail);
+    int result = 0;
+    result = msgBox.exec();
+    return result;
+}
+int MainWindow::ShowExportStatus()
+{
+    _ExportStatusBox.setStandardButtons(QMessageBox::Cancel);
+    _ExportStatusBox.setIcon(QMessageBox::Information);
+    _ExportStatusBox.setText("Export in progress, please wait...");
+    int result = 0;
+    result = _ExportStatusBox.exec();
+    return result;
+}
+void MainWindow::ExportInThread(HAYDEN::SAMUEL& SAM, const std::string exportPath)
+{
+    // Grey out/disable the buttons
+    ui->btnExportAll->setEnabled(false);
+    ui->btnExportSelected->setEnabled(false);
+    ui->btnLoadResource->setEnabled(false);
+    ui->btnSettings->setEnabled(false);
+    ui->tableWidget->setEnabled(false);
+
+    // Export files
+    SAM.ExportAll(exportPath);
+
+    // Re enable the GUI
+    ui->btnExportAll->setEnabled(true);
+    ui->btnExportSelected->setEnabled(true);
+    ui->btnLoadResource->setEnabled(true);
+    ui->btnSettings->setEnabled(true);
+    ui->tableWidget->setEnabled(true);
+
+    // Close progress box if open
+    if (_ExportStatusBox.isActiveWindow())
+        _ExportStatusBox.close();
+
+    return;
+}
+
+
+// Private Slots
 void MainWindow::on_btnSettings_clicked()
 {
     ThrowError("We do a little trolling.");
@@ -110,9 +150,13 @@ void MainWindow::on_btnExportAll_clicked()
         ThrowError("No .resource file is currently loaded.", "Please select a file using the \"Load Resource\" button first.");
         return;
     }
-        
     if (ConfirmExportAll() == 0x0400) // OK
-        SAM.ExportAll(_ExportPath);
+    {
+        _ExportThread = std::thread(&MainWindow::ExportInThread, this, std::ref(SAM), _ExportPath);
+        if (ShowExportStatus() == 0x00400000) // CANCEL
+            // NOT ACTUALLY GONNA USE THIS SINCE WE CANT CANCEL
+            return;
+    }
     return;
 }
 void MainWindow::on_btnExportSelected_clicked()
@@ -160,5 +204,3 @@ void MainWindow::on_btnLoadResource_clicked()
         _ResourceFileIsLoaded = 1;
     }
 }
-
-

@@ -1,5 +1,6 @@
 #include <QApplication>
 #include <QCommandLineParser>
+
 #include "../core/SAMUEL.h"
 #include "mainwindow.h"
 
