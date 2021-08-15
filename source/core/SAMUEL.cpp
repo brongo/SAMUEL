@@ -29,7 +29,7 @@ namespace HAYDEN
         #ifdef __linux__
         if (!fs::exists("liblinoodle.so"))
         {
-            ThrowError(1, "Error: Could not find liblinoodle.so in the current directory.");
+            ThrowError(1, "SAMUEL requires you to manually copy liblinoodle.so from Doom Eternal's \"base\" folder and place it in the same directory as SAMUEL. Please do this, and then run the SAMUEL program again.");
             return 0;
         }
         #endif
