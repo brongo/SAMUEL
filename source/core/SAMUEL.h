@@ -19,15 +19,17 @@ namespace HAYDEN
 		public:
             bool CheckDependencies();
             bool Init(const std::string resourcePath);
-			void LoadResource(const std::string fileName);
+            bool LoadResource(const std::string fileName);
 			void ExportAll(const std::string outputDirectory);
             void ExportSelected(const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList);
+            bool GetResourceErrorCode() { return _HasResourceLoadError; }
             std::string GetLastErrorMessage() { return _LastErrorMessage; }
             std::string GetLastErrorDetail() { return _LastErrorDetail; }
             ResourceFile GetResourceFile() { return _ResourceFile; }
 
 		private:
             bool _HasFatalError = 0;
+            bool _HasResourceLoadError = 0;
             std::string _LastErrorMessage;
             std::string _LastErrorDetail;
             std::string _BasePath;

@@ -67,7 +67,7 @@ namespace HAYDEN
         }
         catch (...)
         {
-            fprintf(stderr, "Error: Failed to load packagemapspec.json.\n");
+            ThrowError(1,"Failed to load packagemapspec.json.");
             return;
         }
     }
@@ -116,17 +116,26 @@ namespace HAYDEN
     }
 
     // Public API functions - SAMUEL
-    void SAMUEL::LoadResource(const std::string inputFile)
+    bool SAMUEL::LoadResource(const std::string inputFile)
     {
+        _HasResourceLoadError = 0;
         try
         {
+            if (inputFile.rfind(".resources") == -1)
+            {
+                ThrowError(0,"Not a valid .resources file.", "Please load a file with the .resources or .resources.backup file extension.");
+                _HasResourceLoadError = 1;
+                return 0;
+            }
+
             // load .resources file data
             _ResourceFile = ResourceFile(inputFile, 0);
         }
         catch (...)
         {
-            fprintf(stderr, "Error: Failed to read .resource file %s.\n", inputFile.c_str());
-            return;
+            ThrowError(0,"Failed to read .resources file.","Please load a file with the .resources or .resources.backup file extension.");
+            _HasResourceLoadError = 1;
+            return 0;
         }
 
         try
@@ -138,7 +147,7 @@ namespace HAYDEN
         catch (...)
         {
             fprintf(stderr, "Error: Failed to read .streamdb list from packagemapspec.json.\n");
-            return;
+            return 0;
         }
 
         try
@@ -148,10 +157,10 @@ namespace HAYDEN
         }
         catch (...)
         {
-            fprintf(stderr, "Error: Failed to read .streamdb file data.\n");
-            return;
+            ThrowError(1,"Failed to read .streamdb file data.");
+            return 0;
         }
-        return;
+        return 1;
     }
     void SAMUEL::ExportAll(const std::string outputDirectory)
     {
