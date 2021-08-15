@@ -30,6 +30,7 @@ class MainWindow : public QMainWindow
         void on_btnSettings_clicked();
 
     private:
+        QMessageBox _LoadStatusBox;
         QMessageBox _ExportStatusBox;
         QThread* _ExportThread;
         std::string _ApplicationPath;
@@ -41,6 +42,7 @@ class MainWindow : public QMainWindow
         Ui::MainWindow *ui;
 
         int  ConfirmExportAll();
+        int  ShowLoadStatus();
         int  ShowExportStatus();
         void PopulateGUIResourceTable();
         void ExportInThread(HAYDEN::SAMUEL& SAM, const std::string exportPath);
