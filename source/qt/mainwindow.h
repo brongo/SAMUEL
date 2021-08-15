@@ -5,8 +5,7 @@
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QMessageBox>
-
-#include <thread>
+#include <QThread>
 
 #include "../core/SAMUEL.h"
 
@@ -31,8 +30,10 @@ class MainWindow : public QMainWindow
         void on_btnSettings_clicked();
 
     private:
+        QMessageBox _LoadStatusBox;
         QMessageBox _ExportStatusBox;
-        std::thread _ExportThread;
+        QThread* _LoadResourceThread;
+        QThread* _ExportThread;
         std::string _ApplicationPath;
         std::string _ExportPath;
         std::string _ResourcePath;
@@ -42,6 +43,7 @@ class MainWindow : public QMainWindow
         Ui::MainWindow *ui;
 
         int  ConfirmExportAll();
+        int  ShowLoadStatus();
         int  ShowExportStatus();
         void PopulateGUIResourceTable();
         void ExportInThread(HAYDEN::SAMUEL& SAM, const std::string exportPath);

@@ -8,8 +8,11 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
 }
 MainWindow::~MainWindow()
 {
-    if (_ExportThread.joinable())
-        _ExportThread.join();
+    if (!_ExportThread->isFinished())
+        _ExportThread->terminate();
+    if (!_LoadResourceThread->isFinished())
+        _LoadResourceThread->terminate();
+
     delete ui;
 }
 void MainWindow::ThrowFatalError(std::string errorMessage, std::string errorDetail)
@@ -101,6 +104,15 @@ int MainWindow::ConfirmExportAll()
     result = msgBox.exec();
     return result;
 }
+int MainWindow::ShowLoadStatus()
+{
+    _LoadStatusBox.setStandardButtons(QMessageBox::Cancel);
+    _LoadStatusBox.setIcon(QMessageBox::Information);
+    _LoadStatusBox.setText("Loading resource, please wait...");
+    int result = 0;
+    result = _LoadStatusBox.exec();
+    return result;
+}
 int MainWindow::ShowExportStatus()
 {
     _ExportStatusBox.setStandardButtons(QMessageBox::Cancel);
@@ -110,33 +122,6 @@ int MainWindow::ShowExportStatus()
     result = _ExportStatusBox.exec();
     return result;
 }
-void MainWindow::ExportInThread(HAYDEN::SAMUEL& SAM, const std::string exportPath)
-{
-    // Grey out/disable the buttons
-    ui->btnExportAll->setEnabled(false);
-    ui->btnExportSelected->setEnabled(false);
-    ui->btnLoadResource->setEnabled(false);
-    ui->btnSettings->setEnabled(false);
-    ui->tableWidget->setEnabled(false);
-
-    // Export files
-    SAM.ExportAll(exportPath);
-
-    // Re enable the GUI
-    ui->btnExportAll->setEnabled(true);
-    ui->btnExportSelected->setEnabled(true);
-    ui->btnLoadResource->setEnabled(true);
-    ui->btnSettings->setEnabled(true);
-    ui->tableWidget->setEnabled(true);
-
-    // Close progress box if open
-    if (_ExportStatusBox.isActiveWindow())
-        _ExportStatusBox.close();
-
-    return;
-}
-
-
 // Private Slots
 void MainWindow::on_btnSettings_clicked()
 {
@@ -152,10 +137,32 @@ void MainWindow::on_btnExportAll_clicked()
     }
     if (ConfirmExportAll() == 0x0400) // OK
     {
-        _ExportThread = std::thread(&MainWindow::ExportInThread, this, std::ref(SAM), _ExportPath);
+        // Grey out/disable the buttons
+        ui->btnExportAll->setEnabled(false);
+        ui->btnExportSelected->setEnabled(false);
+        ui->btnLoadResource->setEnabled(false);
+        ui->btnSettings->setEnabled(false);
+        ui->tableWidget->setEnabled(false);
+
+        _ExportThread = QThread::create([this]() { SAM.ExportAll(_ExportPath); });
+
+        connect(_ExportThread, &QThread::finished, this, [this]() {
+            // Re enable the GUI
+            ui->btnExportAll->setEnabled(true);
+            ui->btnExportSelected->setEnabled(true);
+            ui->btnLoadResource->setEnabled(true);
+            ui->btnSettings->setEnabled(true);
+            ui->tableWidget->setEnabled(true);
+
+            // Close progress box if open
+            if (_ExportStatusBox.isVisible())
+                _ExportStatusBox.close();
+        });
+
+        _ExportThread->start();
+
         if (ShowExportStatus() == 0x00400000) // CANCEL
-            // NOT ACTUALLY GONNA USE THIS SINCE WE CANT CANCEL
-            return;
+            _ExportThread->terminate();
     }
     return;
 }
@@ -188,6 +195,33 @@ void MainWindow::on_btnLoadResource_clicked()
     const QString fileName = QFileDialog::getOpenFileName(this);
     if (!fileName.isEmpty())
     {
+        // Grey out/disable the buttons
+        ui->btnExportAll->setEnabled(false);
+        ui->btnExportSelected->setEnabled(false);
+        ui->btnLoadResource->setEnabled(false);
+        ui->btnSettings->setEnabled(false);
+        ui->tableWidget->setEnabled(false);
+
+        _LoadResourceThread = QThread::create([this]() { SAM.LoadResource(_ResourcePath); });
+
+        connect(_LoadResourceThread, &QThread::finished, this, [this]() {
+            // Populate the GUI
+            PopulateGUIResourceTable();
+
+            // Re enable the GUI
+            ui->btnExportAll->setEnabled(true);
+            ui->btnExportSelected->setEnabled(true);
+            ui->btnLoadResource->setEnabled(true);
+            ui->btnSettings->setEnabled(true);
+            ui->tableWidget->setEnabled(true);
+
+            // Close progress box if open
+            if (_LoadStatusBox.isVisible())
+                _LoadStatusBox.close();
+
+            _ResourceFileIsLoaded = 1;
+        });
+
         _ApplicationPath = QCoreApplication::applicationFilePath().toStdString();
         _ExportPath = fs::absolute(_ApplicationPath).replace_filename("exports").string();
         _ResourcePath = fileName.toStdString();
@@ -199,8 +233,9 @@ void MainWindow::on_btnLoadResource_clicked()
             return;
         }
 
-        SAM.LoadResource(_ResourcePath);
-        PopulateGUIResourceTable();
-        _ResourceFileIsLoaded = 1;
+        _LoadResourceThread->start();
+
+        if (ShowLoadStatus() == 0x00400000) // CANCEL
+            _LoadResourceThread->terminate();
     }
 }
