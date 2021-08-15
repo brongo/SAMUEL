@@ -22,7 +22,7 @@ namespace HAYDEN
     {
         if (!fs::exists("oo2core_8_win64.dll"))
         {
-            ThrowError(1, "Error: Could not find oo2core_8_win64.dll in the current directory.");
+            ThrowError(1, "SAMUEL requires you to manually copy oo2core_8_win64.dll from Doom Eternal's installation folder and place it in the same folder as SAMUEL.exe. Please do this, and then run SAMUEL.exe again.");
             return 0;
         }
 
