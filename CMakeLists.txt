@@ -56,7 +56,8 @@ else()
     endif()
 endif()
 
-target_link_libraries(SAMUEL PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(SAMUEL PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CMAKE_DL_LIBS})
+set(CMAKE_CXX_FLAGS "-pthread")
 
 set_target_properties(SAMUEL PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com

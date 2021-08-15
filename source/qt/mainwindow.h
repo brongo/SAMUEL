@@ -5,8 +5,7 @@
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QMessageBox>
-
-#include <thread>
+#include <QThread>
 
 #include "../core/SAMUEL.h"
 
@@ -32,7 +31,7 @@ class MainWindow : public QMainWindow
 
     private:
         QMessageBox _ExportStatusBox;
-        std::thread _ExportThread;
+        QThread* _ExportThread;
         std::string _ApplicationPath;
         std::string _ExportPath;
         std::string _ResourcePath;

@@ -8,8 +8,8 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
 }
 MainWindow::~MainWindow()
 {
-    if (_ExportThread.joinable())
-        _ExportThread.join();
+    if (!_ExportThread->isFinished())
+        _ExportThread->wait();
     delete ui;
 }
 void MainWindow::ThrowFatalError(std::string errorMessage, std::string errorDetail)
@@ -152,10 +152,34 @@ void MainWindow::on_btnExportAll_clicked()
     }
     if (ConfirmExportAll() == 0x0400) // OK
     {
-        _ExportThread = std::thread(&MainWindow::ExportInThread, this, std::ref(SAM), _ExportPath);
+        // Grey out/disable the buttons
+        ui->btnExportAll->setEnabled(false);
+        ui->btnExportSelected->setEnabled(false);
+        ui->btnLoadResource->setEnabled(false);
+        ui->btnSettings->setEnabled(false);
+        ui->tableWidget->setEnabled(false);
+
+        _ExportThread = QThread::create([this]() {
+            SAM.ExportAll(_ExportPath);
+        });
+
+        connect(_ExportThread, &QThread::finished, this, [this] () {
+            // Re enable the GUI
+            ui->btnExportAll->setEnabled(true);
+            ui->btnExportSelected->setEnabled(true);
+            ui->btnLoadResource->setEnabled(true);
+            ui->btnSettings->setEnabled(true);
+            ui->tableWidget->setEnabled(true);
+
+            // Close progress box if open
+            if (_ExportStatusBox.isActiveWindow())
+                _ExportStatusBox.close();
+        });
+
+        _ExportThread->start();
+
         if (ShowExportStatus() == 0x00400000) // CANCEL
-            // NOT ACTUALLY GONNA USE THIS SINCE WE CANT CANCEL
-            return;
+            _ExportThread->quit();
     }
     return;
 }
