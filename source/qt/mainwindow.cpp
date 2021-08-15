@@ -8,9 +8,9 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
 }
 MainWindow::~MainWindow()
 {
-    if (!_ExportThread->isFinished())
+    if (_ExportThread != NULL && _ExportThread->isRunning())
         _ExportThread->terminate();
-    if (!_LoadResourceThread->isFinished())
+    if (_LoadResourceThread != NULL && !_LoadResourceThread->isRunning())
         _LoadResourceThread->terminate();
 
     delete ui;
@@ -161,7 +161,7 @@ void MainWindow::on_btnExportAll_clicked()
 
         _ExportThread->start();
 
-        if (ShowExportStatus() == 0x00400000) // CANCEL
+        if (ShowExportStatus() == 0x00400000 && _ExportThread->isRunning()) // CANCEL
             _ExportThread->terminate();
     }
     return;
@@ -235,7 +235,7 @@ void MainWindow::on_btnLoadResource_clicked()
 
         _LoadResourceThread->start();
 
-        if (ShowLoadStatus() == 0x00400000) // CANCEL
+        if (ShowLoadStatus() == 0x00400000 && _LoadResourceThread->isRunning()) // CANCEL
             _LoadResourceThread->terminate();
     }
 }
