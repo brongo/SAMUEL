@@ -6,7 +6,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QThread>
-
+#include <QTableWidgetItem>
 #include "../core/SAMUEL.h"
 
 QT_BEGIN_NAMESPACE
@@ -27,8 +27,9 @@ class MainWindow : public QMainWindow
         void on_btnLoadResource_clicked();
         void on_btnExportAll_clicked();
         void on_btnExportSelected_clicked();
+        void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
 
-    private:
+private:
         QMessageBox _LoadStatusBox;
         QMessageBox _ExportStatusBox;
         QThread* _LoadResourceThread = NULL;

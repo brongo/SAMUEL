@@ -260,3 +260,8 @@ void MainWindow::on_btnLoadResource_clicked()
             _LoadResourceThread->terminate();
     }
 }
+void MainWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
+{
+    on_btnExportSelected_clicked();
+    return;
+}
