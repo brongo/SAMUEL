@@ -60,4 +60,41 @@ namespace HAYDEN
 
         return std::vector<byte>(output.begin(), output.begin() + outbytes);
     }
+
+    // Recursive mkdir, bypassing PATH_MAX limitations on Windows
+    bool mkpath(const fs::path& path)
+    {
+#ifdef __linux__
+        // Use filesystem function on Linux
+        return fs::create_directories(path);
+#else
+        // Get full path in wide string - needed for PATH_MAX bypass
+        std::wstring dirPath = fs::absolute(path).wstring();
+        std::vector<std::wstring> dirPathSections = { dirPath };
+        size_t backwardSlashIndex;
+
+        // Get all directories to make
+        // For example, if the path is "C:\\foo\bar" the directories to create are "C:\", "C:\foo", "C:\foo\bar"
+        while ((backwardSlashIndex = dirPath.rfind('\\')) != std::string::npos) {
+            dirPath = dirPath.substr(0, backwardSlashIndex);
+            dirPathSections.push_back(dirPath);
+        }
+
+        // Reverse directory order to start from lowest
+        std::reverse(dirPathSections.begin(), dirPathSections.end());
+
+        // Make directories
+        for (auto &path : dirPathSections) {
+            if (fs::is_directory(path))
+                continue;
+
+            // "\\?\" alongside the wide string functions is used to bypass PATH_MAX
+            // Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details
+            if (_wmkdir((L"\\\\?\\" + path).c_str()) == -1 && errno != EEXIST)
+                return 0;
+        }
+
+        return 1;
+#endif
+    }
 }

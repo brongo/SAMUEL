@@ -366,7 +366,11 @@ namespace HAYDEN
             folderPath.remove_filename();
 
             if (!fs::exists(folderPath))
-                if (!fs::create_directories(folderPath)) {}
+                if (!mkpath(folderPath)) {
+                    fprintf(stderr, "Error: Failed to create directories for file: %s \n", fullPath.string().c_str());
+                    errorCount++;
+                    continue;
+                }
 
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
             if (outFile == NULL)
@@ -424,7 +428,11 @@ namespace HAYDEN
             folderPath.remove_filename();
 
             if (!fs::exists(folderPath))
-                if (!fs::create_directories(folderPath)) {}
+                if (!mkpath(folderPath)) {
+                    fprintf(stderr, "Error: Failed to create directories for file: %s \n", fullPath.string().c_str());
+                    errorCount++;
+                    continue;
+                }
 
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
             if (outFile == NULL)
@@ -481,7 +489,11 @@ namespace HAYDEN
             folderPath.remove_filename();
 
             if (!fs::exists(folderPath))
-                if (!fs::create_directories(folderPath)) {}
+                if (!mkpath(folderPath)) {
+                    fprintf(stderr, "Error: Failed to create directories for file: %s \n", fullPath.string().c_str());
+                    errorCount++;
+                    continue;
+                }
 
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
             if (outFile == NULL)
