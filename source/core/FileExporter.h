@@ -44,7 +44,6 @@ namespace HAYDEN
 
 		private:
 			int _FileType = 0;
-			std::string _ResourceFileName;
 			std::vector<FileExportItem> _ExportItems;
 			std::vector<EmbeddedTGAHeader> _TGAHeaderData;
 			std::vector<EmbeddedMD6Header> _MD6HeaderData;
@@ -74,6 +73,7 @@ namespace HAYDEN
 
 		private:
 			std::string _OutDir;
+			std::string _ResourceFilePath;
 			FileExportList _TGAExportList;
 			FileExportList _MD6ExportList;
 			FileExportList _LWOExportList;
@@ -81,6 +81,7 @@ namespace HAYDEN
 			// FileExporter Subroutines
 			std::vector<byte> GetBinaryFileFromStreamDB(const FileExportItem& fileExportInfo, const StreamDBFile& streamDBFile);
 			fs::path BuildOutputPath(const std::string filepath);
+			std::string GetResourceFolder();
 
 			// Debug Functions
 			void PrintMatchesToCSV(std::vector<FileExportItem>& fileExportList) const;

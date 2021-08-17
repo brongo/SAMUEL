@@ -235,7 +235,6 @@ namespace HAYDEN
     FileExportList::FileExportList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, int fileType, std::vector<std::string> selectedFileNames, bool exportFromList)
     {
         _FileType = fileType;
-        _ResourceFileName = resourceFile.filename;
         GetResourceEntries(resourceFile, selectedFileNames, exportFromList);
         ParseEmbeddedFileHeaders(resourceFile);
         GetStreamDBIndexAndSize();
@@ -255,9 +254,31 @@ namespace HAYDEN
     }
     fs::path FileExporter::BuildOutputPath(const std::string filePath)
     {
-        fs::path outputPath = _OutDir / fs::path(filePath);
+        std::string resourceFolder = GetResourceFolder();
+        fs::path resourcePath = _OutDir + (char)fs::path::preferred_separator + resourceFolder;
+        fs::path outputPath = resourcePath / fs::path(filePath);
         outputPath.make_preferred();
         return outputPath;
+    }
+    std::string FileExporter::GetResourceFolder()
+    {
+        std::string resourceFolder; 
+        size_t offset1 = _ResourceFilePath.rfind("/");
+        size_t offset2 = _ResourceFilePath.rfind(".");
+        
+        // this shouldn't happen, but if it somehow does, we just won't use the resourceFolder in our export path.
+        if (offset1 < 8 || offset2 < offset1)
+            return resourceFolder;
+
+        // get only the resource folder name, without path or file extension
+        size_t length = offset2 - offset1;
+        resourceFolder = _ResourceFilePath.substr(offset1 + 1, length - 1);
+
+        // separates dlc hub from regular hub folder
+        if (_ResourceFilePath.substr(offset1 - 8, 8) == "/dlc/hub")
+            resourceFolder = "dlc_" + resourceFolder;
+
+        return resourceFolder;
     }
 
     // FileExporter - Debug Functions
@@ -538,6 +559,8 @@ namespace HAYDEN
     void FileExporter::Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory)
     {
         _OutDir = outputDirectory;
+        _ResourceFilePath = resourceFile.filename;
+
         _TGAExportList = FileExportList(resourceFile, streamDBFiles, 21);
         _MD6ExportList = FileExportList(resourceFile, streamDBFiles, 31);
         _LWOExportList = FileExportList(resourceFile, streamDBFiles, 67);
@@ -580,6 +603,9 @@ namespace HAYDEN
     }
     void FileExporter::InitFromList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList)
     {
+        _OutDir = outputDirectory;
+        _ResourceFilePath = resourceFile.filename;
+
         std::vector<std::string> userSelectedTGAFiles;
         std::vector<std::string> userSelectedMD6Files;
         std::vector<std::string> userSelectedLWOFiles;
@@ -603,8 +629,7 @@ namespace HAYDEN
                     break;
             }
         }
-
-        _OutDir = outputDirectory;
+        
         _TGAExportList = FileExportList(resourceFile, streamDBFiles, 21, userSelectedTGAFiles, 1);
         _MD6ExportList = FileExportList(resourceFile, streamDBFiles, 31, userSelectedMD6Files, 1);
         _LWOExportList = FileExportList(resourceFile, streamDBFiles, 67, userSelectedLWOFiles, 1);
