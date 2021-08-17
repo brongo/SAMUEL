@@ -366,9 +366,21 @@ namespace HAYDEN
             folderPath.remove_filename();
 
             if (!fs::exists(folderPath))
-                if (!fs::create_directories(folderPath)) {}
+                if (!mkpath(folderPath)) {
+                    fprintf(stderr, "Error: Failed to create directories for file: %s \n", fullPath.string().c_str());
+                    errorCount++;
+                    continue;
+                }
 
+#ifdef _WIN32
+            // "\\?\" alongside the wide string functions is used to bypass PATH_MAX
+            // Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details
+            std::wstring outFilePath = L"\\\\?\\" + fullPath.wstring();
+            FILE* outFile = _wfopen(outFilePath.c_str(), L"wb");
+#else
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
+#endif
+
             if (outFile == NULL)
             {
                 fprintf(stderr, "Error: Failed to open file for writing: %s \n", fullPath.string().c_str());
@@ -424,9 +436,21 @@ namespace HAYDEN
             folderPath.remove_filename();
 
             if (!fs::exists(folderPath))
-                if (!fs::create_directories(folderPath)) {}
+                if (!mkpath(folderPath)) {
+                    fprintf(stderr, "Error: Failed to create directories for file: %s \n", fullPath.string().c_str());
+                    errorCount++;
+                    continue;
+                }
 
+#ifdef _WIN32
+            // "\\?\" alongside the wide string functions is used to bypass PATH_MAX
+            // Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details
+            std::wstring outFilePath = L"\\\\?\\" + fullPath.wstring();
+            FILE* outFile = _wfopen(outFilePath.c_str(), L"wb");
+#else
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
+#endif
+
             if (outFile == NULL)
             {
                 fprintf(stderr, "Error: Failed to open file for writing: %s \n", fullPath.string().c_str());
@@ -481,9 +505,21 @@ namespace HAYDEN
             folderPath.remove_filename();
 
             if (!fs::exists(folderPath))
-                if (!fs::create_directories(folderPath)) {}
+                if (!mkpath(folderPath)) {
+                    fprintf(stderr, "Error: Failed to create directories for file: %s \n", fullPath.string().c_str());
+                    errorCount++;
+                    continue;
+                }
 
+#ifdef _WIN32
+            // "\\?\" alongside the wide string functions is used to bypass PATH_MAX
+            // Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details
+            std::wstring outFilePath = L"\\\\?\\" + fullPath.wstring();
+            FILE* outFile = _wfopen(outFilePath.c_str(), L"wb");
+#else
             FILE* outFile = fopen(fullPath.string().c_str(), "wb");
+#endif
+
             if (outFile == NULL)
             {
                 fprintf(stderr, "Error: Failed to open file for writing: %s \n", fullPath.string().c_str());

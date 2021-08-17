@@ -1,6 +1,7 @@
 #pragma once
 
 #ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #endif
 
@@ -38,4 +39,7 @@ namespace HAYDEN
 
     // oodle functions
     std::vector<byte> oodleDecompress(std::vector<byte> compressedData, const uint64 decompressedSize);
+
+    // Recursive mkdir, bypassing PATH_MAX limitations on Windows
+    bool mkpath(const fs::path& path);
 }
