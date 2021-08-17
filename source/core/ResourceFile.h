@@ -2,7 +2,7 @@
 
 #ifdef _WIN32
 #include <WinSock2.h> // Additional dependencies: ws2_32.lib - for ntohl
-#elif defined __linux__
+#else
 #include <arpa/inet.h>
 #endif
 

@@ -1,9 +1,4 @@
-#ifndef _WIN32
-#include <dlfcn.h>
-#endif
-
 #include "Utilities.h"
-#include <iostream>
 
 namespace HAYDEN
 {
