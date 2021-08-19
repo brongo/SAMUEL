@@ -165,17 +165,17 @@ namespace HAYDEN
     void SAMUEL::ExportAll(const std::string outputDirectory)
     {
         _Exporter.Init(_ResourceFile, _StreamDBFileData, outputDirectory);
-        _Exporter.ExportTGAFiles(_StreamDBFileData);
-        _Exporter.ExportMD6Files(_StreamDBFileData);
-        _Exporter.ExportLWOFiles(_StreamDBFileData);
+        _Exporter.ExportFiles(_StreamDBFileData, "TGA");
+        _Exporter.ExportFiles(_StreamDBFileData, "MD6");
+        _Exporter.ExportFiles(_StreamDBFileData, "LWO");
         return;
     }
     void SAMUEL::ExportSelected(const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList)
     {
         _Exporter.InitFromList(_ResourceFile, _StreamDBFileData, outputDirectory, userSelectedFileList);
-        _Exporter.ExportTGAFiles(_StreamDBFileData);
-        _Exporter.ExportMD6Files(_StreamDBFileData);
-        _Exporter.ExportLWOFiles(_StreamDBFileData);
+        _Exporter.ExportFiles(_StreamDBFileData, "TGA");
+        _Exporter.ExportFiles(_StreamDBFileData, "MD6");
+        _Exporter.ExportFiles(_StreamDBFileData, "LWO");
         return;
     }
     bool SAMUEL::CheckDependencies()

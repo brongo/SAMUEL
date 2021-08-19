@@ -252,20 +252,12 @@ namespace HAYDEN
 
         return fileData;
     }
-    fs::path FileExporter::BuildOutputPath(const std::string filePath)
-    {
-        std::string resourceFolder = GetResourceFolder();
-        fs::path resourcePath = _OutDir + (char)fs::path::preferred_separator + resourceFolder;
-        fs::path outputPath = resourcePath / fs::path(filePath);
-        outputPath.make_preferred();
-        return outputPath;
-    }
     std::string FileExporter::GetResourceFolder()
     {
-        std::string resourceFolder; 
+        std::string resourceFolder;
         size_t offset1 = _ResourceFilePath.rfind("/");
         size_t offset2 = _ResourceFilePath.rfind(".");
-        
+
         // this shouldn't happen, but if it somehow does, we just won't use the resourceFolder in our export path.
         if (offset1 < 8 || offset2 < offset1)
             return resourceFolder;
@@ -279,6 +271,53 @@ namespace HAYDEN
             resourceFolder = "dlc_" + resourceFolder;
 
         return resourceFolder;
+    }
+    fs::path FileExporter::BuildOutputPath(const std::string filePath)
+    {
+        std::string resourceFolder = GetResourceFolder();
+        fs::path resourcePath = _OutDir + (char)fs::path::preferred_separator + resourceFolder;
+        fs::path outputPath = resourcePath / fs::path(filePath);
+        outputPath.make_preferred();
+        return outputPath;
+    }
+    void FileExporter::WriteFileToDisk(FileExportList* fileExportList, const fs::path& fullPath, const std::vector<byte>& fileData, const std::vector<byte>& headerData)
+    {
+        fs::path folderPath = fullPath;
+        folderPath.remove_filename();
+
+        // create output directories if needed
+        if (!fs::exists(folderPath))
+        {
+            if (!mkpath(folderPath))
+            {
+                fprintf(stderr, "Error: Failed to create directories for file: %s \n", fullPath.string().c_str());
+                fileExportList->errorCount++;
+                return;
+            }
+        }
+
+        // open file for writing
+        #ifdef _WIN32
+        FILE* outFile = openLongFilePathWin32(fullPath); //wb
+        #else
+        FILE* outFile = fopen(fullPath.string().c_str(), "wb");
+        #endif
+
+        if (outFile == NULL)
+        {
+            fprintf(stderr, "Error: Failed to open file for writing: %s \n", fullPath.string().c_str());
+            fileExportList->errorCount++;
+            return;
+        }
+
+        // optional parameter, used for generated DDS headers
+        if (headerData.size() > 0)
+            fwrite(headerData.data(), headerData.size(), 1, outFile);
+
+        // write actual file contents
+        fwrite(fileData.data(), fileData.size(), 1, outFile);
+        fclose(outFile);
+        return;
     }
 
     // FileExporter - Debug Functions
@@ -334,31 +373,38 @@ namespace HAYDEN
     }
 
     // FileExporter - Export Functions
-    void FileExporter::ExportTGAFiles(const std::vector<StreamDBFile>& streamDBFiles)
+    void FileExporter::ExportFiles(const std::vector<StreamDBFile>& streamDBFiles, std::string fileType)
     {
-        int notFound = 0;
-        int errorCount = 0;
-        
-        std::vector<FileExportItem> tgaFilesToExport = _TGAExportList.GetFileExportItems();
-        printf("Now exporting %llu TGA files.\n", tgaFilesToExport.size());
-        
-        for (int i = 0; i < tgaFilesToExport.size(); i++)
+        FileExportList* fileExportList = NULL;
+        std::vector<FileExportItem> fileExportItems;
+
+        if (fileType == "TGA")
+            fileExportList = &_TGAExportList;
+        else if (fileType == "MD6")
+            fileExportList = &_MD6ExportList;
+        else
+            fileExportList = &_LWOExportList;
+
+        fileExportItems = fileExportList->GetFileExportItems(); 
+
+        for (int i = 0; i < fileExportItems.size(); i++)
         {
             std::vector<byte> fileData;
-            FileExportItem& thisFile = tgaFilesToExport[i];
+            FileExportItem& thisFile = fileExportItems[i];
 
+            // Don't try to export resources that weren't found
             if (thisFile.streamDBNumber == -1 && thisFile.isStreamed == 1)
             {
-                notFound++;
+                fileExportList->notFound++;
                 continue;
             }
 
-            // streamed files: get data from .streamdb, decompress if needed.
+            // Get data from .streamdb, decompress if needed.
             if (thisFile.isStreamed == 1)
             {
                 const StreamDBFile& thisStreamDBFile = streamDBFiles[thisFile.streamDBNumber];
                 fileData = GetBinaryFileFromStreamDB(thisFile, thisStreamDBFile);
-
+                
                 // check if compressed
                 if (thisFile.streamDBSizeCompressed != thisFile.streamDBSizeDecompressed)
                 {
@@ -366,192 +412,32 @@ namespace HAYDEN
                     if (fileData.empty())
                     {
                         fprintf(stderr, "Error: Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
-                        errorCount++;
+                        fileExportList->errorCount++;
                         continue;
                     }
                 }
             }
 
-            // non-streamed files: get data from embedded TGA file we parsed already
-            if (thisFile.isStreamed == 0)
-                fileData = _TGAExportList.GetTGAFileData(i);
-            
-            // construct DDS file header
-            DDSHeaderBuilder ddsBuilder(thisFile.tgaPixelWidth, thisFile.tgaPixelHeight, thisFile.streamDBSizeDecompressed, static_cast<ImageType>(thisFile.tgaImageType));
-            std::vector<byte> ddsFileHeader = ddsBuilder.ConvertToByteVector();
+            // TGA files only
+            if (fileType == "TGA")
+            {
+                if (thisFile.isStreamed == 0)
+                    fileData = fileExportList->GetTGAFileData(i);
 
-            // parse filepath and create folders if necessary
-            thisFile.resourceFileName += ".dds";
+                DDSHeaderBuilder ddsBuilder(thisFile.tgaPixelWidth, thisFile.tgaPixelHeight, thisFile.streamDBSizeDecompressed, static_cast<ImageType>(thisFile.tgaImageType));
+                std::vector<byte> ddsFileHeader = ddsBuilder.ConvertToByteVector();
+                
+                // write to filesystem
+                fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
+                WriteFileToDisk(fileExportList, fullPath, fileData, ddsFileHeader);
+                continue;
+            }
+
+            // write to filesystem
             fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
-            fs::path folderPath = fullPath;
-            folderPath.remove_filename();
-
-            if (!fs::exists(folderPath))
-                if (!mkpath(folderPath)) {
-                    fprintf(stderr, "Error: Failed to create directories for file: %s \n", fullPath.string().c_str());
-                    errorCount++;
-                    continue;
-                }
-
-#ifdef _WIN32
-            // "\\?\" alongside the wide string functions is used to bypass PATH_MAX
-            // Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details
-            std::wstring outFilePath = L"\\\\?\\" + fullPath.wstring();
-            FILE* outFile = _wfopen(outFilePath.c_str(), L"wb");
-#else
-            FILE* outFile = fopen(fullPath.string().c_str(), "wb");
-#endif
-
-            if (outFile == NULL)
-            {
-                fprintf(stderr, "Error: Failed to open file for writing: %s \n", fullPath.string().c_str());
-                errorCount++;
-                continue;
-            }
-
-            fwrite(ddsFileHeader.data(), ddsFileHeader.size(), 1, outFile);
-            fwrite(fileData.data(), fileData.size(), 1, outFile);
-            fclose(outFile);
+            WriteFileToDisk(fileExportList, fullPath, fileData);        
         }
-        printf("Wrote %llu TGA files, %d not found, %d errors. \n", tgaFilesToExport.size(), notFound, errorCount);
-        return;
-    }
-    void FileExporter::ExportMD6Files(const std::vector<StreamDBFile>& streamDBFiles)
-    {
-        int notFound = 0;
-        int errorCount = 0;
-
-        std::vector<FileExportItem> md6FilesToExport = _MD6ExportList.GetFileExportItems();
-        printf("Now exporting %llu MD6 files.\n", md6FilesToExport.size());
-        
-        for (int i = 0; i < md6FilesToExport.size(); i++)
-        {
-            // Don't try to export resources that weren't found
-            if (md6FilesToExport[i].streamDBNumber == -1)
-            {
-                notFound++;
-                continue;
-            }
-
-            FileExportItem& thisFile = md6FilesToExport[i];
-            const StreamDBFile& thisStreamDBFile = streamDBFiles[thisFile.streamDBNumber];
-
-            // get binary file data from streamdb
-            std::vector<byte> fileData = GetBinaryFileFromStreamDB(thisFile, thisStreamDBFile);
-
-            // check if decompression is necessary
-            if (thisFile.streamDBSizeCompressed != thisFile.streamDBSizeDecompressed)
-            {
-                fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
-                if (fileData.empty())
-                {
-                    fprintf(stderr, "Error: Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
-                    errorCount++;
-                    continue;
-                }
-            }
-
-            // parse filepath and create folders if necessary
-            fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
-            fs::path folderPath = fullPath;
-            folderPath.remove_filename();
-
-            if (!fs::exists(folderPath))
-                if (!mkpath(folderPath)) {
-                    fprintf(stderr, "Error: Failed to create directories for file: %s \n", fullPath.string().c_str());
-                    errorCount++;
-                    continue;
-                }
-
-#ifdef _WIN32
-            // "\\?\" alongside the wide string functions is used to bypass PATH_MAX
-            // Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details
-            std::wstring outFilePath = L"\\\\?\\" + fullPath.wstring();
-            FILE* outFile = _wfopen(outFilePath.c_str(), L"wb");
-#else
-            FILE* outFile = fopen(fullPath.string().c_str(), "wb");
-#endif
-
-            if (outFile == NULL)
-            {
-                fprintf(stderr, "Error: Failed to open file for writing: %s \n", fullPath.string().c_str());
-                errorCount++;
-                continue;
-            }
-
-            fwrite(fileData.data(), fileData.size(), 1, outFile);
-            fclose(outFile);
-        }
-        printf("Wrote %llu MD6 files, %d not found, %d errors. \n", md6FilesToExport.size(), notFound, errorCount);
-        return;
-    }
-    void FileExporter::ExportLWOFiles(const std::vector<StreamDBFile>& streamDBFiles)
-    {
-        int notFound = 0;
-        int errorCount = 0;
-
-        std::vector<FileExportItem> lwoFilesToExport = _LWOExportList.GetFileExportItems();
-        printf("Now exporting %llu LWO files.\n", lwoFilesToExport.size());
-
-        for (int i = 0; i < lwoFilesToExport.size(); i++)
-        {
-            // Don't try to export resources that weren't found
-            if (lwoFilesToExport[i].streamDBNumber == -1)
-            {
-                notFound++;
-                continue;
-            }
-
-            FileExportItem& thisFile = lwoFilesToExport[i];
-            const StreamDBFile& thisStreamDBFile = streamDBFiles[thisFile.streamDBNumber];
-
-            // get binary file data from streamdb
-            std::vector<byte> fileData = GetBinaryFileFromStreamDB(thisFile, thisStreamDBFile);
-
-            // check if decompression is necessary
-            if (thisFile.streamDBSizeCompressed != thisFile.streamDBSizeDecompressed)
-            {
-                fileData = oodleDecompress(fileData, thisFile.streamDBSizeDecompressed);
-                if (fileData.empty())
-                {
-                    fprintf(stderr, "Error: Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
-                    errorCount++;
-                    continue;
-                }
-            }
-
-            // parse filepath and create folders if necessary
-            fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
-            fs::path folderPath = fullPath;
-            folderPath.remove_filename();
-
-            if (!fs::exists(folderPath))
-                if (!mkpath(folderPath)) {
-                    fprintf(stderr, "Error: Failed to create directories for file: %s \n", fullPath.string().c_str());
-                    errorCount++;
-                    continue;
-                }
-
-#ifdef _WIN32
-            // "\\?\" alongside the wide string functions is used to bypass PATH_MAX
-            // Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details
-            std::wstring outFilePath = L"\\\\?\\" + fullPath.wstring();
-            FILE* outFile = _wfopen(outFilePath.c_str(), L"wb");
-#else
-            FILE* outFile = fopen(fullPath.string().c_str(), "wb");
-#endif
-
-            if (outFile == NULL)
-            {
-                fprintf(stderr, "Error: Failed to open file for writing: %s \n", fullPath.string().c_str());
-                errorCount++;
-                continue;
-            }
-
-            fwrite(fileData.data(), fileData.size(), 1, outFile);
-            fclose(outFile);
-        }
-        printf("Wrote %llu LWO files, %d not found, %d errors. \n", lwoFilesToExport.size(), notFound, errorCount);
+        printf("Wrote %llu %s files, %d not found, %d errors. \n", fileExportItems.size(), fileType.c_str(), fileExportList->notFound, fileExportList->errorCount);
         return;
     }
 
@@ -636,18 +522,6 @@ namespace HAYDEN
         std::vector<FileExportItem> tgaFilesToExport = _TGAExportList.GetFileExportItems();
         std::vector<FileExportItem> md6FilesToExport = _MD6ExportList.GetFileExportItems();
         std::vector<FileExportItem> lwoFilesToExport = _LWOExportList.GetFileExportItems();
-
-        // debug tga export
-        // PrintMatchesToCSV(tgaFilesToExport);
-        // PrintUnmatchedToCSV(tgaFilesToExport);
-
-        // debug md6 export
-        // PrintMatchesToCSV(md6FilesToExport);
-        // PrintUnmatchedToCSV(md6FilesToExport);
-
-        // debug lwo export
-        // PrintMatchesToCSV(lwoFilesToExport);
-        // PrintUnmatchedToCSV(lwoFilesToExport);
 
         // get total size of files to export
         size_t totalExportSize = 0;

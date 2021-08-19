@@ -37,6 +37,8 @@ namespace HAYDEN
 	class FileExportList
 	{
 		public:
+			int errorCount = 0;
+			int notFound = 0;
 			FileExportList() {};
             FileExportList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, int fileType, std::vector<std::string> selectedFileNames = std::vector<std::string>(), bool exportFromList = 0);
 			std::vector<FileExportItem> GetFileExportItems() { return _ExportItems; }
@@ -57,8 +59,7 @@ namespace HAYDEN
             void GetResourceEntries(const ResourceFile& resourceFile, std::vector<std::string> selectedFileNames = std::vector<std::string>(), bool exportFromList = 0);
 			void ParseEmbeddedFileHeaders(const ResourceFile& resourceFile);
 			void GetStreamDBIndexAndSize();	
-			void GetStreamDBFileOffsets(const std::vector<StreamDBFile>& streamDBFiles);		
-			
+			void GetStreamDBFileOffsets(const std::vector<StreamDBFile>& streamDBFiles);					
 	};
 
 	class FileExporter
@@ -67,9 +68,7 @@ namespace HAYDEN
 			FileExporter() {};
             void Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory);
             void InitFromList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList);
-			void ExportTGAFiles(const std::vector<StreamDBFile>& streamDBFiles);
-			void ExportMD6Files(const std::vector<StreamDBFile>& streamDBFiles);
-			void ExportLWOFiles(const std::vector<StreamDBFile>& streamDBFiles);
+			void ExportFiles(const std::vector<StreamDBFile>& streamDBFiles, std::string fileType);
 
 		private:
 			std::string _OutDir;
@@ -82,6 +81,7 @@ namespace HAYDEN
 			std::vector<byte> GetBinaryFileFromStreamDB(const FileExportItem& fileExportInfo, const StreamDBFile& streamDBFile);
 			fs::path BuildOutputPath(const std::string filepath);
 			std::string GetResourceFolder();
+			void WriteFileToDisk(FileExportList* fileExportList, const fs::path& fullPath, const std::vector<byte>& fileData, const std::vector<byte>& headerData = std::vector<byte>());
 
 			// Debug Functions
 			void PrintMatchesToCSV(std::vector<FileExportItem>& fileExportList) const;

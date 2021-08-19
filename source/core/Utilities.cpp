@@ -2,7 +2,6 @@
 
 namespace HAYDEN
 {
-    // hex <-> decimal conversions and endian functions
     void endianSwap(uint64& value) 
     {
         value = ((value & 0x00000000FFFFFFFFull) << 32) | ((value & 0xFFFFFFFF00000000ull) >> 32);
@@ -18,7 +17,7 @@ namespace HAYDEN
         return x;
     }
 
-    // oodle functions
+    // Decompress using Oodle DLL
     std::vector<byte> oodleDecompress(std::vector<byte> compressedData, const uint64 decompressedSize)
     {
         std::vector<byte> output(decompressedSize + SAFE_SPACE);
@@ -57,17 +56,27 @@ namespace HAYDEN
         return std::vector<byte>(output.begin(), output.begin() + outbytes);
     }
 
-    // Recursive mkdir, bypassing PATH_MAX limitations on Windows
+    // Recursive mkdir, bypassing PATH_MAX limitations on Windows       
     bool mkpath(const fs::path& path)
     {
         std::error_code ec;
-#ifdef _WIN32
-        // "\\?\" is used to bypass PATH_MAX
-        // Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details
-        fs::create_directories(L"\\\\?\\" + fs::absolute(path).wstring(), ec);
-#else
-        fs::create_directories(path, ec);
-#endif
+        #ifdef _WIN32
+            // "\\?\" alongside the wide string functions is used to bypass PATH_MAX
+            // Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details 
+            fs::create_directories(L"\\\\?\\" + fs::absolute(path).wstring(), ec);
+        #else
+            fs::create_directories(path, ec);
+        #endif
         return ec.value() == 0;
+    }
+
+    // Opens FILE* with long filepath, bypasses PATH_MAX limitations in Windows
+    FILE* openLongFilePathWin32(const fs::path& path)
+    {
+        // "\\?\" alongside the wide string functions is used to bypass PATH_MAX
+        // Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details 
+        std::wstring wPath = L"\\\\?\\" + path.wstring();
+        FILE* file = _wfopen(wPath.c_str(), L"wb");
+        return file;
     }
 }
