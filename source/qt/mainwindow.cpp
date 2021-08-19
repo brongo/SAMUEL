@@ -5,6 +5,8 @@
 MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->btnClear->setVisible(false);
+    ui->btnSearch->setEnabled(false);
     ui->btnExportAll->setEnabled(false);
     ui->btnExportSelected->setEnabled(false);
 }
@@ -43,8 +45,32 @@ void MainWindow::ThrowError(std::string errorMessage, std::string errorDetail)
 }
 
 // Private Functions
-void MainWindow::PopulateGUIResourceTable()
+void MainWindow::DisableGUI()
 {
+    ui->inputSearch->clear();
+    ui->inputSearch->setEnabled(false);
+    ui->btnSearch->setEnabled(false);
+    ui->btnExportAll->setEnabled(false);
+    ui->btnExportSelected->setEnabled(false);
+    ui->btnLoadResource->setEnabled(false);
+    ui->tableWidget->setEnabled(false);
+    return;
+}
+void MainWindow::EnableGUI()
+{
+    ui->inputSearch->setEnabled(true);
+    ui->btnSearch->setEnabled(true);
+    ui->btnExportAll->setEnabled(true);
+    ui->btnExportSelected->setEnabled(true);
+    ui->btnLoadResource->setEnabled(true);
+    ui->tableWidget->setEnabled(true);
+    return;
+}
+void MainWindow::PopulateGUIResourceTable(std::string searchText)
+{
+    // Must disable sorting or rows won't populate correctly
+    ui->tableWidget->setSortingEnabled(false);
+
     // Clear any existing contents
     ui->tableWidget->clearContents();
     ui->tableWidget->setRowCount(0);
@@ -58,6 +84,12 @@ void MainWindow::PopulateGUIResourceTable()
             resourceFile.resourceEntries[i].version != 31 &&
             resourceFile.resourceEntries[i].version != 21)
             continue;
+
+        // Filter out anything we didn't search for
+        if (!searchText.empty())
+            if (resourceFile.resourceEntries[i].name.find(searchText) == -1)
+                continue;
+
 
         int row_count = ui->tableWidget->rowCount();
         ui->tableWidget->insertRow(row_count);
@@ -86,6 +118,9 @@ void MainWindow::PopulateGUIResourceTable()
         ui->tableWidget->setItem(row_count, 2, tableResourceVersion);
         ui->tableWidget->setItem(row_count, 3, tableResourceStatus);
     }
+
+    // Enable sorting again
+    ui->tableWidget->setSortingEnabled(true);
 
     QHeaderView* tableHeader = ui->tableWidget->horizontalHeader();
     tableHeader->setSectionResizeMode(0, QHeaderView::Stretch);
@@ -133,12 +168,7 @@ void MainWindow::on_btnExportAll_clicked()
     }
     if (ConfirmExportAll() == 0x0400) // OK
     {
-        // Grey out/disable the buttons
-        ui->btnExportAll->setEnabled(false);
-        ui->btnExportSelected->setEnabled(false);
-        ui->btnLoadResource->setEnabled(false);
-        ui->tableWidget->setEnabled(false);
-
+        DisableGUI();
         _ExportThread = QThread::create(&HAYDEN::SAMUEL::ExportAll, &SAM, _ExportPath);
 
         connect(_ExportThread, &QThread::finished, this, [this]() {   
@@ -151,13 +181,7 @@ void MainWindow::on_btnExportAll_clicked()
                 tableItem->setText("Exported");
             }
 
-            // Re enable the GUI
-            ui->btnExportAll->setEnabled(true);
-            ui->btnExportSelected->setEnabled(true);
-            ui->btnLoadResource->setEnabled(true);
-            ui->tableWidget->setEnabled(true);
-
-            // Close progress box if open
+            EnableGUI();
             if (_ExportStatusBox.isVisible())
                 _ExportStatusBox.close();
         });
@@ -213,17 +237,15 @@ void MainWindow::on_btnLoadResource_clicked()
         if (!SAM.Init(_ResourcePath))
         {
             ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
+            DisableGUI();
+            ui->tableWidget->clearContents();
+            ui->tableWidget->setRowCount(0);
+            ui->tableWidget->setEnabled(true);
+            ui->btnLoadResource->setEnabled(true);
             return;
         }
 
-        // Grey out/disable the buttons
-        ui->btnExportAll->setEnabled(false);
-        ui->btnExportSelected->setEnabled(false);
-        ui->btnLoadResource->setEnabled(false);
-        ui->tableWidget->setEnabled(false);
-        ui->tableWidget->setSortingEnabled(false);
-
-        // Load resource data in separate thread
+        DisableGUI();
         _LoadResourceThread = QThread::create(&HAYDEN::SAMUEL::LoadResource, &SAM, _ResourcePath);
 
         connect(_LoadResourceThread, &QThread::finished, this, [this]()
@@ -234,21 +256,26 @@ void MainWindow::on_btnLoadResource_clicked()
 
             // Failed to load resource, display error
             if (SAM.GetResourceErrorCode() == 1)
+            {
                 ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
-
+                ui->tableWidget->clearContents();
+                ui->tableWidget->setRowCount(0);
+            }
             // Loaded resource successfully
             if (SAM.GetResourceErrorCode() == 0)
             {
                 // Populate the GUI
                 PopulateGUIResourceTable();
 
-                // Enable Export buttons
-                ui->btnExportAll->setEnabled(true);
+                // Enable export-related features on success
+                ui->inputSearch->setEnabled(true);
+                ui->btnSearch->setEnabled(true);
                 ui->btnExportSelected->setEnabled(true);
+                ui->btnExportAll->setEnabled(true);
                 _ResourceFileIsLoaded = 1;
             }
 
-            // Re enable the GUI
+            // Enable these even if resource loading failed
             ui->btnLoadResource->setEnabled(true);
             ui->tableWidget->setEnabled(true);
             ui->tableWidget->setSortingEnabled(true);          
@@ -265,3 +292,28 @@ void MainWindow::on_tableWidget_itemDoubleClicked(QTableWidgetItem *item)
     on_btnExportSelected_clicked();
     return;
 }
+void MainWindow::on_btnSearch_clicked()
+{
+    if (ui->inputSearch->text().isEmpty())
+        return;
+
+    std::string searchText = ui->inputSearch->text().toStdString();
+    PopulateGUIResourceTable(searchText);
+
+    ui->btnClear->setVisible(true);
+    return;
+}
+void MainWindow::on_inputSearch_returnPressed()
+{
+    on_btnSearch_clicked();
+    return;
+}
+void MainWindow::on_btnClear_clicked()
+{
+    ui->btnClear->setVisible(false);
+    ui->inputSearch->setText("");
+    PopulateGUIResourceTable();
+    return;
+}
+
+

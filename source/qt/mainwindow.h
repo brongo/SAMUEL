@@ -27,7 +27,10 @@ class MainWindow : public QMainWindow
         void on_btnLoadResource_clicked();
         void on_btnExportAll_clicked();
         void on_btnExportSelected_clicked();
+        void on_btnSearch_clicked();
         void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
+        void on_btnClear_clicked();
+        void on_inputSearch_returnPressed();
 
 private:
         QMessageBox _LoadStatusBox;
@@ -45,7 +48,9 @@ private:
         int  ConfirmExportAll();
         int  ShowLoadStatus();
         int  ShowExportStatus();
-        void PopulateGUIResourceTable();
+        void DisableGUI();
+        void EnableGUI();
+        void PopulateGUIResourceTable(std::string searchText = "");
         void ExportInThread(HAYDEN::SAMUEL& SAM, const std::string exportPath);
 
 };
