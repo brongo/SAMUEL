@@ -428,6 +428,7 @@ namespace HAYDEN
                 std::vector<byte> ddsFileHeader = ddsBuilder.ConvertToByteVector();
                 
                 // write to filesystem
+                thisFile.resourceFileName += ".dds";
                 fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
                 WriteFileToDisk(fileExportList, fullPath, fileData, ddsFileHeader);
                 continue;
