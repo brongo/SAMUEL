@@ -61,15 +61,16 @@ namespace HAYDEN
     {
         std::error_code ec;
         #ifdef _WIN32
-            // "\\?\" alongside the wide string functions is used to bypass PATH_MAX
-            // Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details 
-            fs::create_directories(L"\\\\?\\" + fs::absolute(path).wstring(), ec);
+        // "\\?\" alongside the wide string functions is used to bypass PATH_MAX
+        // Check https://docs.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=cmd for details 
+        fs::create_directories(L"\\\\?\\" + fs::absolute(path).wstring(), ec);
         #else
-            fs::create_directories(path, ec);
+        fs::create_directories(path, ec);
         #endif
         return ec.value() == 0;
     }
 
+    #ifdef _WIN32
     // Opens FILE* with long filepath, bypasses PATH_MAX limitations in Windows
     FILE* openLongFilePathWin32(const fs::path& path)
     {
@@ -79,4 +80,5 @@ namespace HAYDEN
         FILE* file = _wfopen(wPath.c_str(), L"wb");
         return file;
     }
+    #endif
 }
