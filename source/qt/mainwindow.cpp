@@ -82,14 +82,17 @@ void MainWindow::PopulateGUIResourceTable(std::string searchText)
         // Temporary, probably? Skip anything that isn't TGA, LWO, MD6 for now.
         if (resourceFile.resourceEntries[i].version != 67 &&
             resourceFile.resourceEntries[i].version != 31 &&
-            resourceFile.resourceEntries[i].version != 21)
+            resourceFile.resourceEntries[i].version != 21 &&
+            resourceFile.resourceEntries[i].version != 0)
+            continue;
+
+        // Filter out unsupported "version 0" files.
+        if (resourceFile.resourceEntries[i].version == 0 && resourceFile.resourceEntries[i].type != "rs_streamfile")
             continue;
 
         // Filter out anything we didn't search for
-        if (!searchText.empty())
-            if (resourceFile.resourceEntries[i].name.find(searchText) == -1)
-                continue;
-
+        if (!searchText.empty() && resourceFile.resourceEntries[i].name.find(searchText) == -1)
+            continue;
 
         int row_count = ui->tableWidget->rowCount();
         ui->tableWidget->insertRow(row_count);
@@ -129,7 +132,7 @@ void MainWindow::PopulateGUIResourceTable(std::string searchText)
 int MainWindow::ConfirmExportAll()
 {
     const QString qErrorMessage = "Do you really want to export *everything* in this resource file?";
-    const QString qErrorDetail = "For some .resource files this can take up to 20-30 minutes, and require 25GB+ of free space.";
+    const QString qErrorDetail = "For some .resource files this can take 30 minutes or longer, and require 25GB+ of free space.";
 
     QMessageBox msgBox;
     msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
@@ -170,20 +173,25 @@ void MainWindow::on_btnExportAll_clicked()
     {
         DisableGUI();
         _ExportThread = QThread::create(&HAYDEN::SAMUEL::ExportAll, &SAM, _ExportPath);
-
-        connect(_ExportThread, &QThread::finished, this, [this]() {   
-
-            // Update status to "Exported"
-            int rowCount = ui->tableWidget->rowCount();
-            for (int64 i = 0; i < rowCount; i++)
-            {
-                QTableWidgetItem *tableItem = ui->tableWidget->item(i,3);
-                tableItem->setText("Exported");
-            }
-
-            EnableGUI();
+        
+        connect(_ExportThread, &QThread::finished, this, [this]() 
+        {   
             if (_ExportStatusBox.isVisible())
                 _ExportStatusBox.close();
+
+            if (SAM.HasDiskSpaceError() == 1)
+                ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
+
+            if (SAM.HasDiskSpaceError() == 0)
+            {
+                int rowCount = ui->tableWidget->rowCount();
+                for (int64 i = 0; i < rowCount; i++)
+                {
+                    QTableWidgetItem* tableItem = ui->tableWidget->item(i, 3);
+                    tableItem->setText("Exported");
+                }
+            }
+            EnableGUI();
         });
 
         _ExportThread->start();
@@ -250,24 +258,19 @@ void MainWindow::on_btnLoadResource_clicked()
 
         connect(_LoadResourceThread, &QThread::finished, this, [this]()
         {
-            // Close progress box if open
             if (_LoadStatusBox.isVisible())
                 _LoadStatusBox.close();
 
-            // Failed to load resource, display error
-            if (SAM.GetResourceErrorCode() == 1)
+            if (SAM.HasResourceLoadError() == 1)
             {
                 ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
                 ui->tableWidget->clearContents();
                 ui->tableWidget->setRowCount(0);
             }
-            // Loaded resource successfully
-            if (SAM.GetResourceErrorCode() == 0)
-            {
-                // Populate the GUI
-                PopulateGUIResourceTable();
 
-                // Enable export-related features on success
+            if (SAM.HasResourceLoadError() == 0)
+            {
+                PopulateGUIResourceTable();
                 ui->inputSearch->setEnabled(true);
                 ui->btnSearch->setEnabled(true);
                 ui->btnExportSelected->setEnabled(true);

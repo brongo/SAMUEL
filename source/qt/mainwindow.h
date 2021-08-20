@@ -32,7 +32,7 @@ class MainWindow : public QMainWindow
         void on_btnClear_clicked();
         void on_inputSearch_returnPressed();
 
-private:
+    private:
         QMessageBox _LoadStatusBox;
         QMessageBox _ExportStatusBox;
         QThread* _LoadResourceThread = NULL;
@@ -51,7 +51,6 @@ private:
         void DisableGUI();
         void EnableGUI();
         void PopulateGUIResourceTable(std::string searchText = "");
-        void ExportInThread(HAYDEN::SAMUEL& SAM, const std::string exportPath);
 
 };
 
