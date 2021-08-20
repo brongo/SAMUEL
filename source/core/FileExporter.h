@@ -43,6 +43,7 @@ namespace HAYDEN
             FileExportList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, int fileType, std::vector<std::string> selectedFileNames = std::vector<std::string>(), bool exportFromList = 0);
 			std::vector<FileExportItem> GetFileExportItems() { return _ExportItems; }
 			std::vector<byte> GetTGAFileData(int i) { return _TGAHeaderData[i].unstreamedFileData; }
+            std::vector<byte> GetDECLFileData(int i) { return _DECLFileData[i].unstreamedFileData; }
 
 		private:
 			int _FileType = 0;
@@ -50,6 +51,7 @@ namespace HAYDEN
 			std::vector<EmbeddedTGAHeader> _TGAHeaderData;
 			std::vector<EmbeddedMD6Header> _MD6HeaderData;
 			std::vector<EmbeddedLWOHeader> _LWOHeaderData;
+            std::vector<EmbeddedDECLFile> _DECLFileData;
 
 			// Subroutines
 			uint64 CalculateStreamDBIndex(const uint64 resourceId, const int mipCount = -6) const;
@@ -69,6 +71,7 @@ namespace HAYDEN
             void Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory);
             void InitFromList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList);
 			void ExportFiles(const std::vector<StreamDBFile>& streamDBFiles, std::string fileType);
+			size_t GetTotalExportSize() { return _TotalExportSize; }
 
 		private:
 			std::string _OutDir;
@@ -76,15 +79,14 @@ namespace HAYDEN
 			FileExportList _TGAExportList;
 			FileExportList _MD6ExportList;
 			FileExportList _LWOExportList;
+            FileExportList _DECLExportList;
+			size_t _TotalExportSize = 0;
 
 			// FileExporter Subroutines
 			std::vector<byte> GetBinaryFileFromStreamDB(const FileExportItem& fileExportInfo, const StreamDBFile& streamDBFile);
 			fs::path BuildOutputPath(const std::string filepath);
 			std::string GetResourceFolder();
 			void WriteFileToDisk(FileExportList* fileExportList, const fs::path& fullPath, const std::vector<byte>& fileData, const std::vector<byte>& headerData = std::vector<byte>());
-
-			// Debug Functions
-			void PrintMatchesToCSV(std::vector<FileExportItem>& fileExportList) const;
-			void PrintUnmatchedToCSV(std::vector<FileExportItem>& fileExportList) const;
+			size_t CalculateRequiredDiskSpace();
 	};
 }

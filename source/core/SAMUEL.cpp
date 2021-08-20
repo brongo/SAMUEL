@@ -26,13 +26,13 @@ namespace HAYDEN
             return 0;
         }
 
-#ifdef __linux__
+        #ifdef __linux__
         if (!fs::exists("liblinoodle.so"))
         {
             ThrowError(1, "SAMUEL requires you to manually copy liblinoodle.so from Doom Eternal's \"base\" folder and place it in the same directory as SAMUEL. Please do this, and then run the SAMUEL program again.");
             return 0;
         }
-#endif
+        #endif
 
         return 1;
     };
@@ -114,7 +114,7 @@ namespace HAYDEN
             _StreamDBFileData.push_back(streamDBFile);
         }
     }
-
+    
     // Public API functions - SAMUEL
     bool SAMUEL::LoadResource(const std::string inputFile)
     {
@@ -141,8 +141,8 @@ namespace HAYDEN
         try
         {
             // get list of .streamdb files for this resource
-            UpdateStreamDBFileList("gameresources.resources");      // globals
-            UpdateStreamDBFileList(_ResourceFile.filename);          // resource-specific
+            UpdateStreamDBFileList("gameresources.resources");  // globals
+            UpdateStreamDBFileList(_ResourceFile.filename);     // resource-specific
         }
         catch (...)
         {
@@ -162,21 +162,62 @@ namespace HAYDEN
         }
         return 1;
     }
-    void SAMUEL::ExportAll(const std::string outputDirectory)
+    bool SAMUEL::HasEnoughDiskSpace()
+    {
+        _HasDiskSpaceError = 0;
+        size_t spaceRequired = _Exporter.GetTotalExportSize();
+        size_t spaceAvailable = fs::space(fs::current_path()).available;
+
+        if (spaceRequired > spaceAvailable)
+        {
+            _HasDiskSpaceError = 1;
+
+            double spaceRequiredInGB = 0;
+            size_t decimalPosition = 0; 
+            std::string spaceRequiredString;
+            std::string errorMessageToUser;
+
+            spaceRequiredInGB = ((double)_Exporter.GetTotalExportSize()) / (1024 * 1024 * 1024);
+            spaceRequiredString = std::to_string(spaceRequiredInGB);
+            
+            decimalPosition = spaceRequiredString.rfind(".");
+
+            if (decimalPosition != -1)
+                spaceRequiredString = spaceRequiredString.substr(0, decimalPosition + 3);
+
+            errorMessageToUser = "The requested file export requires a minimum of " + spaceRequiredString + " GB of free space. This action has been canceled. No files have been extracted.";
+            ThrowError(0, "Error: Not enough space in disk.", errorMessageToUser);
+            return 0;
+        }
+        return 1;
+    }
+    bool SAMUEL::ExportAll(const std::string outputDirectory)
     {
         _Exporter.Init(_ResourceFile, _StreamDBFileData, outputDirectory);
-        _Exporter.ExportFiles(_StreamDBFileData, "TGA");
-        _Exporter.ExportFiles(_StreamDBFileData, "MD6");
-        _Exporter.ExportFiles(_StreamDBFileData, "LWO");
-        return;
+
+        if (HasEnoughDiskSpace())
+        {
+            _Exporter.ExportFiles(_StreamDBFileData, "TGA");
+            _Exporter.ExportFiles(_StreamDBFileData, "MD6");
+            _Exporter.ExportFiles(_StreamDBFileData, "LWO");
+            _Exporter.ExportFiles(_StreamDBFileData, "DECL");
+            return 1;
+        }
+        return 0;
     }
-    void SAMUEL::ExportSelected(const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList)
+    bool SAMUEL::ExportSelected(const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList)
     {
         _Exporter.InitFromList(_ResourceFile, _StreamDBFileData, outputDirectory, userSelectedFileList);
-        _Exporter.ExportFiles(_StreamDBFileData, "TGA");
-        _Exporter.ExportFiles(_StreamDBFileData, "MD6");
-        _Exporter.ExportFiles(_StreamDBFileData, "LWO");
-        return;
+
+        if (HasEnoughDiskSpace())
+        {
+            _Exporter.ExportFiles(_StreamDBFileData, "TGA");
+            _Exporter.ExportFiles(_StreamDBFileData, "MD6");
+            _Exporter.ExportFiles(_StreamDBFileData, "LWO");
+            _Exporter.ExportFiles(_StreamDBFileData, "DECL");
+            return 1;
+        }
+        return 0;
     }
     bool SAMUEL::CheckDependencies()
     {

@@ -116,6 +116,7 @@ namespace HAYDEN
         lwoHeader.compressedSize = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - (entryStart + 4)));
         return lwoHeader;
     }
+
     std::vector<byte> ResourceFile::GetEmbeddedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const
     {
         std::vector<byte> compressedData(compressedSize);

@@ -47,7 +47,7 @@ namespace HAYDEN
             if (exportFromList && selectedFileNames.size() == 0)
                 return;
 
-            // each instance of FileExportList is for a different filetype. 21 = .tga, 31 = .md6mesh
+            // each instance of FileExportList is for a different filetype. 21 = .tga, 31 = .md6mesh, 67 = .lwo, 0 = .decl
             if (thisEntry.version != _FileType)
                 continue;
 
@@ -83,6 +83,13 @@ namespace HAYDEN
                     continue;
             }
 
+            // skip non-decl files
+            if (thisEntry.version == 0)
+            {
+                if (thisEntry.type != "rs_streamfile")
+                    continue;
+            }
+
             FileExportItem exportItem;
             exportItem.resourceFileName = thisEntry.name;
             exportItem.resourceFileOffset = thisEntry.dataOffset;
@@ -90,13 +97,16 @@ namespace HAYDEN
             exportItem.resourceFileDecompressedSize = thisEntry.dataSizeDecompressed;
             exportItem.resourceFileHash = thisEntry.hash;
 
+            if (thisEntry.version == 0)
+                exportItem.isStreamed = 0;
+
             _ExportItems.push_back(exportItem);
         }
         return;
     }
     void FileExportList::ParseEmbeddedFileHeaders(const ResourceFile& resourceFile)
     {
-        // Open .resource file containing embedded TGA data.
+        // Open .resource file containing embedded file headers.
         FILE* f = fopen(resourceFile.filename.c_str(), "rb");
         if (f == NULL)
         {
@@ -131,12 +141,22 @@ namespace HAYDEN
                 EmbeddedLWOHeader embeddedLWOHeader = resourceFile.ReadLWOHeader(decompressedHeader);
                 _LWOHeaderData.push_back(embeddedLWOHeader);
             }
+
+            if (_FileType == 0)
+            {
+                EmbeddedDECLFile embeddedDECLFile;
+                embeddedDECLFile.unstreamedFileData = decompressedHeader;
+                _DECLFileData.push_back(embeddedDECLFile);
+            }
         }
         fclose(f);
         return;
     }
     void FileExportList::GetStreamDBIndexAndSize()
     {
+        if (_FileType == 0)
+            return;
+
         for (int i = 0; i < _ExportItems.size(); i++)
         {
             FileExportItem& thisFile = _ExportItems[i];
@@ -185,6 +205,9 @@ namespace HAYDEN
     }
     void FileExportList::GetStreamDBFileOffsets(const std::vector<StreamDBFile>& streamDBFiles)
     {
+        if (_FileType == 0)
+            return;
+
         for (int i = 0; i < _ExportItems.size(); i++)
         {
             if (_ExportItems[i].isStreamed == 0)
@@ -319,57 +342,20 @@ namespace HAYDEN
         fclose(outFile);
         return;
     }
-
-    // FileExporter - Debug Functions
-    void FileExporter::PrintMatchesToCSV(std::vector<FileExportItem>& fileExportList) const
+    size_t FileExporter::CalculateRequiredDiskSpace()
     {
-        std::ofstream outputMatched("matched.csv", std::ios::app);
-        for (int i = 0; i < fileExportList.size(); i++)
-        {
-            FileExportItem& thisEntry = fileExportList[i];
-            if (thisEntry.streamDBNumber == -1 && thisEntry.isStreamed == 1)
-                continue;
+        size_t totalExportSize = 0;
 
-            std::string output;
-            output += "\"" + thisEntry.resourceFileName + "\",";
-            //output += std::to_string(thisEntry.streamDBIndex) + ",";
-            //output += std::to_string(thisEntry.streamDBFileOffset) + ",";
-            output += std::to_string(thisEntry.streamDBSizeCompressed) + ",";
-            output += std::to_string(thisEntry.streamDBSizeDecompressed) + ",";
-            output += std::to_string(thisEntry.streamDBCompressionType) + ",";
-            output += std::to_string(thisEntry.tgaImageType) + ",";
-            output += std::to_string(thisEntry.tgaPixelWidth) + ",";
-            output += std::to_string(thisEntry.tgaPixelHeight) + "," + "\n";
-            //output += std::to_string(thisEntry.streamDBNumber) + ",";
-            //output += "\"" + thisEntry.streamDBFileName + "\"" + "\n";
-            outputMatched.write(output.c_str(), output.length());
-        }
-        return;
-    }
-    void FileExporter::PrintUnmatchedToCSV(std::vector<FileExportItem>& fileExportList) const
-    {
-        std::ofstream outputUnmatched("unmatched.csv", std::ios::app);
-        for (int i = 0; i < fileExportList.size(); i++)
-        {
-            FileExportItem& thisEntry = fileExportList[i];
-            if (thisEntry.streamDBNumber != -1 || thisEntry.isStreamed == 0)
-                continue;
+        for (const auto& fileExport : _TGAExportList.GetFileExportItems())
+            totalExportSize += fileExport.streamDBSizeDecompressed;
 
-            std::string output;
-            output += "\"" + thisEntry.resourceFileName + "\",";
-            //output += std::to_string(thisEntry.streamDBIndex) + ",";
-            //output += std::to_string(thisEntry.streamDBFileOffset) + ",";
-            output += std::to_string(thisEntry.streamDBSizeCompressed) + ",";
-            output += std::to_string(thisEntry.streamDBSizeDecompressed) + ",";
-            output += std::to_string(thisEntry.streamDBCompressionType) + ",";
-            output += std::to_string(thisEntry.tgaImageType) + ",";
-            output += std::to_string(thisEntry.tgaPixelWidth) + ",";
-            output += std::to_string(thisEntry.tgaPixelHeight) + "," + "\n";
-            //output += std::to_string(thisEntry.streamDBNumber) + ",";
-            //output += "\"" + thisEntry.streamDBFileName + "\"" + "\n";
-            outputUnmatched.write(output.c_str(), output.length());
-        }
-        return;
+        for (const auto& fileExport : _MD6ExportList.GetFileExportItems())
+            totalExportSize += fileExport.streamDBSizeDecompressed;
+
+        for (const auto& fileExport : _LWOExportList.GetFileExportItems())
+            totalExportSize += fileExport.streamDBSizeDecompressed;
+
+        return totalExportSize;
     }
 
     // FileExporter - Export Functions
@@ -382,8 +368,12 @@ namespace HAYDEN
             fileExportList = &_TGAExportList;
         else if (fileType == "MD6")
             fileExportList = &_MD6ExportList;
-        else
+        else if (fileType == "LWO")
             fileExportList = &_LWOExportList;
+        else if (fileType == "DECL")
+            fileExportList = &_DECLExportList;
+        else
+            return;
 
         fileExportItems = fileExportList->GetFileExportItems(); 
 
@@ -418,7 +408,6 @@ namespace HAYDEN
                 }
             }
 
-            // TGA files only
             if (fileType == "TGA")
             {
                 if (thisFile.isStreamed == 0)
@@ -434,7 +423,14 @@ namespace HAYDEN
                 continue;
             }
 
-            // write to filesystem
+            if (fileType == "DECL")
+            {
+                fileData = fileExportList->GetDECLFileData(i);
+                fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
+                WriteFileToDisk(fileExportList, fullPath, fileData);
+                continue;
+            }
+
             fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
             WriteFileToDisk(fileExportList, fullPath, fileData);        
         }
@@ -447,45 +443,13 @@ namespace HAYDEN
     {
         _OutDir = outputDirectory;
         _ResourceFilePath = resourceFile.filename;
-
         _TGAExportList = FileExportList(resourceFile, streamDBFiles, 21);
         _MD6ExportList = FileExportList(resourceFile, streamDBFiles, 31);
         _LWOExportList = FileExportList(resourceFile, streamDBFiles, 67);
-        std::vector<FileExportItem> tgaFilesToExport = _TGAExportList.GetFileExportItems();
-        std::vector<FileExportItem> md6FilesToExport = _MD6ExportList.GetFileExportItems();
-        std::vector<FileExportItem> lwoFilesToExport = _LWOExportList.GetFileExportItems();
-
-        // debug tga export
-        // PrintMatchesToCSV(tgaFilesToExport);
-        // PrintUnmatchedToCSV(tgaFilesToExport);
-
-        // debug md6 export
-        // PrintMatchesToCSV(md6FilesToExport);
-        // PrintUnmatchedToCSV(md6FilesToExport);
-
-        // debug lwo export
-        // PrintMatchesToCSV(lwoFilesToExport);
-        // PrintUnmatchedToCSV(lwoFilesToExport);
+        _DECLExportList = FileExportList(resourceFile, streamDBFiles, 0);
 
         // get total size of files to export
-        size_t totalExportSize = 0;
-
-        for (const auto& fileExport : _TGAExportList.GetFileExportItems())
-            totalExportSize += fileExport.streamDBSizeDecompressed;
-
-        for (const auto& fileExport : _MD6ExportList.GetFileExportItems())
-            totalExportSize += fileExport.streamDBSizeDecompressed;
-
-        for (const auto& fileExport : _LWOExportList.GetFileExportItems())
-            totalExportSize += fileExport.streamDBSizeDecompressed;
-
-        if (fs::space(fs::current_path()).available < totalExportSize)
-        {
-            fprintf(stderr, "Error: Not enough space in disk.\n");
-            fprintf(stderr, "Exporting from this file requires at least %.2lf MB of free space.\n", (double)totalExportSize / (1024 * 1024));
-            exit(1);
-        }
-
+        _TotalExportSize = CalculateRequiredDiskSpace();
         return;
     }
     void FileExporter::InitFromList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList)
@@ -496,6 +460,7 @@ namespace HAYDEN
         std::vector<std::string> userSelectedTGAFiles;
         std::vector<std::string> userSelectedMD6Files;
         std::vector<std::string> userSelectedLWOFiles;
+        std::vector<std::string> userSelectedDECLFiles;
 
         // build separate lists for each file type.
         for (int i = 0; i < userSelectedFileList.size(); i++)
@@ -512,6 +477,9 @@ namespace HAYDEN
                 case 67:
                     userSelectedLWOFiles.push_back(userSelectedFileList[i][0]);
                     break;
+                case 0:
+                    userSelectedDECLFiles.push_back(userSelectedFileList[i][0]);
+                    break;
                 default:
                     break;
             }
@@ -520,28 +488,10 @@ namespace HAYDEN
         _TGAExportList = FileExportList(resourceFile, streamDBFiles, 21, userSelectedTGAFiles, 1);
         _MD6ExportList = FileExportList(resourceFile, streamDBFiles, 31, userSelectedMD6Files, 1);
         _LWOExportList = FileExportList(resourceFile, streamDBFiles, 67, userSelectedLWOFiles, 1);
-        std::vector<FileExportItem> tgaFilesToExport = _TGAExportList.GetFileExportItems();
-        std::vector<FileExportItem> md6FilesToExport = _MD6ExportList.GetFileExportItems();
-        std::vector<FileExportItem> lwoFilesToExport = _LWOExportList.GetFileExportItems();
+        _DECLExportList = FileExportList(resourceFile, streamDBFiles, 0, userSelectedDECLFiles, 1);
 
         // get total size of files to export
-        size_t totalExportSize = 0;
-
-        for (const auto& fileExport : _TGAExportList.GetFileExportItems())
-            totalExportSize += fileExport.streamDBSizeDecompressed;
-
-        for (const auto& fileExport : _MD6ExportList.GetFileExportItems())
-            totalExportSize += fileExport.streamDBSizeDecompressed;
-
-        for (const auto& fileExport : _LWOExportList.GetFileExportItems())
-            totalExportSize += fileExport.streamDBSizeDecompressed;
-
-        if (fs::space(fs::current_path()).available < totalExportSize)
-        {
-            fprintf(stderr, "Error: Not enough space in disk.\n");
-            fprintf(stderr, "Exporting from this file requires at least %.2lf MB of free space.\n", (double)totalExportSize / (1024 * 1024));
-            exit(1);
-        }
+        _TotalExportSize = CalculateRequiredDiskSpace();
         return;
     }
 }
