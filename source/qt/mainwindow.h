@@ -50,6 +50,7 @@ class MainWindow : public QMainWindow
         int  ShowExportStatus();
         void DisableGUI();
         void EnableGUI();
+        void ResetGUITable();
         void PopulateGUIResourceTable(std::string searchText = "");
 
 };

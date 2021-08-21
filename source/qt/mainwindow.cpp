@@ -66,6 +66,15 @@ void MainWindow::EnableGUI()
     ui->tableWidget->setEnabled(true);
     return;
 }
+void MainWindow::ResetGUITable()
+{
+    ui->labelStatus->clear();
+    ui->tableWidget->clearContents();
+    ui->tableWidget->setRowCount(0);
+    ui->tableWidget->setEnabled(true);
+    ui->tableWidget->setSortingEnabled(true);
+    return;
+}
 void MainWindow::PopulateGUIResourceTable(std::string searchText)
 {
     // Must disable sorting or rows won't populate correctly
@@ -79,7 +88,7 @@ void MainWindow::PopulateGUIResourceTable(std::string searchText)
     HAYDEN::ResourceFile resourceFile = SAM.GetResourceFile();
     for (int i = 0; i < resourceFile.resourceEntries.size(); i++)
     {
-        // Temporary, probably? Skip anything that isn't TGA, LWO, MD6 for now.
+        // Temporary, probably? Skip anything that isn't TGA, LWO, MD6, DECL for now.
         if (resourceFile.resourceEntries[i].version != 67 &&
             resourceFile.resourceEntries[i].version != 31 &&
             resourceFile.resourceEntries[i].version != 21 &&
@@ -121,6 +130,10 @@ void MainWindow::PopulateGUIResourceTable(std::string searchText)
         ui->tableWidget->setItem(row_count, 2, tableResourceVersion);
         ui->tableWidget->setItem(row_count, 3, tableResourceStatus);
     }
+
+    QString labelCount = QString::number(ui->tableWidget->rowCount());
+    QString labelText = "Found " + labelCount + " files.";
+    ui->labelStatus->setText(labelText);
 
     // Enable sorting again
     ui->tableWidget->setSortingEnabled(true);
@@ -172,6 +185,7 @@ void MainWindow::on_btnExportAll_clicked()
     if (ConfirmExportAll() == 0x0400) // OK
     {
         DisableGUI();
+        ui->labelStatus->setText("Exporting...");
         _ExportThread = QThread::create(&HAYDEN::SAMUEL::ExportAll, &SAM, _ExportPath);
         
         connect(_ExportThread, &QThread::finished, this, [this]() 
@@ -192,29 +206,40 @@ void MainWindow::on_btnExportAll_clicked()
                 }
             }
             EnableGUI();
+            ui->labelStatus->setText("All files exported successfully.");
         });
 
         _ExportThread->start();
 
         if (ShowExportStatus() == 0x00400000 && _ExportThread->isRunning()) // CANCEL
+        {
             _ExportThread->terminate();
+            ui->labelStatus->setText("Export operation was cancelled.");
+
+            for (int64 i = 0; i <  ui->tableWidget->rowCount(); i++)
+            {
+                QTableWidgetItem* tableItem = ui->tableWidget->item(i, 3);
+                tableItem->setText("Loaded");
+            }
+        }
     }
     return;
 }
 void MainWindow::on_btnExportSelected_clicked()
 {
-    // Get selected items in QList
+    // itemExportRows is the list of files we pass to fileExporter.
+    // We build this from ui->tableWidget->selectedItems.
+
+    std::vector<std::vector<std::string>> itemExportRows;
     QList<QTableWidgetItem *> itemExportQList = ui->tableWidget->selectedItems();
 
-    // Abort if no selection
     if (itemExportQList.size() == 0)
     {
         ThrowError("No items were selected for export.");
         return;
     }
 
-    // Convert to vector, get text for selected rows
-    std::vector<std::vector<std::string>> itemExportRows;
+    // Loop through selected items and build itemExportRows
     for (int64 i = 0; i < itemExportQList.size(); i+=4)
     {
         std::vector<std::string> rowText = {
@@ -223,13 +248,49 @@ void MainWindow::on_btnExportSelected_clicked()
             itemExportQList[i+2]->text().toStdString()
         };
         itemExportRows.push_back(rowText);
-
-        // Update status to "Exported"
         itemExportQList[i+3]->setText("Exported");
     }
 
-    // This vector gets passed to file exporter, so it only exports files from this list.
-    SAM.ExportSelected(_ExportPath, itemExportRows);
+    // Define export thread behavior
+    _ExportThread = QThread::create(&HAYDEN::SAMUEL::ExportSelected, &SAM, _ExportPath, itemExportRows);
+    connect(_ExportThread, &QThread::finished, this, [this]()
+    {
+        if (_ExportStatusBox.isVisible())
+            _ExportStatusBox.close();
+
+        if (SAM.HasDiskSpaceError() == 1)
+            ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
+
+        QList<QTableWidgetItem *> itemExportQList = ui->tableWidget->selectedItems();
+        QString labelCount = QString::number(itemExportQList.size() / 4);
+        QString labelText = "Exported " + labelCount + " files.";
+
+        ui->labelStatus->setText(labelText);
+        EnableGUI();
+    });
+
+    // Begin file export
+    _ExportThread->start();
+
+    // Show dialog with cancel option if >= 40 items selected.
+    if (itemExportRows.size() >= 40)
+    {
+        DisableGUI();
+        ui->labelStatus->setText("Exporting...");
+
+        if (ShowExportStatus() == 0x00400000 && _ExportThread->isRunning()) // CANCEL
+        {
+            _ExportThread->terminate();
+            ui->labelStatus->setText("Export operation was cancelled.");
+
+            for (int64 i = 0; i < ui->tableWidget->rowCount(); i++)
+            {
+                QTableWidgetItem* tableItem = ui->tableWidget->item(i, 3);
+                tableItem->setText("Loaded");
+            }
+        }
+    }
+
     return;
 }
 void MainWindow::on_btnLoadResource_clicked()
@@ -246,9 +307,8 @@ void MainWindow::on_btnLoadResource_clicked()
         {
             ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
             DisableGUI();
-            ui->tableWidget->clearContents();
-            ui->tableWidget->setRowCount(0);
-            ui->tableWidget->setEnabled(true);
+            ResetGUITable();
+            ui->labelStatus->setText("Failed to load resource.");
             ui->btnLoadResource->setEnabled(true);
             return;
         }
@@ -264,26 +324,22 @@ void MainWindow::on_btnLoadResource_clicked()
             if (SAM.HasResourceLoadError() == 1)
             {
                 ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
-                ui->tableWidget->clearContents();
-                ui->tableWidget->setRowCount(0);
+                ResetGUITable();
+                ui->labelStatus->setText("Failed to load resource.");
             }
 
             if (SAM.HasResourceLoadError() == 0)
             {
                 PopulateGUIResourceTable();
-                ui->inputSearch->setEnabled(true);
-                ui->btnSearch->setEnabled(true);
-                ui->btnExportSelected->setEnabled(true);
-                ui->btnExportAll->setEnabled(true);
+                EnableGUI();
                 _ResourceFileIsLoaded = 1;
             }
 
-            // Enable these even if resource loading failed
+            // Must enable this even if resource loading failed
             ui->btnLoadResource->setEnabled(true);
-            ui->tableWidget->setEnabled(true);
-            ui->tableWidget->setSortingEnabled(true);          
         });
 
+        ui->labelStatus->setText("Loading resource...");
         _LoadResourceThread->start();
 
         if (ShowLoadStatus() == 0x00400000 && _LoadResourceThread->isRunning()) // CANCEL
@@ -318,5 +374,3 @@ void MainWindow::on_btnClear_clicked()
     PopulateGUIResourceTable();
     return;
 }
-
-
