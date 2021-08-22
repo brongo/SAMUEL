@@ -4,7 +4,7 @@ SAMUEL is a tool for extracting assets from DOOM Eternal.
 
 It is cross-platform, open-source, and has an easy-to-use graphical interface.
 
-# How to Use
+## How to Use:
 
 1. Run SAMUEL.exe
 2. Click the "Load Resource" button.
@@ -14,11 +14,11 @@ It is cross-platform, open-source, and has an easy-to-use graphical interface.
 
 Files will be extracted to the "exports" folder, which is in the same location as SAMUEL.exe.
 
-# SAMUEL vs. VEGA
+## SAMUEL vs. VEGA
 
 This will obviously get compared to VEGA (the other asset extraction tool), so its probably necessary to explain the differences here:
 
-## Improvements:
+### Improvements:
 
 1. SAMUEL is cross-platform and open-source. It works on Windows, Linux, MacOS.
 2. Supports extracting of .decl files in bulk or individually.
@@ -28,7 +28,7 @@ This will obviously get compared to VEGA (the other asset extraction tool), so i
 6. Extracts "normals" in RG format (greenish color) used by DOOM Eternal, which should reduce steps needed to modify them.
 7. Runs a bit faster than VEGA in general.
 
-## Downsides / Limitations:
+### Downsides / Limitations:
 
 SAMUEL is not yet capable of exporting models (.lwo/.md6 files) for use in Substance Painter or Blender. However, it is now possible to export these files in their *native* formats for the very first time. This is an important step and it makes it possible for us to start reverse-engineering the format. Once the model format is better understood, we can add export to .obj/.fbx features.
 
