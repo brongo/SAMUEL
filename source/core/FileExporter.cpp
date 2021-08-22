@@ -352,8 +352,12 @@ namespace HAYDEN
         for (const auto& fileExport : _MD6ExportList.GetFileExportItems())
             totalExportSize += fileExport.streamDBSizeDecompressed;
 
-        for (const auto& fileExport : _LWOExportList.GetFileExportItems())
-            totalExportSize += fileExport.streamDBSizeDecompressed;
+        for (const auto& fileExport : _DECLExportList.GetFileExportItems())
+            totalExportSize += fileExport.resourceFileDecompressedSize;
+
+        // Disabling for now, unpredictable
+        // for (const auto& fileExport : _LWOExportList.GetFileExportItems())
+        //    totalExportSize += fileExport.streamDBSizeDecompressed;
 
         return totalExportSize;
     }
