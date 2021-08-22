@@ -41,6 +41,7 @@ class MainWindow : public QMainWindow
         std::string _ExportPath;
         std::string _ResourcePath;
         bool _ResourceFileIsLoaded = 0;
+        bool _ViewIsFiltered = 0;
 
         HAYDEN::SAMUEL SAM;
         Ui::MainWindow *ui;
@@ -51,7 +52,11 @@ class MainWindow : public QMainWindow
         void DisableGUI();
         void EnableGUI();
         void ResetGUITable();
-        void PopulateGUIResourceTable(std::string searchText = "");
+        void ExportSearchResults();
+        void PopulateGUIResourceTable(std::vector<std::string> searchWords = std::vector<std::string>());
+
+        // Splits search query by whitespace
+        std::vector<std::string> SplitSearchTerms(std::string inputString);
 
 };
 

@@ -68,6 +68,7 @@ void MainWindow::EnableGUI()
 }
 void MainWindow::ResetGUITable()
 {
+    _ViewIsFiltered = 0;
     ui->labelStatus->clear();
     ui->tableWidget->clearContents();
     ui->tableWidget->setRowCount(0);
@@ -75,7 +76,30 @@ void MainWindow::ResetGUITable()
     ui->tableWidget->setSortingEnabled(true);
     return;
 }
-void MainWindow::PopulateGUIResourceTable(std::string searchText)
+
+std::vector<std::string> MainWindow::SplitSearchTerms(std::string inputString)
+{
+    std::string singleWord;
+    std::vector<std::string> searchWords;
+
+    // Convert search string to lowercase
+    std::for_each(inputString.begin(), inputString.end(), [](char & c) {
+        c = ::tolower(c);
+    });
+
+    // Split into words, separated by spaces
+    const char* delimiter = " ";
+    std::stringstream checkline(inputString);
+
+    while(std::getline(checkline, singleWord, *delimiter))
+    {
+        if (singleWord != delimiter)
+            searchWords.push_back(singleWord);
+    }
+    return searchWords;
+}
+
+void MainWindow::PopulateGUIResourceTable(std::vector<std::string> searchWords)
 {
     // Must disable sorting or rows won't populate correctly
     ui->tableWidget->setSortingEnabled(false);
@@ -83,6 +107,7 @@ void MainWindow::PopulateGUIResourceTable(std::string searchText)
     // Clear any existing contents
     ui->tableWidget->clearContents();
     ui->tableWidget->setRowCount(0);
+    _ViewIsFiltered = 0;
 
     // Load resource file data
     HAYDEN::ResourceFile resourceFile = SAM.GetResourceFile();
@@ -100,8 +125,18 @@ void MainWindow::PopulateGUIResourceTable(std::string searchText)
             continue;
 
         // Filter out anything we didn't search for
-        if (!searchText.empty() && resourceFile.resourceEntries[i].name.find(searchText) == -1)
-            continue;
+        if (searchWords.size() > 0)
+        {
+            _ViewIsFiltered = 1;
+            bool matched = 1;
+
+            for (int j = 0; j < searchWords.size(); j++)
+                if (resourceFile.resourceEntries[i].name.find(searchWords[j]) == -1)
+                    matched = 0;
+
+            if (matched == 0)
+                continue;
+        }
 
         int row_count = ui->tableWidget->rowCount();
         ui->tableWidget->insertRow(row_count);
@@ -173,16 +208,83 @@ int MainWindow::ShowExportStatus()
     result = _ExportStatusBox.exec();
     return result;
 }
+void MainWindow::ExportSearchResults()
+{
+    if (ui->tableWidget->rowCount() == 0)
+        return;
+
+    std::vector<std::vector<std::string>> itemExportRows;
+
+    for (int i = 0; i < ui->tableWidget->rowCount(); i++)
+    {
+        std::vector<std::string> rowText = {
+            ui->tableWidget->item(i,0)->text().toStdString(),
+            ui->tableWidget->item(i,1)->text().toStdString(),
+            ui->tableWidget->item(i,2)->text().toStdString()
+        };
+
+        itemExportRows.push_back(rowText);
+        ui->tableWidget->item(i,3)->setText("Exported");
+    }
+
+    _ExportThread = QThread::create(&HAYDEN::SAMUEL::ExportSelected, &SAM, _ExportPath, itemExportRows);
+
+    connect(_ExportThread, &QThread::finished, this, [this]()
+    {
+        if (_ExportStatusBox.isVisible())
+            _ExportStatusBox.close();
+
+        if (SAM.HasDiskSpaceError() == 1)
+            ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
+
+        QString labelCount = QString::number(ui->tableWidget->rowCount());
+        QString labelText = "Exported " + labelCount + " files.";
+
+        ui->labelStatus->setText(labelText);
+        EnableGUI();
+    });
+
+    _ExportThread->start();
+
+    /*
+     * We don't want the dialog box to appear
+     * unless the export will take a while. Otherwise it looks broken.
+     * For fast exports, the box will flashes on screen and disappear
+     * before anyone can read it. Probably needs some adjustment.
+    */
+
+    if (itemExportRows.size() >= 40) // Might want to use different number for TGA vs. DECL
+    {
+        DisableGUI();
+        ui->labelStatus->setText("Exporting...");
+
+        if (ShowExportStatus() == 0x00400000 && _ExportThread->isRunning()) // CANCEL
+        {
+            _ExportThread->terminate();
+            ui->labelStatus->setText("Export operation was cancelled.");
+
+            for (int64 i = 0; i < ui->tableWidget->rowCount(); i++)
+            {
+                QTableWidgetItem* tableItem = ui->tableWidget->item(i, 3);
+                tableItem->setText("Loaded");
+            }
+        }
+    }
+}
+
 
 // Private Slots
 void MainWindow::on_btnExportAll_clicked()
 {
-    if (!_ResourceFileIsLoaded)
+    // User most-likely intends to export search results only.
+    if (_ViewIsFiltered == 1)
     {
-        ThrowError("No .resource file is currently loaded.", "Please select a file using the \"Load Resource\" button first.");
+        ExportSearchResults();
         return;
     }
-    if (ConfirmExportAll() == 0x0400) // OK
+
+    // USER CONFIRMED - OK TO EXPORT
+    if (ConfirmExportAll() == 0x0400)
     {
         DisableGUI();
         ui->labelStatus->setText("Exporting...");
@@ -211,7 +313,8 @@ void MainWindow::on_btnExportAll_clicked()
 
         _ExportThread->start();
 
-        if (ShowExportStatus() == 0x00400000 && _ExportThread->isRunning()) // CANCEL
+        // CANCELLED BY USER
+        if (ShowExportStatus() == 0x00400000 && _ExportThread->isRunning())
         {
             _ExportThread->terminate();
             ui->labelStatus->setText("Export operation was cancelled.");
@@ -227,10 +330,7 @@ void MainWindow::on_btnExportAll_clicked()
 }
 void MainWindow::on_btnExportSelected_clicked()
 {
-    // itemExportRows is the list of files we pass to fileExporter.
-    // We build this from ui->tableWidget->selectedItems.
-
-    std::vector<std::vector<std::string>> itemExportRows;
+    std::vector<std::vector<std::string>> itemExportRows; // list of files to export
     QList<QTableWidgetItem *> itemExportQList = ui->tableWidget->selectedItems();
 
     if (itemExportQList.size() == 0)
@@ -239,7 +339,6 @@ void MainWindow::on_btnExportSelected_clicked()
         return;
     }
 
-    // Loop through selected items and build itemExportRows
     for (int64 i = 0; i < itemExportQList.size(); i+=4)
     {
         std::vector<std::string> rowText = {
@@ -251,8 +350,8 @@ void MainWindow::on_btnExportSelected_clicked()
         itemExportQList[i+3]->setText("Exported");
     }
 
-    // Define export thread behavior
     _ExportThread = QThread::create(&HAYDEN::SAMUEL::ExportSelected, &SAM, _ExportPath, itemExportRows);
+
     connect(_ExportThread, &QThread::finished, this, [this]()
     {
         if (_ExportStatusBox.isVisible())
@@ -269,11 +368,16 @@ void MainWindow::on_btnExportSelected_clicked()
         EnableGUI();
     });
 
-    // Begin file export
     _ExportThread->start();
 
-    // Show dialog with cancel option if >= 40 items selected.
-    if (itemExportRows.size() >= 40)
+    /*
+     * We don't want the dialog box to appear
+     * unless the export will take a while. Otherwise it looks broken.
+     * For fast exports, the box will flashes on screen and disappear
+     * before anyone can read it. Probably needs some adjustment.
+    */
+
+    if (itemExportRows.size() >= 40) // Might want to use different number for TGA vs. DECL
     {
         DisableGUI();
         ui->labelStatus->setText("Exporting...");
@@ -357,7 +461,9 @@ void MainWindow::on_btnSearch_clicked()
         return;
 
     std::string searchText = ui->inputSearch->text().toStdString();
-    PopulateGUIResourceTable(searchText);
+    std::vector<std::string> searchWords = SplitSearchTerms(searchText);
+
+    PopulateGUIResourceTable(searchWords);
 
     ui->btnClear->setVisible(true);
     return;
