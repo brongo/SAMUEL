@@ -55,7 +55,7 @@ namespace HAYDEN
 			void LoadPackageMapSpec();
 
 			// Reads streamdb data associated with this resource file (per packageMapSpec).
-			void UpdateStreamDBFileList(const std::string resourceFileName);
+            void UpdateStreamDBFileList(const std::string resourceFileName);
 			void ReadStreamDBFiles();
 	};
 }

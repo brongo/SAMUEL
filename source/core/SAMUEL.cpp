@@ -74,7 +74,11 @@ namespace HAYDEN
     void SAMUEL::UpdateStreamDBFileList(const std::string resourceFileName)
     {
         std::vector<std::string> appendList;
-        appendList = _PackageMapSpec.GetFilesByResourceName(_BasePath + (char)fs::path::preferred_separator + resourceFileName);
+
+        if (resourceFileName == "gameresources.resources")
+            appendList = _PackageMapSpec.GetFilesByResourceName(_BasePath + (char)fs::path::preferred_separator + resourceFileName);
+        else
+            appendList = _PackageMapSpec.GetFilesByResourceName(resourceFileName);
 
         // remove any files without .streamdb extension
         for (int i = 0; i < appendList.size(); i++)

@@ -279,7 +279,7 @@ namespace HAYDEN
     {
         std::string resourceFolder;
         size_t offset1 = _ResourceFilePath.rfind("/");
-        size_t offset2 = _ResourceFilePath.rfind(".");
+        size_t offset2 = _ResourceFilePath.find(".");
 
         // this shouldn't happen, but if it somehow does, we just won't use the resourceFolder in our export path.
         if (offset1 < 8 || offset2 < offset1)
