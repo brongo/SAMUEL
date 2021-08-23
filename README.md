@@ -24,7 +24,7 @@ This will obviously get compared to VEGA (the other asset extraction tool), so i
 4. Supports extracting non-streamed or modded textures - texture modders can now recover their source images.
 5. Has improved search functionality - can search with multiple keywords separated by spaces.
 6. Extracts "normals" in RG format (greenish color) used by DOOM Eternal, which should reduce steps needed to modify them.
-7. Loads/runs a bit faster than VEGA in general, but is not not as full-featured.
+7. Loads/runs a bit faster than VEGA in general, but is not as full-featured.
 
 ### Limitations:
 
