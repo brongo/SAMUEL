@@ -30,15 +30,9 @@ namespace HAYDEN
 #else
         auto oodle = dlopen("./liblinoodle.so", RTLD_LAZY);
         OodLZ_Decompress = (OodLZ_DecompressFunc*)dlsym(oodle, "OodleLZ_Decompress");
-
-        if (dlerror() != NULL)
-        {
-            fprintf(stderr, "Error: failed to load oo2core_8_win64.dll.\n\n");
-            return std::vector<byte>();
-        }
 #endif
 
-        if (OodLZ_Decompress == NULL)
+        if (oodle == NULL || OodLZ_Decompress == NULL)
         {
             fprintf(stderr, "Error: failed to load oo2core_8_win64.dll.\n\n");
             return std::vector<byte>();
