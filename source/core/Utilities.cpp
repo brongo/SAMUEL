@@ -18,7 +18,7 @@ namespace HAYDEN
     }
 
     // Decompress using Oodle DLL
-    OodLZ_DecompressFunc* OodLZ_Decompress;
+    OodLZ_DecompressFunc* OodLZ_Decompress = NULL;
 
     bool oodleInit(const std::string& basePath)
     {
@@ -39,6 +39,9 @@ namespace HAYDEN
     }
     std::vector<byte> oodleDecompress(std::vector<byte> compressedData, const uint64 decompressedSize)
     {
+        if (OodLZ_Decompress == NULL)
+            return std::vector<byte>();
+
         std::vector<byte> output(decompressedSize + SAFE_SPACE);
         uint64 outbytes = 0;
 
