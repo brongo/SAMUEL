@@ -427,9 +427,9 @@ void MainWindow::on_btnLoadResource_clicked()
     if (!fileName.isEmpty())
     {
         #ifdef __linux__
-        // If it's an AppImage, get path from ARGV0 env variable
+        // If it's an AppImage, get path from OWD and ARGV0 env variables
         if (getenv("APPIMAGE") != NULL)
-            _ApplicationPath = std::string(getenv("ARGV0"));
+            _ApplicationPath = fs::path(getenv("OWD")).append(getenv("ARGV0")).string();
         else
         #endif
         _ApplicationPath = QCoreApplication::applicationFilePath().toStdString();
