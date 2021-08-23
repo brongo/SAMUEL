@@ -426,6 +426,12 @@ void MainWindow::on_btnLoadResource_clicked()
     const QString fileName = QFileDialog::getOpenFileName(this);
     if (!fileName.isEmpty())
     {
+        #ifdef __linux__
+        // If it's an AppImage, get path from ARGV0 env variable
+        if (getenv("APPIMAGE") != NULL)
+            _ApplicationPath = std::string(getenv("ARGV0"));
+        else
+        #endif
         _ApplicationPath = QCoreApplication::applicationFilePath().toStdString();
         _ExportPath = fs::absolute(_ApplicationPath).replace_filename("exports").string();
         _ResourcePath = fileName.toStdString();
