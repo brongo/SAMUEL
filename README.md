@@ -6,11 +6,9 @@ It is cross-platform, open-source, and features an easy-to-use graphical interfa
 
 ## What this tool is for:
 
-SAMUEL can:
-
-- Export .decl files individually or in bulk
-- Export full-size images for use in texture modding (in .dds format).
-- **Experimental:** export .lwo and .md6mesh files in their native formats (to allow for eventual reverse-engineering of DOOM Eternal model formats).
+1. Exports .decl files individually or in-bulk.
+2. Exports full-size images for use in texture modding (in .dds format).
+3. **Experimental:** exports .lwo and .md6mesh files in their native formats (to allow for eventual reverse-engineering of DOOM Eternal model formats).
 
 Files will be extracted to the "exports" folder, which is in the same location as SAMUEL.exe.
 
