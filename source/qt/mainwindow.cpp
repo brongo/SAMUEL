@@ -403,7 +403,7 @@ void MainWindow::on_btnLoadResource_clicked()
     if (!fileName.isEmpty())
     {
         _ApplicationPath = QCoreApplication::applicationFilePath().toStdString();
-        _ExportPath = fs::absolute(_ApplicationPath).replace_filename("exports").string();
+        _ExportPath = fs::current_path().replace_filename("exports").string();
         _ResourcePath = fileName.toStdString();
 
         // Load BasePath and PackageMapSpec Data into SAMUEL
