@@ -136,6 +136,9 @@ namespace HAYDEN
 
         if (!InBaseDirectory(resourceFileName))
             return fileList;
+
+        if (resourceFileName.rfind(".backup") != -1)
+            resourceFileName = resourceFileName.substr(0, resourceFileName.rfind(".backup"));
         
         resourceFileName = GetRelativeFilePath(resourceFileName);
         fileIndex = GetFileIndexByFileName(resourceFileName);

@@ -1,7 +1,10 @@
 #pragma once
 
 #ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#else
+#include <dlfcn.h>
 #endif
 
 #include <string>
@@ -36,6 +39,13 @@ namespace HAYDEN
     uint64_t hexToInt64(const std::string hex); 
     void endianSwap(uint64& value); 
 
-    // oodle functions
+    // Decompress using Oodle DLL
+    bool oodleInit(const std::string& basePath);
     std::vector<byte> oodleDecompress(std::vector<byte> compressedData, const uint64 decompressedSize);
+
+    // Recursive mkdir, bypassing PATH_MAX limitations on Windows
+    bool mkpath(const fs::path& path);
+
+    // Opens FILE* with long filepath, bypasses PATH_MAX limitations in Windows
+    FILE* openLongFilePathWin32(const fs::path& path);
 }
