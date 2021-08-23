@@ -23,8 +23,9 @@ This will obviously get compared to VEGA (the other asset extraction tool), so i
 3. Successfully extracts a few types of textures that VEGA doesn't support.
 4. Supports extracting non-streamed or modded textures - texture modders can now recover their source images.
 5. Has improved search functionality - can search with multiple keywords separated by spaces.
-6. Extracts "normals" in RG format (greenish color) used by DOOM Eternal, which should reduce steps needed to modify them.
-7. Loads/runs a bit faster than VEGA in general, but is not as full-featured.
+6. Extracts "normals" in RG format (yellow-greenish color) used by DOOM Eternal, which should reduce steps needed to modify them.
+7. Image files are exported using their full name with "$" modifiers (important for custom assets).
+8. Files are extracted to their full path used in the game (e.g. "gameresources_patch1/art/tile/etc" instead of just "images").
 
 ### Limitations:
 
@@ -60,4 +61,4 @@ SAMUEL for Windows is tested and compiled using a static build of Qt version 6.1
 
 ## Contributing:
 
-Contributions are *very* welcome, and there is lots of room for code cleanup/improvement. All issues and pull requests will be considered. Please note I have limited time, so my response may not be immediate.
+Contributions are welcomed. There is lots of room for code cleanup/improvement. All issues and pull requests will be considered. Please note I have limited time, so my response may not be immediate.
