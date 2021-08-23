@@ -120,10 +120,6 @@ void MainWindow::PopulateGUIResourceTable(std::vector<std::string> searchWords)
             resourceFile.resourceEntries[i].version != 0)
             continue;
 
-        // Filter out unsupported "version 0" files.
-        if (resourceFile.resourceEntries[i].version == 0 && resourceFile.resourceEntries[i].type != "rs_streamfile")
-            continue;
-
         // Filter out anything we didn't search for
         if (searchWords.size() > 0)
         {
@@ -137,6 +133,34 @@ void MainWindow::PopulateGUIResourceTable(std::vector<std::string> searchWords)
             if (matched == 0)
                 continue;
         }
+
+        // Filter out unsupported .lwo
+        if (resourceFile.resourceEntries[i].version == 67)
+        {
+            if (resourceFile.resourceEntries[i].name.rfind("world_") != -1 && (resourceFile.resourceEntries[i].name.find("maps/game") != -1))
+                continue;
+
+            if (resourceFile.resourceEntries[i].name.rfind(".bmodel") != -1)
+                continue;
+        }
+
+        // Filter out unsupported md6
+        if (resourceFile.resourceEntries[i].version == 31)
+        {
+            if (resourceFile.resourceEntries[i].name.rfind(".abc") != -1)
+                continue;
+        }
+
+        // Filter out unsupported images
+        if (resourceFile.resourceEntries[i].version == 21)
+        {
+            if (resourceFile.resourceEntries[i].name.rfind("/lightprobes/") != -1)
+                continue;
+        }
+
+        // Filter out unsupported "version 0" files
+        if (resourceFile.resourceEntries[i].version == 0 && resourceFile.resourceEntries[i].type != "rs_streamfile")
+            continue;
 
         int row_count = ui->tableWidget->rowCount();
         ui->tableWidget->insertRow(row_count);
