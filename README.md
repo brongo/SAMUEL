@@ -20,13 +20,15 @@ This will obviously get compared to VEGA (the other asset extraction tool), so i
 
 1. SAMUEL is cross-platform and open-source. It works on Windows, Linux, MacOS.
 2. Supports extracting of .decl files in bulk or individually.
-3. Successfully extracts several types of textures that VEGA doesn't support.
+3. Successfully extracts a few types of textures that VEGA doesn't support.
 4. Supports extracting non-streamed or modded textures - texture modders can now recover their source images.
 5. Has improved search functionality - can search with multiple keywords separated by spaces.
 6. Extracts "normals" in RG format (greenish color) used by DOOM Eternal, which should reduce steps needed to modify them.
-7. Runs a bit faster than VEGA in general.
+7. Loads/runs a bit faster than VEGA in general, but is not not as full-featured.
 
 ### Limitations:
+
+SAMUEL exports images in .DDS format only.
 
 SAMUEL is not yet capable of exporting models (.lwo/.md6 files) for use in Substance Painter or Blender. However, it is now possible to export these files in their *native* formats for the very first time. This is an important step and it makes it possible for us to start reverse-engineering the format. Once the model format is better understood, we can add export to .obj/.fbx features.
 
