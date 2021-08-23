@@ -23,7 +23,7 @@ namespace HAYDEN
     bool oodleInit(const std::string& basePath)
     {
 #ifdef _WIN32
-        std::string oodlePath = basePath.substring(0, basePath.length() - 4) + "oo2core_8_win64.dll";
+        std::string oodlePath = basePath.substr(0, basePath.length() - 4) + "oo2core_8_win64.dll";
         auto oodle = LoadLibraryA(oodlePath.c_str());
         OodLZ_Decompress = (OodLZ_DecompressFunc*)GetProcAddress(oodle, "OodleLZ_Decompress");
 #else
