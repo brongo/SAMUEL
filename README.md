@@ -36,7 +36,7 @@ SAMUEL is not yet capable of exporting models (.lwo/.md6 files) for use in Subst
 
 ## Credits:
 
-* SamPT ([@brongo](https://github.com/brongo)) - Main author/developer of the SAMUEL tool. First person to fully reverse-engineer _and disclose_ the .streamdb file format, .resources format, .tga file format, .lwo/.md6mesh header formats, and discover how to export the files.
+* SamPT ([@brongo](https://github.com/brongo)) - Primary author/developer of the SAMUEL tool. First person to fully reverse-engineer _and disclose_ the .streamdb file format, .resources format, .tga file format, .lwo/.md6mesh header formats, and discover how to export the files.
 * [@Powerball253](https://github.com/PowerBall253) - Many HUGE contributions in the form of code & testing. Responsible for Linux/MacOS compatibility, packageMapSpec parser, and figuring out Qt multithreading. Also assisted with reverse-engineering of TGA header formats.
 * [DOOM 2016+ Modding Discord](https://discord.gg/ymRvQaU) for support and testing, and encouraging future developments.
 
@@ -57,3 +57,7 @@ There is no need to build/compile this program from source code. Simply download
 If you *want* to build/compile from source, you will need a copy of the [Qt development library](https://www.qt.io/). The SAMUEL program uses Qt for its cross-platform GUI features. Please note that usage of Qt is subject to a separate licensing agreement. SAMUEL uses Qt under the [Qt for Open-Source Development](https://www.qt.io/download-open-source). The Qt source code can be acquired here: https://www.qt.io/offline-installers.
 
 SAMUEL for Windows is tested and compiled using a static build of Qt version 6.1.2.
+
+## Contributing:
+
+Contributions are *very* welcome, and there is lots of room for code cleanup/improvement. All issues and pull requests will be considered. Please note I have limited time, so my response may not be immediate.
