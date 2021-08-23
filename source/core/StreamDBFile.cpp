@@ -2,7 +2,6 @@
 
 namespace HAYDEN
 {
-    // Utility functions
     uint64 StreamDBFile::GetFileOffsetInStreamDB(const uint64 streamDBIndex, const uint64 compressedSize) const
     {
         for (int i = 0; i < indexEntryCount; i++)
@@ -31,7 +30,6 @@ namespace HAYDEN
         return compressedData;
     }
 
-    // Helper functions for constructor
     void StreamDBFile::readStreamDBHeader(FILE* f)
     {
         byte buff4[4];
@@ -69,7 +67,6 @@ namespace HAYDEN
         return;
     }
 
-    // Preferred Constructor, calls helper functions above
     StreamDBFile::StreamDBFile(const fs::path& path)
     {
         fileName = path.string();
