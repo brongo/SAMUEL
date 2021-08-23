@@ -299,7 +299,7 @@ namespace HAYDEN
     {
         std::string resourceFolder = GetResourceFolder();
         fs::path resourcePath = _OutDir + (char)fs::path::preferred_separator + resourceFolder;
-        fs::path outputPath = resourcePath / fs::path(filePath);
+        fs::path outputPath = resourcePath.append(filePath);
         outputPath.make_preferred();
         return outputPath;
     }
