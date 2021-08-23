@@ -36,7 +36,7 @@ SAMUEL is not yet capable of exporting models (.lwo/.md6 files) for use in Subst
 
 ## Credits:
 
-* SamPT ([@brongo](https://github.com/brongo)) - Main author/developer of the SAMUEL tool, which was made possible by many hours of reverse-engineering work. First person to fully and publically reverse-engineer the .streamdb file format, .resources format, .tga file format, .lwo/.md6mesh header formats, and discover how to export the files.
+* SamPT ([@brongo](https://github.com/brongo)) - Main author/developer of the SAMUEL tool, made possible by many hours of reverse-engineering work. First person to fully reverse-engineer _and disclose_ the .streamdb file format, .resources format, .tga file format, .lwo/.md6mesh header formats, and discover how to export the files.
 * [@Powerball253](https://github.com/PowerBall253) - Many significant contributions in the form of code & testing. Responsible for Linux/MacOS compatibility, packageMapSpec parser, and figuring out Qt multithreading. Also assisted with reverse-engineering of TGA header formats.
 * [DOOM 2016+ Modding Discord](https://discord.gg/ymRvQaU) for support and testing, and encouraging future developments.
 
