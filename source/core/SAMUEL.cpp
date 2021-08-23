@@ -18,24 +18,6 @@ namespace HAYDEN
         fprintf(stderr, "%s", consoleMsg.c_str());
         return;
     }
-    bool SAMUEL::FindOodleDLL()
-    {
-        if (!fs::exists("oo2core_8_win64.dll"))
-        {
-            ThrowError(1, "SAMUEL requires you to manually copy oo2core_8_win64.dll from Doom Eternal's installation folder and place it in the same folder as SAMUEL. Please do this, and then run the SAMUEL program again.");
-            return 0;
-        }
-
-        #ifdef __linux__
-        if (!fs::exists("liblinoodle.so"))
-        {
-            ThrowError(1, "SAMUEL requires you to manually copy liblinoodle.so from Doom Eternal's \"base\" folder and place it in the same directory as SAMUEL. Please do this, and then run the SAMUEL program again.");
-            return 0;
-        }
-        #endif
-
-        return 1;
-    };
     bool SAMUEL::FindBasePath(const std::string resourcePath)
     {
         // Get base path from resource path
@@ -223,16 +205,19 @@ namespace HAYDEN
         }
         return 0;
     }
-    bool SAMUEL::CheckDependencies()
-    {
-        if (!FindOodleDLL())
-            return 0;
-        return 1;
-    }
     bool SAMUEL::Init(const std::string resourcePath)
     {     
         if (!FindBasePath(resourcePath))
             return 0;
+
+        if (!oodleInit(_BasePath))
+        {
+            ThrowError(1,
+                "Failed to load the oodle dll.",
+                "Make sure the oo2core_8_win64.dll file is present in your game directory."
+            );
+            return 0;
+        }
 
         LoadPackageMapSpec();
         return 1;

@@ -18,7 +18,6 @@ namespace HAYDEN
 	{
         public:
 			// Startup and resource loader functions
-			bool CheckDependencies();
 			bool Init(const std::string resourcePath);
 			bool LoadResource(const std::string fileName);
 
@@ -50,7 +49,6 @@ namespace HAYDEN
 			void ThrowError(bool isFatal, std::string errorMessage, std::string errorDetail = "");
 
 			// Called on startup
-			bool FindOodleDLL();
 			bool FindBasePath(const std::string resourcePath);
 			void LoadPackageMapSpec();
 
