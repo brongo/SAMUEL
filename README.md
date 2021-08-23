@@ -2,7 +2,7 @@
 
 SAMUEL is a tool for extracting assets from DOOM Eternal. 
 
-It is cross-platform, open-source, and has an easy-to-use graphical interface.
+It is cross-platform, open-source, and features an easy-to-use graphical interface.
 
 # Usage:
 
