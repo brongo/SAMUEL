@@ -19,7 +19,7 @@ This will obviously get compared to VEGA (the other asset extraction tool), so i
 ### Differences from VEGA:
 
 1. SAMUEL is cross-platform and open-source. It works on Windows, Linux, MacOS.
-2. Supports extracting of .decl files in bulk or individually.
+2. Supports extracting of .decl files.
 3. Successfully extracts a few types of textures that VEGA doesn't support.
 4. Supports extracting non-streamed or modded textures - texture modders can now recover their source images.
 5. Has improved search functionality - can search with multiple keywords separated by spaces.
