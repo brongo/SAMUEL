@@ -40,6 +40,7 @@ namespace HAYDEN
     void endianSwap(uint64& value); 
 
     // Decompress using Oodle DLL
+    bool oodleInit(const std::string& basePath);
     std::vector<byte> oodleDecompress(std::vector<byte> compressedData, const uint64 decompressedSize);
 
     // Recursive mkdir, bypassing PATH_MAX limitations on Windows
