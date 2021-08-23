@@ -6,7 +6,7 @@ It is cross-platform, open-source, and features an easy-to-use graphical interfa
 
 ## What this tool is for:
 
-1. Export .decl files individually or bulk.
+1. Export .decl files.
 2. Export full-size images for use in texture modding (in .dds format).
 3. **Experimental:** export .lwo and .md6mesh files in their native formats (to allow for eventual reverse-engineering).
 
