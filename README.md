@@ -1,4 +1,4 @@
-# SAMUEL v1.0
+# SAMUEL v1.1 (In Development)
 
 SAMUEL is a tool for extracting assets from DOOM Eternal. 
 
@@ -6,7 +6,7 @@ It is cross-platform, open-source, and features an easy-to-use graphical interfa
 
 ## What this tool is for:
 
-1. Export .decl files.
+1. Export .decl files and .entities files.
 2. Export full-size images for use in texture modding (in .dds format).
 3. **Experimental:** export .lwo and .md6mesh files in their native formats (to allow for eventual reverse-engineering).
 
