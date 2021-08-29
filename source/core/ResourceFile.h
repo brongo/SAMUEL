@@ -36,6 +36,7 @@ namespace HAYDEN
             int cumulativeStreamDBSize = 0;
             int compressedSize = 0;
             int decompressedSize = 0;
+            std::vector<byte> unstreamedFileHeader;
     };
 
     class EmbeddedLWOHeader
@@ -44,6 +45,7 @@ namespace HAYDEN
             int cumulativeStreamDBSize = 0;
             int compressedSize = 0;
             int decompressedSize = 0;
+            std::vector<byte> unstreamedFileHeader;
     };
 
 

@@ -77,6 +77,7 @@ namespace HAYDEN
         md6Header.cumulativeStreamDBSize = *(int*)(md6DecompressedHeader.data() + (md6DecompressedHeader.size() - 4));
         md6Header.decompressedSize = *(int*)(md6DecompressedHeader.data() + (md6DecompressedHeader.size() - 76));
         md6Header.compressedSize = *(int*)(md6DecompressedHeader.data() + (md6DecompressedHeader.size() - 72));
+        md6Header.unstreamedFileHeader = md6DecompressedHeader; // Temporary for rev-eng
 
         return md6Header;
     }
@@ -113,6 +114,8 @@ namespace HAYDEN
         // Get decompressed & compressed sizes relative to entryStart.
         lwoHeader.decompressedSize = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - (entryStart + 8)));
         lwoHeader.compressedSize = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - (entryStart + 4)));
+
+        lwoHeader.unstreamedFileHeader = lwoDecompressedHeader; // Temporary for rev-eng
         return lwoHeader;
     }
     EmbeddedCOMPFile ResourceFile::ReadCOMPFile(const std::vector<byte> compDecompressedHeader) const

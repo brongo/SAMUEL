@@ -453,6 +453,22 @@ namespace HAYDEN
                 continue;
             }
 
+            if (fileType == "LWO")
+            {
+                std::vector<byte> lwoFileHeader = fileExportList->GetLWOFileHeader(i);
+                fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
+                WriteFileToDisk(fileExportList, fullPath, fileData, lwoFileHeader);
+                continue;
+            }
+
+            if (fileType == "MD6")
+            {
+                std::vector<byte> md6FileHeader = fileExportList->GetMD6FileHeader(i);
+                fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
+                WriteFileToDisk(fileExportList, fullPath, fileData, md6FileHeader);
+                continue;
+            }
+
             if (fileType == "COMPFILE")
             {
                 int decompressedSize = 0;
@@ -471,9 +487,6 @@ namespace HAYDEN
                 WriteFileToDisk(fileExportList, fullPath, fileData);
                 continue;
             }
-
-            fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
-            WriteFileToDisk(fileExportList, fullPath, fileData);        
         }
         printf("Wrote %llu %s files, %d not found, %d errors. \n", fileExportItems.size(), fileType.c_str(), fileExportList->notFound, fileExportList->errorCount);
         return;
