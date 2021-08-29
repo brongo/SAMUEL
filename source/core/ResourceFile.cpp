@@ -115,6 +115,17 @@ namespace HAYDEN
         lwoHeader.compressedSize = *(int*)(lwoDecompressedHeader.data() + (lwoDecompressedHeader.size() - (entryStart + 4)));
         return lwoHeader;
     }
+    EmbeddedCOMPFile ResourceFile::ReadCOMPFile(const std::vector<byte> compDecompressedHeader) const
+    {
+        EmbeddedCOMPFile compFile;
+
+        compFile.decompressedSize = *(int*)(compDecompressedHeader.data() + 0);
+        compFile.compressedSize = *(int*)(compDecompressedHeader.data() + 8);
+
+        compFile.unstreamedFileData = compDecompressedHeader;
+        compFile.unstreamedFileData.erase(compFile.unstreamedFileData.begin(), compFile.unstreamedFileData.begin() + 16);
+        return compFile;
+    }
 
     std::vector<byte> ResourceFile::GetEmbeddedFileHeader(FILE* f, const uint64 fileOffset, const uint64 compressedSize) const
     {

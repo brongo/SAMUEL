@@ -63,14 +63,6 @@ namespace HAYDEN
             if (thisEntry.dataSizeCompressed == 0)
                 continue;
 
-            // skip unsupported images
-            if (thisEntry.version == 21)
-            {                 
-                // skip entries with "lightprobes" path
-                if (thisEntry.name.rfind("/lightprobes/") != -1)
-                    continue;
-            }
-
             // skip unsupported models
             if (thisEntry.version == 67)
             {
@@ -83,12 +75,28 @@ namespace HAYDEN
                     continue;
             }
 
-            // skip non-decl files
-            if (thisEntry.version == 0)
+            // skip unsupported md6
+            if (thisEntry.version == 31)
             {
-                if (thisEntry.type != "rs_streamfile")
+                if (thisEntry.name.rfind(".abc") != -1)
                     continue;
             }
+
+            // skip unsupported images
+            if (thisEntry.version == 21)
+            {                 
+                // skip entries with "lightprobes" path
+                if (thisEntry.name.rfind("/lightprobes/") != -1)
+                    continue;
+            }
+
+            // skip unsupported version 1 files
+            if (thisEntry.version == 1 && thisEntry.type != "compfile")
+                continue;
+
+            // skip unsupported version 0 files
+            if (thisEntry.version == 0 && thisEntry.type != "rs_streamfile")
+                continue;
 
             FileExportItem exportItem;
             exportItem.resourceFileName = thisEntry.name;
@@ -97,7 +105,7 @@ namespace HAYDEN
             exportItem.resourceFileDecompressedSize = thisEntry.dataSizeDecompressed;
             exportItem.resourceFileHash = thisEntry.hash;
 
-            if (thisEntry.version == 0)
+            if (thisEntry.version == 0 || thisEntry.version == 1)
                 exportItem.isStreamed = 0;
 
             _ExportItems.push_back(exportItem);
@@ -142,19 +150,27 @@ namespace HAYDEN
                 _LWOHeaderData.push_back(embeddedLWOHeader);
             }
 
+            if (_FileType == 1)
+            {
+                EmbeddedCOMPFile embeddedCOMPFile = resourceFile.ReadCOMPFile(decompressedHeader);
+                _COMPFileData.push_back(embeddedCOMPFile);
+            }
+
             if (_FileType == 0)
             {
                 EmbeddedDECLFile embeddedDECLFile;
                 embeddedDECLFile.unstreamedFileData = decompressedHeader;
                 _DECLFileData.push_back(embeddedDECLFile);
             }
+
+
         }
         fclose(f);
         return;
     }
     void FileExportList::GetStreamDBIndexAndSize()
     {
-        if (_FileType == 0)
+        if (_FileType == 0 || _FileType == 1)
             return;
 
         for (int i = 0; i < _ExportItems.size(); i++)
@@ -205,7 +221,7 @@ namespace HAYDEN
     }
     void FileExportList::GetStreamDBFileOffsets(const std::vector<StreamDBFile>& streamDBFiles)
     {
-        if (_FileType == 0)
+        if (_FileType == 0 || _FileType == 1)
             return;
 
         for (int i = 0; i < _ExportItems.size(); i++)
@@ -376,6 +392,8 @@ namespace HAYDEN
             fileExportList = &_LWOExportList;
         else if (fileType == "DECL")
             fileExportList = &_DECLExportList;
+        else if (fileType == "COMPFILE")
+            fileExportList = &_COMPExportList;
         else
             return;
 
@@ -435,6 +453,25 @@ namespace HAYDEN
                 continue;
             }
 
+            if (fileType == "COMPFILE")
+            {
+                int decompressedSize = 0;
+                decompressedSize = fileExportList->GetCOMPFileDecompressedSize(i);
+                fileData = fileExportList->GetCOMPFileData(i);
+
+                fileData = oodleDecompress(fileData, decompressedSize);
+                if (fileData.empty())
+                {
+                    fprintf(stderr, "Error: Failed to decompress: %s \n", thisFile.resourceFileName.c_str());
+                    fileExportList->errorCount++;
+                    continue;
+                }
+
+                fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
+                WriteFileToDisk(fileExportList, fullPath, fileData);
+                continue;
+            }
+
             fs::path fullPath = BuildOutputPath(thisFile.resourceFileName);
             WriteFileToDisk(fileExportList, fullPath, fileData);        
         }
@@ -451,6 +488,7 @@ namespace HAYDEN
         _MD6ExportList = FileExportList(resourceFile, streamDBFiles, 31);
         _LWOExportList = FileExportList(resourceFile, streamDBFiles, 67);
         _DECLExportList = FileExportList(resourceFile, streamDBFiles, 0);
+        _COMPExportList = FileExportList(resourceFile, streamDBFiles, 1);
 
         // get total size of files to export
         _TotalExportSize = CalculateRequiredDiskSpace();
@@ -465,6 +503,7 @@ namespace HAYDEN
         std::vector<std::string> userSelectedMD6Files;
         std::vector<std::string> userSelectedLWOFiles;
         std::vector<std::string> userSelectedDECLFiles;
+        std::vector<std::string> userSelectedCOMPFiles;
 
         // build separate lists for each file type.
         for (int i = 0; i < userSelectedFileList.size(); i++)
@@ -484,6 +523,9 @@ namespace HAYDEN
                 case 0:
                     userSelectedDECLFiles.push_back(userSelectedFileList[i][0]);
                     break;
+                case 1:
+                    userSelectedCOMPFiles.push_back(userSelectedFileList[i][0]);
+                    break;
                 default:
                     break;
             }
@@ -493,6 +535,7 @@ namespace HAYDEN
         _MD6ExportList = FileExportList(resourceFile, streamDBFiles, 31, userSelectedMD6Files, 1);
         _LWOExportList = FileExportList(resourceFile, streamDBFiles, 67, userSelectedLWOFiles, 1);
         _DECLExportList = FileExportList(resourceFile, streamDBFiles, 0, userSelectedDECLFiles, 1);
+        _COMPExportList = FileExportList(resourceFile, streamDBFiles, 1, userSelectedCOMPFiles, 1);
 
         // get total size of files to export
         _TotalExportSize = CalculateRequiredDiskSpace();

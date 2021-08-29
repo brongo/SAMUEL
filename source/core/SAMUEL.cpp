@@ -187,6 +187,7 @@ namespace HAYDEN
             _Exporter.ExportFiles(_StreamDBFileData, "MD6");
             _Exporter.ExportFiles(_StreamDBFileData, "LWO");
             _Exporter.ExportFiles(_StreamDBFileData, "DECL");
+            _Exporter.ExportFiles(_StreamDBFileData, "COMPFILE");
             return 1;
         }
         return 0;
@@ -201,6 +202,7 @@ namespace HAYDEN
             _Exporter.ExportFiles(_StreamDBFileData, "MD6");
             _Exporter.ExportFiles(_StreamDBFileData, "LWO");
             _Exporter.ExportFiles(_StreamDBFileData, "DECL");
+            _Exporter.ExportFiles(_StreamDBFileData, "COMPFILE");
             return 1;
         }
         return 0;

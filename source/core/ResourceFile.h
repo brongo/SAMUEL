@@ -46,6 +46,15 @@ namespace HAYDEN
             int decompressedSize = 0;
     };
 
+
+    class EmbeddedCOMPFile
+    {
+        public:
+            int compressedSize = 0;
+            int decompressedSize = 0;
+            std::vector<byte> unstreamedFileData;
+    };
+
     class EmbeddedDECLFile
     {
         public:
@@ -125,7 +134,7 @@ namespace HAYDEN
             EmbeddedTGAHeader ReadTGAHeader(const std::vector<byte> tgaDecompressedHeader) const;
             EmbeddedMD6Header ReadMD6Header(const std::vector<byte> md6DecompressedHeader) const;
             EmbeddedLWOHeader ReadLWOHeader(const std::vector<byte> lwoDecompressedHeader) const;
-            EmbeddedDECLFile  ReadDECLFile(const std::vector<byte> declDecompressedFile) const;
+            EmbeddedCOMPFile  ReadCOMPFile(const std::vector<byte> compDecompressedHeader) const;
 
             // Helper functions for constructor
             void ReadFileHeader(FILE* f);
