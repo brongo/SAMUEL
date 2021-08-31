@@ -31,7 +31,7 @@ namespace HAYDEN
 #else
         // Copy oodle to current dir to prevent linoodle errors
         std::error_code ec;
-        fs::copy(oodlePath, fs::current_path());
+        fs::copy(oodlePath, fs::current_path(), ec);
         if (ec.value() != 0)
             return false;
 
