@@ -22,14 +22,26 @@ namespace HAYDEN
 
     bool oodleInit(const std::string& basePath)
     {
-#ifdef _WIN32
         std::string oodlePath = basePath.substr(0, basePath.length() - 4) + "oo2core_8_win64.dll";
+
+#ifdef _WIN32
+        // Load oodle dll
         auto oodle = LoadLibraryA(oodlePath.c_str());
         OodLZ_Decompress = (OodLZ_DecompressFunc*)GetProcAddress(oodle, "OodleLZ_Decompress");
 #else
+        // Copy oodle to current dir to prevent linoodle errors
+        std::error_code ec;
+        fs::copy(oodlePath, fs::current_path());
+        if (ec.value() != 0)
+            return false;
+
+        // Load linoodle library
         std::string linoodlePath = basePath + "/liblinoodle.so";
         auto oodle = dlopen(linoodlePath.c_str(), RTLD_LAZY);
         OodLZ_Decompress = (OodLZ_DecompressFunc*)dlsym(oodle, "OodleLZ_Decompress");
+
+        // Remove oodle dll
+        fs::remove(fs::current_path().append("oo2core_8_win64.dll"), ec);
 #endif
 
         if (oodle == NULL || OodLZ_Decompress == NULL)
