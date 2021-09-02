@@ -1,4 +1,4 @@
-# SAMUEL v1.1 (In Development)
+# SAMUEL v1.1
 
 SAMUEL is a tool for extracting assets from DOOM Eternal. 
 
