@@ -113,10 +113,11 @@ void MainWindow::PopulateGUIResourceTable(std::vector<std::string> searchWords)
     HAYDEN::ResourceFile resourceFile = SAM.GetResourceFile();
     for (int i = 0; i < resourceFile.resourceEntries.size(); i++)
     {
-        // Temporary, probably? Skip anything that isn't TGA, LWO, MD6, DECL for now.
+        // Temporary, maybe? Skip anything that isn't TGA, LWO, MD6, DECL for now.
         if (resourceFile.resourceEntries[i].version != 67 &&
             resourceFile.resourceEntries[i].version != 31 &&
             resourceFile.resourceEntries[i].version != 21 &&
+            resourceFile.resourceEntries[i].version != 1 &&
             resourceFile.resourceEntries[i].version != 0)
             continue;
 
@@ -157,6 +158,10 @@ void MainWindow::PopulateGUIResourceTable(std::vector<std::string> searchWords)
             if (resourceFile.resourceEntries[i].name.rfind("/lightprobes/") != -1)
                 continue;
         }
+
+        // Filter out unsupported "version 1" files
+        if (resourceFile.resourceEntries[i].version == 1 && resourceFile.resourceEntries[i].type != "compfile")
+            continue;
 
         // Filter out unsupported "version 0" files
         if (resourceFile.resourceEntries[i].version == 0 && resourceFile.resourceEntries[i].type != "rs_streamfile")

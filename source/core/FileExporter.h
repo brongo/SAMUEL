@@ -42,8 +42,12 @@ namespace HAYDEN
 			FileExportList() {};
             FileExportList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, int fileType, std::vector<std::string> selectedFileNames = std::vector<std::string>(), bool exportFromList = 0);
 			std::vector<FileExportItem> GetFileExportItems() { return _ExportItems; }
-			std::vector<byte> GetTGAFileData(int i) { return _TGAHeaderData[i].unstreamedFileData; }
+            std::vector<byte> GetTGAFileData(int i) { return _TGAHeaderData[i].unstreamedFileData; }
             std::vector<byte> GetDECLFileData(int i) { return _DECLFileData[i].unstreamedFileData; }
+            std::vector<byte> GetCOMPFileData(int i) { return _COMPFileData[i].unstreamedFileData; }
+            std::vector<byte> GetLWOFileHeader(int i) { return _LWOHeaderData[i].unstreamedFileHeader; }
+            std::vector<byte> GetMD6FileHeader(int i) { return _MD6HeaderData[i].unstreamedFileHeader; }
+            int GetCOMPFileDecompressedSize(int i) { return _COMPFileData[i].decompressedSize; }
 
 		private:
 			int _FileType = 0;
@@ -52,6 +56,7 @@ namespace HAYDEN
 			std::vector<EmbeddedMD6Header> _MD6HeaderData;
 			std::vector<EmbeddedLWOHeader> _LWOHeaderData;
             std::vector<EmbeddedDECLFile> _DECLFileData;
+            std::vector<EmbeddedCOMPFile> _COMPFileData;
 
 			// Subroutines
 			uint64 CalculateStreamDBIndex(const uint64 resourceId, const int mipCount = -6) const;
@@ -80,6 +85,7 @@ namespace HAYDEN
 			FileExportList _MD6ExportList;
 			FileExportList _LWOExportList;
             FileExportList _DECLExportList;
+            FileExportList _COMPExportList;
 			size_t _TotalExportSize = 0;
 
 			// FileExporter Subroutines
