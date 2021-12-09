@@ -11,14 +11,14 @@ namespace HAYDEN
     // User-friendly struct for managing .resources data
     struct ResourceEntry
     {
-        uint64_t DataOffset;
-        uint64_t DataSize;
-        uint64_t DataSizeUncompressed;
-        uint64_t StreamResourceHash;
-        uint32_t Version;
-        uint16_t CompressionMode;
-        std::string Name;
-        std::string Type;
+        uint64_t DataOffset = 0;
+        uint64_t DataSize = 0;
+        uint64_t DataSizeUncompressed = 0;
+        uint64_t StreamResourceHash = 0;
+        uint32_t Version = 0;
+        uint16_t CompressionMode = 0;
+        std::string Name = 0;
+        std::string Type = 0;
     };
 
     struct EmbeddedTGAHeader
