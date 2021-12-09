@@ -110,15 +110,15 @@ void MainWindow::PopulateGUIResourceTable(std::vector<std::string> searchWords)
     _ViewIsFiltered = 0;
 
     // Load resource file data
-    HAYDEN::ResourceFile resourceFile = SAM.GetResourceFile();
-    for (int i = 0; i < resourceFile.resourceEntries.size(); i++)
+    std::vector<HAYDEN::ResourceEntry> resourceData = SAM.GetResourceData();
+    for (int i = 0; i < resourceData.size(); i++)
     {
         // Temporary, maybe? Skip anything that isn't TGA, LWO, MD6, DECL for now.
-        if (resourceFile.resourceEntries[i].version != 67 &&
-            resourceFile.resourceEntries[i].version != 31 &&
-            resourceFile.resourceEntries[i].version != 21 &&
-            resourceFile.resourceEntries[i].version != 1 &&
-            resourceFile.resourceEntries[i].version != 0)
+        if (resourceData[i].Version != 67 &&
+            resourceData[i].Version != 31 &&
+            resourceData[i].Version != 21 &&
+            resourceData[i].Version != 1 &&
+            resourceData[i].Version != 0)
             continue;
 
         // Filter out anything we didn't search for
@@ -128,7 +128,7 @@ void MainWindow::PopulateGUIResourceTable(std::vector<std::string> searchWords)
             bool matched = 1;
 
             for (int j = 0; j < searchWords.size(); j++)
-                if (resourceFile.resourceEntries[i].name.find(searchWords[j]) == -1)
+                if (resourceData[i].Name.find(searchWords[j]) == -1)
                     matched = 0;
 
             if (matched == 0)
@@ -136,52 +136,52 @@ void MainWindow::PopulateGUIResourceTable(std::vector<std::string> searchWords)
         }
 
         // Filter out unsupported .lwo
-        if (resourceFile.resourceEntries[i].version == 67)
+        if (resourceData[i].Version == 67)
         {
-            if (resourceFile.resourceEntries[i].name.rfind("world_") != -1 && (resourceFile.resourceEntries[i].name.find("maps/game") != -1))
+            if (resourceData[i].Name.rfind("world_") != -1 && (resourceData[i].Name.find("maps/game") != -1))
                 continue;
 
-            if (resourceFile.resourceEntries[i].name.rfind(".bmodel") != -1)
+            if (resourceData[i].Name.rfind(".bmodel") != -1)
                 continue;
         }
 
         // Filter out unsupported md6
-        if (resourceFile.resourceEntries[i].version == 31)
+        if (resourceData[i].Version == 31)
         {
-            if (resourceFile.resourceEntries[i].name.rfind(".abc") != -1)
+            if (resourceData[i].Name.rfind(".abc") != -1)
                 continue;
         }
 
         // Filter out unsupported images
-        if (resourceFile.resourceEntries[i].version == 21)
+        if (resourceData[i].Version == 21)
         {
-            if (resourceFile.resourceEntries[i].name.rfind("/lightprobes/") != -1)
+            if (resourceData[i].Name.rfind("/lightprobes/") != -1)
                 continue;
         }
 
         // Filter out unsupported "version 1" files
-        if (resourceFile.resourceEntries[i].version == 1 && resourceFile.resourceEntries[i].type != "compfile")
+        if (resourceData[i].Version == 1 && resourceData[i].Type != "compfile")
             continue;
 
         // Filter out unsupported "version 0" files
-        if (resourceFile.resourceEntries[i].version == 0 && resourceFile.resourceEntries[i].type != "rs_streamfile")
+        if (resourceData[i].Version == 0 && resourceData[i].Type != "rs_streamfile")
             continue;
 
         int row_count = ui->tableWidget->rowCount();
         ui->tableWidget->insertRow(row_count);
 
         // Set Resource Name
-        std::string resourceName = resourceFile.resourceEntries[i].name;
+        std::string resourceName = resourceData[i].Name;
         QString qResourceName = QString::fromStdString(resourceName);
         QTableWidgetItem *tableResourceName = new QTableWidgetItem(qResourceName);
 
         // Set Resource Type
-        std::string resourceType = resourceFile.resourceEntries[i].type;
+        std::string resourceType = resourceData[i].Type;
         QString qResourceType = QString::fromStdString(resourceType);
         QTableWidgetItem *tableResourceType = new QTableWidgetItem(qResourceType);
 
         // Set Resource Version
-        std::string resourceVersion = std::to_string(resourceFile.resourceEntries[i].version);
+        std::string resourceVersion = std::to_string(resourceData[i].Version);
         QString qResourceVersion = QString::fromStdString(resourceVersion);
         QTableWidgetItem *tableResourceVersion = new QTableWidgetItem(qResourceVersion);
 
