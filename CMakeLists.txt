@@ -23,6 +23,8 @@ set(PROJECT_SOURCES
         ./source/core/PackageMapSpec.h
         ./source/core/ResourceFile.cpp
         ./source/core/ResourceFile.h
+        ./source/core/ResourceFileReader.cpp
+        ./source/core/ResourceFileReader.h
         ./source/core/SAMUEL.cpp
         ./source/core/SAMUEL.h
         ./source/core/StreamDBFile.cpp
