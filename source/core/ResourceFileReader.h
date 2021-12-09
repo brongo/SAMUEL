@@ -4,7 +4,7 @@
 #include <vector>
 #include <filesystem>
 
-#include "ResourceFile.h"
+#include "idFileTypes/ResourceFile.h"
 
 namespace HAYDEN
 {

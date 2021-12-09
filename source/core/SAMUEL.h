@@ -6,11 +6,12 @@
 #include <algorithm>
 #include <vector>
 
+#include "idFileTypes/PackageMapSpec.h"
+#include "idFileTypes/ResourceFile.h"
+#include "idFileTypes/StreamDBFile.h"
+
 #include "FileExporter.h"
-#include "PackageMapSpec.h"
-#include "ResourceFile.h"
 #include "ResourceFileReader.h"
-#include "StreamDBFile.h"
 #include "Utilities.h"
 
 namespace HAYDEN

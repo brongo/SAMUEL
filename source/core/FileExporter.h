@@ -3,11 +3,12 @@
 #include <vector>
 #include <filesystem>
 
-#include "DDSHeader.h"
-#include "PackageMapSpec.h"
-#include "ResourceFile.h"
+#include "exportTypes/DDSHeader.h"
+#include "idFileTypes/PackageMapSpec.h"
+#include "idFileTypes/ResourceFile.h"
+#include "idFileTypes/StreamDBFile.h"
+
 #include "ResourceFileReader.h"
-#include "StreamDBFile.h"
 #include "Utilities.h"
 
 namespace fs = std::filesystem;
