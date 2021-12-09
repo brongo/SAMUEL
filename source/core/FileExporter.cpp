@@ -36,97 +36,99 @@ namespace HAYDEN
     }
 
     // FileExportList - Helper functions for FileExportList constructor
-    void FileExportList::GetResourceEntries(const ResourceFile& resourceFile, std::vector<std::string> selectedFileNames, bool exportFromList)
+    void FileExportList::GetResourceEntries(const std::vector<ResourceEntry>& resourceData, std::vector<std::string> selectedFileNames, bool exportFromList)
     {
         // Iterate through currently loaded .resource entries to find supported files
-        for (uint64 i = 0; i < resourceFile.numFileEntries; i++)
+        for (uint64 i = 0; i < resourceData.size(); i++)
         {
-            ResourceEntry thisEntry = resourceFile.resourceEntries[i];
+            ResourceEntry thisEntry = resourceData[i];
 
             // Can't export from empty list
             if (exportFromList && selectedFileNames.size() == 0)
                 return;
 
             // each instance of FileExportList is for a different filetype. 21 = .tga, 31 = .md6mesh, 67 = .lwo, 0 = .decl
-            if (thisEntry.version != _FileType)
+            if (thisEntry.Version != _FileType)
                 continue;
 
             // only get selected file names, if list was provided
             if (exportFromList && selectedFileNames.size() > 0)
             {
-                auto it = std::find(selectedFileNames.begin(), selectedFileNames.end(), thisEntry.name);
+                auto it = std::find(selectedFileNames.begin(), selectedFileNames.end(), thisEntry.Name);
                 if (it == selectedFileNames.end())
                     continue;
             }
 
             // skips entries with no data to extract
-            if (thisEntry.dataSizeCompressed == 0)
+            if (thisEntry.DataSize == 0)
                 continue;
 
             // skip unsupported models
-            if (thisEntry.version == 67)
+            if (thisEntry.Version == 67)
             {
                 // skips world files (e.g. world_b403a83e93ccd372)
-                if (thisEntry.name.rfind("world_") != -1 && (thisEntry.name.find("maps/game") != -1))
+                if (thisEntry.Name.rfind("world_") != -1 && (thisEntry.Name.find("maps/game") != -1))
                     continue;
 
                 // skips .bmodel files
-                if (thisEntry.name.rfind(".bmodel") != -1)
+                if (thisEntry.Name.rfind(".bmodel") != -1)
                     continue;
             }
 
             // skip unsupported md6
-            if (thisEntry.version == 31)
+            if (thisEntry.Version == 31)
             {
-                if (thisEntry.name.rfind(".abc") != -1)
+                if (thisEntry.Name.rfind(".abc") != -1)
                     continue;
             }
 
             // skip unsupported images
-            if (thisEntry.version == 21)
+            if (thisEntry.Version == 21)
             {                 
                 // skip entries with "lightprobes" path
-                if (thisEntry.name.rfind("/lightprobes/") != -1)
+                if (thisEntry.Name.rfind("/lightprobes/") != -1)
                     continue;
             }
 
             // skip unsupported version 1 files
-            if (thisEntry.version == 1 && thisEntry.type != "compfile")
+            if (thisEntry.Version == 1 && thisEntry.Type != "compfile")
                 continue;
 
             // skip unsupported version 0 files
-            if (thisEntry.version == 0 && thisEntry.type != "rs_streamfile")
+            if (thisEntry.Version == 0 && thisEntry.Type != "rs_streamfile")
                 continue;
 
             FileExportItem exportItem;
-            exportItem.resourceFileName = thisEntry.name;
-            exportItem.resourceFileOffset = thisEntry.dataOffset;
-            exportItem.resourceFileCompressedSize = thisEntry.dataSizeCompressed;
-            exportItem.resourceFileDecompressedSize = thisEntry.dataSizeDecompressed;
-            exportItem.resourceFileHash = thisEntry.hash;
+            exportItem.resourceFileName = thisEntry.Name;
+            exportItem.resourceFileOffset = thisEntry.DataOffset;
+            exportItem.resourceFileCompressedSize = thisEntry.DataSize;
+            exportItem.resourceFileDecompressedSize = thisEntry.DataSizeUncompressed;
+            exportItem.resourceFileHash = thisEntry.StreamResourceHash;
 
-            if (thisEntry.version == 0 || thisEntry.version == 1)
+            if (thisEntry.Version == 0 || thisEntry.Version == 1)
                 exportItem.isStreamed = 0;
 
             _ExportItems.push_back(exportItem);
         }
         return;
     }
-    void FileExportList::ParseEmbeddedFileHeaders(const ResourceFile& resourceFile)
+    void FileExportList::ParseEmbeddedFileHeaders(const std::string resourcePath)
     {
         // Open .resource file containing embedded file headers.
-        FILE* f = fopen(resourceFile.filename.c_str(), "rb");
+        FILE* f = fopen(resourcePath.c_str(), "rb");
         if (f == NULL)
         {
-            fprintf(stderr, "Error: failed to open %s for reading.\n", resourceFile.filename.c_str());
+            fprintf(stderr, "Error: failed to open %s for reading.\n", resourcePath.c_str());
             return;
         }
         
+        ResourceFileReader reader(resourcePath);
+
         // read compressed file headers into memory
         for (uint64 i = 0; i < _ExportItems.size(); i++)
         {
             FileExportItem& thisFile = _ExportItems[i];
-            std::vector<byte> embeddedHeader = resourceFile.GetEmbeddedFileHeader(f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
+            std::vector<byte> embeddedHeader = reader.GetEmbeddedFileHeader(f, thisFile.resourceFileOffset, thisFile.resourceFileCompressedSize);
             std::vector<byte> decompressedHeader = DecompressEmbeddedFileHeader(embeddedHeader, thisFile.resourceFileDecompressedSize);
 
             if (decompressedHeader.empty())
@@ -134,25 +136,25 @@ namespace HAYDEN
         
             if (_FileType == 21)
             {
-                EmbeddedTGAHeader embeddedTGAHeader = resourceFile.ReadTGAHeader(decompressedHeader);
+                EmbeddedTGAHeader embeddedTGAHeader = reader.ReadTGAHeader(decompressedHeader);
                 _TGAHeaderData.push_back(embeddedTGAHeader);
             }
 
             if (_FileType == 31)
             {
-                EmbeddedMD6Header embeddedMD6Header = resourceFile.ReadMD6Header(decompressedHeader);
+                EmbeddedMD6Header embeddedMD6Header = reader.ReadMD6Header(decompressedHeader);
                 _MD6HeaderData.push_back(embeddedMD6Header);
             }
 
             if (_FileType == 67)
             {
-                EmbeddedLWOHeader embeddedLWOHeader = resourceFile.ReadLWOHeader(decompressedHeader);
+                EmbeddedLWOHeader embeddedLWOHeader = reader.ReadLWOHeader(decompressedHeader);
                 _LWOHeaderData.push_back(embeddedLWOHeader);
             }
 
             if (_FileType == 1)
             {
-                EmbeddedCOMPFile embeddedCOMPFile = resourceFile.ReadCOMPFile(decompressedHeader);
+                EmbeddedCOMPFile embeddedCOMPFile = reader.ReadCOMPFile(decompressedHeader);
                 _COMPFileData.push_back(embeddedCOMPFile);
             }
 
@@ -271,11 +273,11 @@ namespace HAYDEN
     }
 
     // Constructs FileExportList
-    FileExportList::FileExportList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, int fileType, std::vector<std::string> selectedFileNames, bool exportFromList)
+    FileExportList::FileExportList(const std::string resourcePath, const std::vector<ResourceEntry>& resourceData, const std::vector<StreamDBFile>& streamDBFiles, int fileType, std::vector<std::string> selectedFileNames, bool exportFromList)
     {
         _FileType = fileType;
-        GetResourceEntries(resourceFile, selectedFileNames, exportFromList);
-        ParseEmbeddedFileHeaders(resourceFile);
+        GetResourceEntries(resourceData, selectedFileNames, exportFromList);
+        ParseEmbeddedFileHeaders(resourcePath);
         GetStreamDBIndexAndSize();
         GetStreamDBFileOffsets(streamDBFiles);
         return;
@@ -493,25 +495,24 @@ namespace HAYDEN
     }
 
     // Constructs FileExporter, collects data needed for export.
-    void FileExporter::Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory)
+    void FileExporter::Init(std::string resourcePath, const std::vector<ResourceEntry>& resourceData, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory)
     {
         _OutDir = outputDirectory;
-        _ResourceFilePath = resourceFile.filename;
-        _TGAExportList = FileExportList(resourceFile, streamDBFiles, 21);
-        _MD6ExportList = FileExportList(resourceFile, streamDBFiles, 31);
-        _LWOExportList = FileExportList(resourceFile, streamDBFiles, 67);
-        _DECLExportList = FileExportList(resourceFile, streamDBFiles, 0);
-        _COMPExportList = FileExportList(resourceFile, streamDBFiles, 1);
+        _ResourceFilePath = resourcePath;
+        _TGAExportList = FileExportList(_ResourceFilePath, resourceData, streamDBFiles, 21);
+        _MD6ExportList = FileExportList(_ResourceFilePath, resourceData, streamDBFiles, 31);
+        _LWOExportList = FileExportList(_ResourceFilePath, resourceData, streamDBFiles, 67);
+        _DECLExportList = FileExportList(_ResourceFilePath, resourceData, streamDBFiles, 0);
+        _COMPExportList = FileExportList(_ResourceFilePath, resourceData, streamDBFiles, 1);
 
         // get total size of files to export
         _TotalExportSize = CalculateRequiredDiskSpace();
         return;
     }
-    void FileExporter::InitFromList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList)
+    void FileExporter::InitFromList(std::string resourcePath, const std::vector<ResourceEntry>& resourceData, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList)
     {
         _OutDir = outputDirectory;
-        _ResourceFilePath = resourceFile.filename;
-
+        _ResourceFilePath = resourcePath;
         std::vector<std::string> userSelectedTGAFiles;
         std::vector<std::string> userSelectedMD6Files;
         std::vector<std::string> userSelectedLWOFiles;
@@ -544,11 +545,11 @@ namespace HAYDEN
             }
         }
         
-        _TGAExportList = FileExportList(resourceFile, streamDBFiles, 21, userSelectedTGAFiles, 1);
-        _MD6ExportList = FileExportList(resourceFile, streamDBFiles, 31, userSelectedMD6Files, 1);
-        _LWOExportList = FileExportList(resourceFile, streamDBFiles, 67, userSelectedLWOFiles, 1);
-        _DECLExportList = FileExportList(resourceFile, streamDBFiles, 0, userSelectedDECLFiles, 1);
-        _COMPExportList = FileExportList(resourceFile, streamDBFiles, 1, userSelectedCOMPFiles, 1);
+        _TGAExportList = FileExportList(_ResourceFilePath, resourceData, streamDBFiles, 21, userSelectedTGAFiles, 1);
+        _MD6ExportList = FileExportList(_ResourceFilePath, resourceData, streamDBFiles, 31, userSelectedMD6Files, 1);
+        _LWOExportList = FileExportList(_ResourceFilePath, resourceData, streamDBFiles, 67, userSelectedLWOFiles, 1);
+        _DECLExportList = FileExportList(_ResourceFilePath, resourceData, streamDBFiles, 0, userSelectedDECLFiles, 1);
+        _COMPExportList = FileExportList(_ResourceFilePath, resourceData, streamDBFiles, 1, userSelectedCOMPFiles, 1);
 
         // get total size of files to export
         _TotalExportSize = CalculateRequiredDiskSpace();

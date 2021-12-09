@@ -9,6 +9,7 @@
 #include "FileExporter.h"
 #include "PackageMapSpec.h"
 #include "ResourceFile.h"
+#include "ResourceFileReader.h"
 #include "StreamDBFile.h"
 #include "Utilities.h"
 
@@ -30,7 +31,7 @@ namespace HAYDEN
 			bool HasResourceLoadError() { return _HasResourceLoadError; }
 			std::string GetLastErrorMessage() { return _LastErrorMessage; }
 			std::string GetLastErrorDetail() { return _LastErrorDetail; }
-			ResourceFile GetResourceFile() { return _ResourceFile; }
+			std::vector<ResourceEntry> GetResourceData() { return _ResourceData; }
 
 		private:
 			bool _HasFatalError = 0;
@@ -39,9 +40,10 @@ namespace HAYDEN
 			std::string _LastErrorMessage;
 			std::string _LastErrorDetail;
 			std::string _BasePath;
+			std::string _ResourcePath;
 			std::vector<std::string> _StreamDBFileList;
 			std::vector<StreamDBFile> _StreamDBFileData; 
-			ResourceFile _ResourceFile;
+			std::vector<ResourceEntry> _ResourceData;
 			PackageMapSpec _PackageMapSpec;
 			FileExporter _Exporter;
 

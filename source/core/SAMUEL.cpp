@@ -102,12 +102,13 @@ namespace HAYDEN
     }
     
     // Public API functions - SAMUEL
-    bool SAMUEL::LoadResource(const std::string inputFile)
+    bool SAMUEL::LoadResource(const std::string resourcePath)
     {
+        _ResourcePath = resourcePath;
         _HasResourceLoadError = 0;
         try
         {
-            if (inputFile.rfind(".resources") == -1)
+            if (resourcePath.rfind(".resources") == -1)
             {
                 ThrowError(0,"Not a valid .resources file.", "Please load a file with the .resources or .resources.backup file extension.");
                 _HasResourceLoadError = 1;
@@ -115,7 +116,8 @@ namespace HAYDEN
             }
 
             // load .resources file data
-            _ResourceFile = ResourceFile(inputFile, 0);
+            ResourceFileReader reader(_ResourcePath);
+            _ResourceData = reader.ReadResourceFile();
         }
         catch (...)
         {
@@ -128,7 +130,7 @@ namespace HAYDEN
         {
             // get list of .streamdb files for this resource
             UpdateStreamDBFileList("gameresources.resources");  // globals
-            UpdateStreamDBFileList(_ResourceFile.filename);     // resource-specific
+            UpdateStreamDBFileList(_ResourcePath);               // resource-specific
         }
         catch (...)
         {
@@ -179,7 +181,7 @@ namespace HAYDEN
     }
     bool SAMUEL::ExportAll(const std::string outputDirectory)
     {
-        _Exporter.Init(_ResourceFile, _StreamDBFileData, outputDirectory);
+        _Exporter.Init(_ResourcePath, _ResourceData, _StreamDBFileData, outputDirectory);
 
         if (HasEnoughDiskSpace())
         {
@@ -194,7 +196,7 @@ namespace HAYDEN
     }
     bool SAMUEL::ExportSelected(const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList)
     {
-        _Exporter.InitFromList(_ResourceFile, _StreamDBFileData, outputDirectory, userSelectedFileList);
+        _Exporter.InitFromList(_ResourcePath, _ResourceData, _StreamDBFileData, outputDirectory, userSelectedFileList);
 
         if (HasEnoughDiskSpace())
         {

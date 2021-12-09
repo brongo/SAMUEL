@@ -6,6 +6,7 @@
 #include "DDSHeader.h"
 #include "PackageMapSpec.h"
 #include "ResourceFile.h"
+#include "ResourceFileReader.h"
 #include "StreamDBFile.h"
 #include "Utilities.h"
 
@@ -40,7 +41,7 @@ namespace HAYDEN
 			int errorCount = 0;
 			int notFound = 0;
 			FileExportList() {};
-            FileExportList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, int fileType, std::vector<std::string> selectedFileNames = std::vector<std::string>(), bool exportFromList = 0);
+            FileExportList(const std::string resourcePath, const std::vector<ResourceEntry>& resourceData, const std::vector<StreamDBFile>& streamDBFiles, int fileType, std::vector<std::string> selectedFileNames = std::vector<std::string>(), bool exportFromList = 0);
 			std::vector<FileExportItem> GetFileExportItems() { return _ExportItems; }
             std::vector<byte> GetTGAFileData(int i) { return _TGAHeaderData[i].unstreamedFileData; }
             std::vector<byte> GetDECLFileData(int i) { return _DECLFileData[i].unstreamedFileData; }
@@ -63,8 +64,8 @@ namespace HAYDEN
 			std::vector<byte> DecompressEmbeddedFileHeader(std::vector<byte> embeddedHeader, const uint64 decompressedSize);
 
 			// Helper functions for FileExportList constructor
-            void GetResourceEntries(const ResourceFile& resourceFile, std::vector<std::string> selectedFileNames = std::vector<std::string>(), bool exportFromList = 0);
-			void ParseEmbeddedFileHeaders(const ResourceFile& resourceFile);
+            void GetResourceEntries(const std::vector<ResourceEntry>& resourceData, std::vector<std::string> selectedFileNames = std::vector<std::string>(), bool exportFromList = 0);
+			void ParseEmbeddedFileHeaders(const std::string resourcePath);
 			void GetStreamDBIndexAndSize();	
 			void GetStreamDBFileOffsets(const std::vector<StreamDBFile>& streamDBFiles);					
 	};
@@ -73,8 +74,8 @@ namespace HAYDEN
 	{
 		public:
 			FileExporter() {};
-            void Init(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory);
-            void InitFromList(const ResourceFile& resourceFile, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList);
+            void Init(std::string resourcePath, const std::vector<ResourceEntry>& resourceData, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory);
+            void InitFromList(std::string resourcePath, const std::vector<ResourceEntry>& resourceData, const std::vector<StreamDBFile>& streamDBFiles, const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList);
 			void ExportFiles(const std::vector<StreamDBFile>& streamDBFiles, std::string fileType);
 			size_t GetTotalExportSize() { return _TotalExportSize; }
 
