@@ -7,8 +7,8 @@ namespace HAYDEN
     {
         this->FilePath = filePath.string();
 
-        FILE* f;
-        if (fopen_s(&f, FilePath.c_str(), "rb") != 0)
+        FILE* f = fopen(FilePath.c_str(), "rb");
+        if (f == NULL)
         {
             fprintf(stderr, "ERROR : ResourceFile : Failed to open %s for reading.\n", FilePath.c_str());
             return;
