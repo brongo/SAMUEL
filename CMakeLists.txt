@@ -15,20 +15,20 @@ find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
 
 set(PROJECT_SOURCES
-        ./source/core/DDSHeader.cpp
-        ./source/core/DDSHeader.h
+        ./source/core/exportTypes/DDSHeader.cpp
+        ./source/core/exportTypes/DDSHeader.h
+        ./source/core/idFileTypes/PackageMapSpec.cpp
+        ./source/core/idFileTypes/PackageMapSpec.h
+        ./source/core/idFileTypes/ResourceFile.cpp
+        ./source/core/idFileTypes/ResourceFile.h
+        ./source/core/idFileTypes/StreamDBFile.cpp
+        ./source/core/idFileTypes/StreamDBFile.h
         ./source/core/FileExporter.cpp
         ./source/core/FileExporter.h
-        ./source/core/PackageMapSpec.cpp
-        ./source/core/PackageMapSpec.h
-        ./source/core/ResourceFile.cpp
-        ./source/core/ResourceFile.h
         ./source/core/ResourceFileReader.cpp
         ./source/core/ResourceFileReader.h
         ./source/core/SAMUEL.cpp
         ./source/core/SAMUEL.h
-        ./source/core/StreamDBFile.cpp
-        ./source/core/StreamDBFile.h
         ./source/core/Utilities.cpp
         ./source/core/Utilities.h
         ./source/qt/mainwindow.ui
