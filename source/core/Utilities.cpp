@@ -2,71 +2,20 @@
 
 namespace HAYDEN
 {
-    void endianSwap(uint64& value) 
+    void endianSwap(uint64_t& value)
     {
         value = ((value & 0x00000000FFFFFFFFull) << 32) | ((value & 0xFFFFFFFF00000000ull) >> 32);
         value = ((value & 0x0000FFFF0000FFFFull) << 16) | ((value & 0xFFFF0000FFFF0000ull) >> 16);
         value = ((value & 0x00FF00FF00FF00FFull) << 8) | ((value & 0xFF00FF00FF00FF00ull) >> 8);
     }
-    uint64_t hexToInt64(const std::string hex) 
+
+    uint64_t hexToInt64(const std::string hex)
     {
         uint64_t x;
         std::stringstream stream;
         stream << std::hex << hex;
         stream >> x;
         return x;
-    }
-
-    // Decompress using Oodle DLL
-    OodLZ_DecompressFunc* OodLZ_Decompress = NULL;
-
-    bool oodleInit(const std::string& basePath)
-    {
-        std::string oodlePath = basePath.substr(0, basePath.length() - 4) + "oo2core_8_win64.dll";
-
-#ifdef _WIN32
-        // Load oodle dll
-        auto oodle = LoadLibraryA(oodlePath.c_str());
-        OodLZ_Decompress = (OodLZ_DecompressFunc*)GetProcAddress(oodle, "OodleLZ_Decompress");
-#else
-        // Copy oodle to current dir to prevent linoodle errors
-        std::error_code ec;
-        fs::copy(oodlePath, fs::current_path(), ec);
-        if (ec.value() != 0)
-            return false;
-
-        // Load linoodle library
-        std::string linoodlePath = basePath + "/liblinoodle.so";
-        auto oodle = dlopen(linoodlePath.c_str(), RTLD_LAZY);
-        OodLZ_Decompress = (OodLZ_DecompressFunc*)dlsym(oodle, "OodleLZ_Decompress");
-
-        // Remove oodle dll
-        fs::remove(fs::current_path().append("oo2core_8_win64.dll"), ec);
-#endif
-
-        if (oodle == NULL || OodLZ_Decompress == NULL)
-            return false;
-
-        return true;
-    }
-    std::vector<byte> oodleDecompress(std::vector<byte> compressedData, const uint64 decompressedSize)
-    {
-        if (OodLZ_Decompress == NULL)
-            return std::vector<byte>();
-
-        std::vector<byte> output(decompressedSize + SAFE_SPACE);
-        uint64 outbytes = 0;
-
-        // Decompress using Oodle DLL
-        outbytes = OodLZ_Decompress(compressedData.data(), compressedData.size(), output.data(), decompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        
-        if (outbytes == 0)
-        {
-            fprintf(stderr, "Error: failed to decompress with Oodle DLL.\n\n");
-            return std::vector<byte>();
-        }
-
-        return std::vector<byte>(output.begin(), output.begin() + outbytes);
     }
 
     // Recursive mkdir, bypassing PATH_MAX limitations on Windows       
@@ -94,4 +43,65 @@ namespace HAYDEN
         return file;
     }
     #endif
+
+    // Remove quotation marks from a string
+    std::string stripQuotes(std::string str)
+    {
+        std::string::iterator end_pos = std::remove(str.begin(), str.end(), '"');
+        str.erase(end_pos, str.end());
+        std::string::iterator end_pos2 = std::remove(str.begin(), str.end(), '\'');
+        str.erase(end_pos2, str.end());
+        return str;
+    }
+
+    // Writes data from memory to local filesystem. Return 1 on success.
+    bool writeToFilesystem(std::vector<uint8_t> outData, fs::path outPath)
+    {
+        fs::path folderPath = outPath;
+        folderPath.remove_filename();
+
+        if (!fs::exists(folderPath))
+        {
+            if (!mkpath(folderPath))
+            {
+                fprintf(stderr, "Error: Failed to create directories for file: %s \n", outPath.string().c_str());
+                return 0;
+            }
+        }
+
+        // open file for writing
+#ifdef _WIN32
+        FILE* outFile = openLongFilePathWin32(outPath); //wb
+#else
+        FILE* outFile = fopen(outPath.string().c_str(), "wb");
+#endif
+
+        if (outFile == NULL)
+        {
+            fprintf(stderr, "Error: Failed to open file for writing: %s \n", outPath.string().c_str());
+            return 0;
+        }
+
+        fwrite(outData.data(), 1, outData.size(), outFile);
+        fclose(outFile);        
+        return 1;
+    }
+
+    // Reads whole file into vector
+    bool readFile(const fs::path& path, std::vector<uint8_t>& out)
+    {
+        FILE *f = fopen(path.string().c_str(), "rb");
+        if (f == NULL)
+            return false;
+
+        fseek(f, 0, SEEK_END);
+        size_t length = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        out.resize(length);
+
+        fread(out.data(), 1, length, f);
+        fclose(f);
+
+        return true;
+    }
 }

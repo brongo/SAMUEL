@@ -7,8 +7,12 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     ui->setupUi(this);
     ui->btnClear->setVisible(false);
     ui->btnSearch->setEnabled(false);
-    ui->btnExportAll->setEnabled(false);
     ui->btnExportSelected->setEnabled(false);
+    ui->radioShowAll->setEnabled(false);
+    ui->radioShowDecl->setEnabled(false);
+    ui->radioShowEntities->setEnabled(false);
+    ui->radioShowImages->setEnabled(false);
+    ui->radioShowModels->setEnabled(false);
 }
 MainWindow::~MainWindow()
 {
@@ -50,20 +54,28 @@ void MainWindow::DisableGUI()
     ui->inputSearch->clear();
     ui->inputSearch->setEnabled(false);
     ui->btnSearch->setEnabled(false);
-    ui->btnExportAll->setEnabled(false);
     ui->btnExportSelected->setEnabled(false);
     ui->btnLoadResource->setEnabled(false);
     ui->tableWidget->setEnabled(false);
+    ui->radioShowAll->setEnabled(false);
+    ui->radioShowDecl->setEnabled(false);
+    ui->radioShowEntities->setEnabled(false);
+    ui->radioShowImages->setEnabled(false);
+    ui->radioShowModels->setEnabled(false);
     return;
 }
 void MainWindow::EnableGUI()
 {
     ui->inputSearch->setEnabled(true);
     ui->btnSearch->setEnabled(true);
-    ui->btnExportAll->setEnabled(true);
     ui->btnExportSelected->setEnabled(true);
     ui->btnLoadResource->setEnabled(true);
     ui->tableWidget->setEnabled(true);
+    ui->radioShowAll->setEnabled(true);
+    ui->radioShowDecl->setEnabled(true);
+    ui->radioShowEntities->setEnabled(true);
+    ui->radioShowImages->setEnabled(true);
+    ui->radioShowModels->setEnabled(true);
     return;
 }
 void MainWindow::ResetGUITable()
@@ -110,16 +122,38 @@ void MainWindow::PopulateGUIResourceTable(std::vector<std::string> searchWords)
     _ViewIsFiltered = 0;
 
     // Load resource file data
-    HAYDEN::ResourceFile resourceFile = SAM.GetResourceFile();
-    for (int i = 0; i < resourceFile.resourceEntries.size(); i++)
+    std::vector<HAYDEN::ResourceEntry> resourceData = SAM.GetResourceData();
+    for (int i = 0; i < resourceData.size(); i++)
     {
-        // Temporary, maybe? Skip anything that isn't TGA, LWO, MD6, DECL for now.
-        if (resourceFile.resourceEntries[i].version != 67 &&
-            resourceFile.resourceEntries[i].version != 31 &&
-            resourceFile.resourceEntries[i].version != 21 &&
-            resourceFile.resourceEntries[i].version != 1 &&
-            resourceFile.resourceEntries[i].version != 0)
-            continue;
+        switch (_SearchMode)
+        {
+            case 0:
+                if (resourceData[i].Version != 67 &&
+                    resourceData[i].Version != 31 &&
+                    resourceData[i].Version != 21 &&
+                    resourceData[i].Version != 1 &&
+                    resourceData[i].Version != 0)
+                    continue;
+                break;
+            case 1:
+                if (resourceData[i].Version != 0)
+                    continue;
+                break;
+            case 2:
+                if (resourceData[i].Version != 1)
+                    continue;
+                break;
+            case 3:
+                if (resourceData[i].Version != 21)
+                    continue;
+                break;
+            case 4:
+                if ((resourceData[i].Version != 31) && (resourceData[i].Version != 67))
+                    continue;
+                break;
+            default:
+                break;
+        }
 
         // Filter out anything we didn't search for
         if (searchWords.size() > 0)
@@ -128,7 +162,7 @@ void MainWindow::PopulateGUIResourceTable(std::vector<std::string> searchWords)
             bool matched = 1;
 
             for (int j = 0; j < searchWords.size(); j++)
-                if (resourceFile.resourceEntries[i].name.find(searchWords[j]) == -1)
+                if (resourceData[i].Name.find(searchWords[j]) == -1)
                     matched = 0;
 
             if (matched == 0)
@@ -136,57 +170,62 @@ void MainWindow::PopulateGUIResourceTable(std::vector<std::string> searchWords)
         }
 
         // Filter out unsupported .lwo
-        if (resourceFile.resourceEntries[i].version == 67)
+        if (resourceData[i].Version == 67)
         {
-            if (resourceFile.resourceEntries[i].name.rfind("world_") != -1 && (resourceFile.resourceEntries[i].name.find("maps/game") != -1))
+            if (resourceData[i].Name.rfind("world_") != -1 && (resourceData[i].Name.find("maps/game") != -1))
                 continue;
 
-            if (resourceFile.resourceEntries[i].name.rfind(".bmodel") != -1)
+            if (resourceData[i].Name.rfind(".bmodel") != -1)
                 continue;
         }
 
         // Filter out unsupported md6
-        if (resourceFile.resourceEntries[i].version == 31)
+        if (resourceData[i].Version == 31)
         {
-            if (resourceFile.resourceEntries[i].name.rfind(".abc") != -1)
+            if (resourceData[i].Name.rfind(".abc") != -1)
                 continue;
         }
 
         // Filter out unsupported images
-        if (resourceFile.resourceEntries[i].version == 21)
+        if (resourceData[i].Version == 21)
         {
-            if (resourceFile.resourceEntries[i].name.rfind("/lightprobes/") != -1)
+            if (resourceData[i].Name.rfind("/lightprobes/") != -1)
                 continue;
         }
 
         // Filter out unsupported "version 1" files
-        if (resourceFile.resourceEntries[i].version == 1 && resourceFile.resourceEntries[i].type != "compfile")
+        if (resourceData[i].Version == 1 && resourceData[i].Type != "compfile")
             continue;
 
         // Filter out unsupported "version 0" files
-        if (resourceFile.resourceEntries[i].version == 0 && resourceFile.resourceEntries[i].type != "rs_streamfile")
+        if (resourceData[i].Version == 0 && resourceData[i].Type != "rs_streamfile")
             continue;
 
         int row_count = ui->tableWidget->rowCount();
         ui->tableWidget->insertRow(row_count);
 
         // Set Resource Name
-        std::string resourceName = resourceFile.resourceEntries[i].name;
+        std::string resourceName = resourceData[i].Name;
         QString qResourceName = QString::fromStdString(resourceName);
         QTableWidgetItem *tableResourceName = new QTableWidgetItem(qResourceName);
 
         // Set Resource Type
-        std::string resourceType = resourceFile.resourceEntries[i].type;
+        std::string resourceType = resourceData[i].Type;
         QString qResourceType = QString::fromStdString(resourceType);
         QTableWidgetItem *tableResourceType = new QTableWidgetItem(qResourceType);
 
         // Set Resource Version
-        std::string resourceVersion = std::to_string(resourceFile.resourceEntries[i].version);
+        std::string resourceVersion = std::to_string(resourceData[i].Version);
         QString qResourceVersion = QString::fromStdString(resourceVersion);
         QTableWidgetItem *tableResourceVersion = new QTableWidgetItem(qResourceVersion);
 
         // Set Resource Status
-        QTableWidgetItem *tableResourceStatus = new QTableWidgetItem("Loaded");
+        QTableWidgetItem *tableResourceStatus;
+
+        if (resourceData[i].Version == 31)
+            tableResourceStatus = new QTableWidgetItem("Experimental");
+        else
+            tableResourceStatus = new QTableWidgetItem("Loaded");
 
         // Populate Table Row
         ui->tableWidget->setItem(row_count, 0, tableResourceName);
@@ -206,21 +245,6 @@ void MainWindow::PopulateGUIResourceTable(std::vector<std::string> searchWords)
     tableHeader->setSectionResizeMode(0, QHeaderView::Stretch);
     return;
 }
-int MainWindow::ConfirmExportAll()
-{
-    const QString qErrorMessage = "Do you really want to export *everything* in this resource file?";
-    const QString qErrorDetail = "For some .resource files this can take 30 minutes or longer, and require 25GB+ of free space.";
-
-    QMessageBox msgBox;
-    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-    msgBox.setDefaultButton(QMessageBox::Ok);
-    msgBox.setIcon(QMessageBox::Warning);
-    msgBox.setText(qErrorMessage);
-    msgBox.setInformativeText(qErrorDetail);
-    int result = 0;
-    result = msgBox.exec();
-    return result;
-}
 int MainWindow::ShowLoadStatus()
 {
     _LoadStatusBox.setStandardButtons(QMessageBox::Cancel);
@@ -237,138 +261,21 @@ int MainWindow::ShowExportStatus()
     result = _ExportStatusBox.exec();
     return result;
 }
-void MainWindow::ExportSearchResults()
-{
-    if (ui->tableWidget->rowCount() == 0)
-        return;
-
-    std::vector<std::vector<std::string>> itemExportRows;
-
-    for (int i = 0; i < ui->tableWidget->rowCount(); i++)
-    {
-        std::vector<std::string> rowText = {
-            ui->tableWidget->item(i,0)->text().toStdString(),
-            ui->tableWidget->item(i,1)->text().toStdString(),
-            ui->tableWidget->item(i,2)->text().toStdString()
-        };
-
-        itemExportRows.push_back(rowText);
-        ui->tableWidget->item(i,3)->setText("Exported");
-    }
-
-    _ExportThread = QThread::create(&HAYDEN::SAMUEL::ExportSelected, &SAM, _ExportPath, itemExportRows);
-
-    connect(_ExportThread, &QThread::finished, this, [this]()
-    {
-        if (_ExportStatusBox.isVisible())
-            _ExportStatusBox.close();
-
-        if (SAM.HasDiskSpaceError() == 1)
-            ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
-
-        QString labelCount = QString::number(ui->tableWidget->rowCount());
-        QString labelText = "Exported " + labelCount + " files.";
-
-        ui->labelStatus->setText(labelText);
-        EnableGUI();
-    });
-
-    _ExportThread->start();
-
-    /*
-     * We don't want the dialog box to appear
-     * unless the export will take a while. Otherwise it looks broken.
-     * For fast exports, the box will flashes on screen and disappear
-     * before anyone can read it. Probably needs some adjustment.
-    */
-
-    if (itemExportRows.size() >= 40) // Might want to use different number for TGA vs. DECL
-    {
-        DisableGUI();
-        ui->labelStatus->setText("Exporting...");
-
-        if (ShowExportStatus() == 0x00400000 && _ExportThread->isRunning()) // CANCEL
-        {
-            _ExportThread->terminate();
-            ui->labelStatus->setText("Export operation was cancelled.");
-
-            for (int64 i = 0; i < ui->tableWidget->rowCount(); i++)
-            {
-                QTableWidgetItem* tableItem = ui->tableWidget->item(i, 3);
-                tableItem->setText("Loaded");
-            }
-        }
-    }
-}
-
 
 // Private Slots
-void MainWindow::on_btnExportAll_clicked()
-{
-    // User most-likely intends to export search results only.
-    if (_ViewIsFiltered == 1)
-    {
-        ExportSearchResults();
-        return;
-    }
-
-    // USER CONFIRMED - OK TO EXPORT
-    if (ConfirmExportAll() == 0x0400)
-    {
-        DisableGUI();
-        ui->labelStatus->setText("Exporting...");
-        _ExportThread = QThread::create(&HAYDEN::SAMUEL::ExportAll, &SAM, _ExportPath);
-        
-        connect(_ExportThread, &QThread::finished, this, [this]() 
-        {   
-            if (_ExportStatusBox.isVisible())
-                _ExportStatusBox.close();
-
-            if (SAM.HasDiskSpaceError() == 1)
-                ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
-
-            if (SAM.HasDiskSpaceError() == 0)
-            {
-                int rowCount = ui->tableWidget->rowCount();
-                for (int64 i = 0; i < rowCount; i++)
-                {
-                    QTableWidgetItem* tableItem = ui->tableWidget->item(i, 3);
-                    tableItem->setText("Exported");
-                }
-            }
-            EnableGUI();
-            ui->labelStatus->setText("All files exported successfully.");
-        });
-
-        _ExportThread->start();
-
-        // CANCELLED BY USER
-        if (ShowExportStatus() == 0x00400000 && _ExportThread->isRunning())
-        {
-            _ExportThread->terminate();
-            ui->labelStatus->setText("Export operation was cancelled.");
-
-            for (int64 i = 0; i <  ui->tableWidget->rowCount(); i++)
-            {
-                QTableWidgetItem* tableItem = ui->tableWidget->item(i, 3);
-                tableItem->setText("Loaded");
-            }
-        }
-    }
-    return;
-}
 void MainWindow::on_btnExportSelected_clicked()
 {
-    std::vector<std::vector<std::string>> itemExportRows; // list of files to export
+    // Return if no items are selected for export
     QList<QTableWidgetItem *> itemExportQList = ui->tableWidget->selectedItems();
-
     if (itemExportQList.size() == 0)
     {
         ThrowError("No items were selected for export.");
         return;
     }
 
-    for (int64 i = 0; i < itemExportQList.size(); i+=4)
+    // Iterate through table, add items to export list
+    std::vector<std::vector<std::string>> itemExportRows;
+    for (int64_t i = 0; i < itemExportQList.size(); i+=4)
     {
         std::vector<std::string> rowText = {
             itemExportQList[i]->text().toStdString(),
@@ -379,15 +286,12 @@ void MainWindow::on_btnExportSelected_clicked()
         itemExportQList[i+3]->setText("Exported");
     }
 
-    _ExportThread = QThread::create(&HAYDEN::SAMUEL::ExportSelected, &SAM, _ExportPath, itemExportRows);
-
+    // Export files in a separate thread
+    _ExportThread = QThread::create(&HAYDEN::SAMUEL::ExportFiles, &SAM, _ExportPath, itemExportRows);
     connect(_ExportThread, &QThread::finished, this, [this]()
     {
         if (_ExportStatusBox.isVisible())
             _ExportStatusBox.close();
-
-        if (SAM.HasDiskSpaceError() == 1)
-            ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
 
         QList<QTableWidgetItem *> itemExportQList = ui->tableWidget->selectedItems();
         QString labelCount = QString::number(itemExportQList.size() / 4);
@@ -396,31 +300,25 @@ void MainWindow::on_btnExportSelected_clicked()
         ui->labelStatus->setText(labelText);
         EnableGUI();
     });
-
     _ExportThread->start();
 
-    /*
-     * We don't want the dialog box to appear
-     * unless the export will take a while. Otherwise it looks broken.
-     * For fast exports, the box will flashes on screen and disappear
-     * before anyone can read it. Probably needs some adjustment.
-    */
-
-    if (itemExportRows.size() >= 40) // Might want to use different number for TGA vs. DECL
+    // Show status dialog
+    if (itemExportRows.size() >= 40)
     {
         DisableGUI();
         ui->labelStatus->setText("Exporting...");
+    }
 
-        if (ShowExportStatus() == 0x00400000 && _ExportThread->isRunning()) // CANCEL
+    // Cancelled by user
+    if (ShowExportStatus() == 0x00400000 && _ExportThread->isRunning())
+    {
+        _ExportThread->terminate();
+        ui->labelStatus->setText("Export operation was cancelled.");
+
+        for (int64_t i = 0; i < ui->tableWidget->rowCount(); i++)
         {
-            _ExportThread->terminate();
-            ui->labelStatus->setText("Export operation was cancelled.");
-
-            for (int64 i = 0; i < ui->tableWidget->rowCount(); i++)
-            {
-                QTableWidgetItem* tableItem = ui->tableWidget->item(i, 3);
-                tableItem->setText("Loaded");
-            }
+            QTableWidgetItem* tableItem = ui->tableWidget->item(i, 3);
+            tableItem->setText("Loaded");
         }
     }
 
@@ -442,7 +340,7 @@ void MainWindow::on_btnLoadResource_clicked()
         _ResourcePath = fileName.toStdString();
 
         // Load BasePath and PackageMapSpec Data into SAMUEL
-        if (!SAM.Init(_ResourcePath))
+        if (!SAM.Init(_ResourcePath, GlobalResources))
         {
             ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
             DisableGUI();
@@ -460,14 +358,13 @@ void MainWindow::on_btnLoadResource_clicked()
             if (_LoadStatusBox.isVisible())
                 _LoadStatusBox.close();
 
-            if (SAM.HasResourceLoadError() == 1)
+            if (SAM.HasResourceLoadError())
             {
                 ThrowError(SAM.GetLastErrorMessage(), SAM.GetLastErrorDetail());
                 ResetGUITable();
                 ui->labelStatus->setText("Failed to load resource.");
             }
-
-            if (SAM.HasResourceLoadError() == 0)
+            else
             {
                 PopulateGUIResourceTable();
                 EnableGUI();
@@ -513,5 +410,50 @@ void MainWindow::on_btnClear_clicked()
     ui->btnClear->setVisible(false);
     ui->inputSearch->setText("");
     PopulateGUIResourceTable();
+    return;
+}
+void MainWindow::on_radioShowAll_toggled(bool checked)
+{
+    if (checked)
+    {
+        _SearchMode = 0;
+        PopulateGUIResourceTable();
+    }
+    return;
+}
+void MainWindow::on_radioShowDecl_toggled(bool checked)
+{
+    if (checked)
+    {
+        _SearchMode = 1;
+        PopulateGUIResourceTable();
+    }
+    return;
+}
+void MainWindow::on_radioShowEntities_toggled(bool checked)
+{
+    if (checked)
+    {
+        _SearchMode = 2;
+        PopulateGUIResourceTable();
+    }
+    return;
+}
+void MainWindow::on_radioShowImages_toggled(bool checked)
+{
+    if (checked)
+    {
+        _SearchMode = 3;
+        PopulateGUIResourceTable();
+    }
+    return;
+}
+void MainWindow::on_radioShowModels_toggled(bool checked)
+{
+    if (checked)
+    {
+        _SearchMode = 4;
+        PopulateGUIResourceTable();
+    }
     return;
 }

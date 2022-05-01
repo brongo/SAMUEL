@@ -1,6 +1,4 @@
 #pragma once
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
 
 #include <QMainWindow>
 #include <QFileDialog>
@@ -18,19 +16,24 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
     public:
+        HAYDEN::GLOBAL_RESOURCES GlobalResources;
         void ThrowFatalError(std::string errorMessage, std::string errorDetail = "");
         void ThrowError(std::string errorMessage, std::string errorDetail = "");
-        MainWindow(QWidget *parent = nullptr);
+        MainWindow(QWidget *parent = NULL);
         ~MainWindow();
 
     private slots:
         void on_btnLoadResource_clicked();
-        void on_btnExportAll_clicked();
         void on_btnExportSelected_clicked();
         void on_btnSearch_clicked();
         void on_tableWidget_itemDoubleClicked(QTableWidgetItem *item);
         void on_btnClear_clicked();
         void on_inputSearch_returnPressed();
+        void on_radioShowAll_toggled(bool checked);
+        void on_radioShowDecl_toggled(bool checked);
+        void on_radioShowEntities_toggled(bool checked);
+        void on_radioShowImages_toggled(bool checked);
+        void on_radioShowModels_toggled(bool checked);
 
     private:
         QMessageBox _LoadStatusBox;
@@ -42,22 +45,18 @@ class MainWindow : public QMainWindow
         std::string _ResourcePath;
         bool _ResourceFileIsLoaded = 0;
         bool _ViewIsFiltered = 0;
+        int _SearchMode = 0;
 
         HAYDEN::SAMUEL SAM;
         Ui::MainWindow *ui;
 
-        int  ConfirmExportAll();
         int  ShowLoadStatus();
         int  ShowExportStatus();
         void DisableGUI();
         void EnableGUI();
         void ResetGUITable();
-        void ExportSearchResults();
         void PopulateGUIResourceTable(std::vector<std::string> searchWords = std::vector<std::string>());
 
         // Splits search query by whitespace
         std::vector<std::string> SplitSearchTerms(std::string inputString);
-
 };
-
-#endif // MAINWINDOW_H

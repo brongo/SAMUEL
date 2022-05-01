@@ -5,7 +5,7 @@ namespace fs = std::filesystem;
 
 namespace HAYDEN
 {
-    // Private functions - SAMUEL
+    // Outputs to stderr, but also stores error message for passing to another application (Qt, etc).
     void SAMUEL::ThrowError(bool isFatal, std::string errorMessage, std::string errorDetail)
     {
         _LastErrorMessage = errorMessage;
@@ -18,9 +18,10 @@ namespace HAYDEN
         fprintf(stderr, "%s", consoleMsg.c_str());
         return;
     }
-    bool SAMUEL::FindBasePath(const std::string resourcePath)
+
+    // Sets _BasePath based on given resourcePath
+    bool SAMUEL::SetBasePath(const std::string resourcePath)
     {
-        // Get base path from resource path
         auto baseIndex = resourcePath.find("base");
         if (baseIndex == -1)
         {
@@ -33,6 +34,8 @@ namespace HAYDEN
         _BasePath = resourcePath.substr(0, baseIndex + 4);
         return 1;
     }
+
+    // Read the game packagemapspec.json file into memory
     void SAMUEL::LoadPackageMapSpec()
     {
         try
@@ -53,6 +56,8 @@ namespace HAYDEN
             return;
         }
     }
+
+    // Populate _StreamDBFileList based on currently loaded *.resources
     void SAMUEL::UpdateStreamDBFileList(const std::string resourceFileName)
     {
         std::vector<std::string> appendList;
@@ -80,8 +85,17 @@ namespace HAYDEN
                 continue;
             _StreamDBFileList.insert(std::end(_StreamDBFileList), appendList[i]);
         }
+
+        // Add EternalMod.streamdb file if needed (used for custom model mods)
+        fs::path customStreamDBPath = fs::path(_BasePath) / "EternalMod.streamdb";
+
+        if (fs::exists(customStreamDBPath) && _StreamDBFileList[0] != "EternalMod.streamdb")
+            _StreamDBFileList.insert(std::begin(_StreamDBFileList), "EternalMod.streamdb");
+    
         return;
     }
+    
+    // Read all *.streamdb file entries from _StreamDBFileList into memory
     void SAMUEL::ReadStreamDBFiles()
     {
         for (auto i = _StreamDBFileList.begin(); i != _StreamDBFileList.end(); ++i)
@@ -100,116 +114,119 @@ namespace HAYDEN
             _StreamDBFileData.push_back(streamDBFile);
         }
     }
-    
-    // Public API functions - SAMUEL
-    bool SAMUEL::LoadResource(const std::string inputFile)
+
+    // Loads all global *.resources data into memory (needed for LWO export)
+    void SAMUEL::LoadGlobalResources()
+    {
+        // List of globally loaded *.resources, in order of load priority
+        std::vector<std::string> globalResourceList =
+        {
+            "gameresources_patch1.resources",
+            "warehouse_patch1.resources",
+            "gameresources_patch2.resources",
+            "gameresources.resources",
+            "warehouse.resources"
+        };
+
+        // Load globals
+        for (int i = 0; i < globalResourceList.size(); i++)
+        {
+            RESOURCES_ARCHIVE globalResource;
+            globalResource.ResourceName = globalResourceList[i];
+            globalResource.ResourcePath = fs::path(_BasePath) / fs::path(globalResource.ResourceName);
+            globalResource.ResourcePath.make_preferred();
+
+            ResourceFileReader reader(globalResource.ResourcePath.string());
+            globalResource.Entries = reader.ParseResourceFile();
+            _GlobalResources->Files.push_back(globalResource);
+        }
+        
+        // If current *.resources file is a global resource, we can stop here
+        if ((_ResourceFileName.find("gameresources") != -1) || (_ResourceFileName.find("warehouse") != -1))
+            return;
+
+        // If current *.resources file is NOT a patch, we can stop here
+        if (_ResourceFileName.rfind("_patch") == -1)
+            return;
+
+        // Otherwise, we need to load the non-patch version of this *.resources file alongside our globals
+        size_t patchSeparator = _ResourceFileName.rfind("_patch");
+        std::string unpatchedResourceName = _ResourceFileName.substr(0, patchSeparator);
+        fs::path unpatchedResourcePath = fs::path(_ResourcePath).remove_filename() / fs::path(unpatchedResourceName).replace_extension(".resources");
+        unpatchedResourcePath.make_preferred();
+
+        RESOURCES_ARCHIVE unpatchedResource;
+        unpatchedResource.ResourcePath = unpatchedResourcePath;
+        unpatchedResource.ResourceName = unpatchedResourcePath.filename().string();
+
+        ResourceFileReader reader(unpatchedResource.ResourcePath.string());
+        unpatchedResource.Entries = reader.ParseResourceFile();
+        _GlobalResources->Files.push_back(unpatchedResource);
+
+        return;
+    }
+
+    // Main resource loading function
+    bool SAMUEL::LoadResource(const std::string resourcePath)
     {
         _HasResourceLoadError = 0;
-        try
-        {
-            if (inputFile.rfind(".resources") == -1)
-            {
-                ThrowError(0,"Not a valid .resources file.", "Please load a file with the .resources or .resources.backup file extension.");
-                _HasResourceLoadError = 1;
-                return 0;
-            }
+        _ResourcePath = resourcePath;
+        _ResourceFileName = fs::path(_ResourcePath).filename().string();
 
-            // load .resources file data
-            _ResourceFile = ResourceFile(inputFile, 0);
-        }
-        catch (...)
+        // Clear any existing .resources data
+        _ResourceData.clear();
+        _GlobalResources->Files.clear();
+
+        // Make sure this is a *.resources file
+        if (_ResourcePath.rfind(".resources") == -1)
         {
-            ThrowError(0,"Failed to read .resources file.","Please load a file with the .resources or .resources.backup file extension.");
+            ThrowError(0, "Not a valid .resources file.", "Please load a file with the .resources or .resources.backup file extension.");
             _HasResourceLoadError = 1;
             return 0;
         }
 
+        // Load the currently requested *.resources file + globals.
         try
         {
-            // get list of .streamdb files for this resource
-            UpdateStreamDBFileList("gameresources.resources");  // globals
-            UpdateStreamDBFileList(_ResourceFile.filename);     // resource-specific
+            ResourceFileReader reader(_ResourcePath);
+            _ResourceData = reader.ParseResourceFile();
+            LoadGlobalResources();
         }
         catch (...)
         {
-            fprintf(stderr, "Error: Failed to read .streamdb list from packagemapspec.json.\n");
+            ThrowError(0, "Failed to read .resources file.", "Please load a file with the .resources or .resources.backup file extension.");
+            _HasResourceLoadError = 1;
             return 0;
         }
 
+        // Load .streamdb data
         try
         {
-            // load .streamdb data from files in _streamDBFileList
+            UpdateStreamDBFileList("gameresources.resources");      
+            UpdateStreamDBFileList("warehouse.resources");          
+            UpdateStreamDBFileList(_ResourcePath);   
             ReadStreamDBFiles();
         }
         catch (...)
         {
-            ThrowError(1,"Failed to read .streamdb file data.");
+            ThrowError(1, "Failed to read .streamdb file data.");
             return 0;
         }
+
         return 1;
     }
-    bool SAMUEL::HasEnoughDiskSpace()
+    
+    // Main file export function
+    bool SAMUEL::ExportFiles(const fs::path outputDirectory, const std::vector<std::vector<std::string>> filesToExport)
     {
-        _HasDiskSpaceError = 0;
-        size_t spaceRequired = _Exporter.GetTotalExportSize();
-        size_t spaceAvailable = fs::space(fs::current_path()).available;
-
-        if (spaceRequired > spaceAvailable)
-        {
-            _HasDiskSpaceError = 1;
-
-            double spaceRequiredInGB = 0;
-            size_t decimalPosition = 0; 
-            std::string spaceRequiredString;
-            std::string errorMessageToUser;
-
-            spaceRequiredInGB = ((double)_Exporter.GetTotalExportSize()) / (1024 * 1024 * 1024);
-            spaceRequiredString = std::to_string(spaceRequiredInGB);
-            
-            decimalPosition = spaceRequiredString.rfind(".");
-
-            if (decimalPosition != -1)
-                spaceRequiredString = spaceRequiredString.substr(0, decimalPosition + 3);
-
-            errorMessageToUser = "The requested file export requires a minimum of " + spaceRequiredString + " GB of free space. This action has been canceled. No files have been extracted.";
-            ThrowError(0, "Error: Not enough space in disk.", errorMessageToUser);
-            return 0;
-        }
-        return 1;
+        ExportManager exportManager;
+        return exportManager.ExportFiles(_GlobalResources, _ResourceData, _ResourcePath, _StreamDBFileData, outputDirectory, filesToExport);
     }
-    bool SAMUEL::ExportAll(const std::string outputDirectory)
-    {
-        _Exporter.Init(_ResourceFile, _StreamDBFileData, outputDirectory);
 
-        if (HasEnoughDiskSpace())
-        {
-            _Exporter.ExportFiles(_StreamDBFileData, "TGA");
-            _Exporter.ExportFiles(_StreamDBFileData, "MD6");
-            _Exporter.ExportFiles(_StreamDBFileData, "LWO");
-            _Exporter.ExportFiles(_StreamDBFileData, "DECL");
-            _Exporter.ExportFiles(_StreamDBFileData, "COMPFILE");
-            return 1;
-        }
-        return 0;
-    }
-    bool SAMUEL::ExportSelected(const std::string outputDirectory, const std::vector<std::vector<std::string>> userSelectedFileList)
-    {
-        _Exporter.InitFromList(_ResourceFile, _StreamDBFileData, outputDirectory, userSelectedFileList);
-
-        if (HasEnoughDiskSpace())
-        {
-            _Exporter.ExportFiles(_StreamDBFileData, "TGA");
-            _Exporter.ExportFiles(_StreamDBFileData, "MD6");
-            _Exporter.ExportFiles(_StreamDBFileData, "LWO");
-            _Exporter.ExportFiles(_StreamDBFileData, "DECL");
-            _Exporter.ExportFiles(_StreamDBFileData, "COMPFILE");
-            return 1;
-        }
-        return 0;
-    }
-    bool SAMUEL::Init(const std::string resourcePath)
+    bool SAMUEL::Init(const std::string resourcePath, GLOBAL_RESOURCES& globalResources)
     {     
-        if (!FindBasePath(resourcePath))
+        _GlobalResources = &globalResources;
+        if (!SetBasePath(resourcePath))
             return 0;
 
         if (!oodleInit(_BasePath))

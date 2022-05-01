@@ -1,4 +1,4 @@
-# SAMUEL v1.1
+# SAMUEL v2.0.9
 
 SAMUEL is a tool for extracting assets from DOOM Eternal. 
 
@@ -7,10 +7,10 @@ It is cross-platform, open-source, and features an easy-to-use graphical interfa
 ## What this tool is for:
 
 1. Export .decl files and .entities files.
-2. Export full-size images for use in texture modding (in .dds format).
-3. **Experimental:** export .lwo and .md6mesh files in their native formats (to allow for eventual reverse-engineering).
+2. Export full-size images for use in texture modding (in .png format).
+3. Export .lwo files to the .obj file format.
 
-Files will be extracted to the "exports" folder, which is in the same location as SAMUEL.exe.
+Files will be extracted to the "exports" folder. Models will be extracted to the "modelExports" folder. When exporting a model, all of the model's textures and material2 .decl files will also be exported.
 
 ## SAMUEL vs. VEGA
 
@@ -18,27 +18,26 @@ This will obviously get compared to VEGA (the other asset extraction tool), so i
 
 ### Differences from VEGA:
 
-1. SAMUEL is cross-platform and open-source. It works on Windows, Linux, MacOS.
+1. SAMUEL is cross-platform and open-source. It works on Windows and Linux.
 2. Supports extracting of .decl files and .entities files.
-3. Successfully extracts a few types of textures that VEGA doesn't support.
-4. Supports extracting non-streamed or modded textures - texture modders can now recover their source images.
-5. Has improved search functionality - can search with multiple keywords separated by spaces.
-6. Extracts "normals" in RG format (yellow-greenish color) used by DOOM Eternal, which should reduce steps needed to modify them.
-7. Image files are exported using their full name with "$" modifiers (important for custom assets).
-8. Files are extracted to their full path used in the game (e.g. "gameresources_patch1/art/tile/etc" instead of just "images").
+3. When exporting a model, all of it's material2 .decl files are also exported.
+4. Successfully extracts a few types of textures that VEGA doesn't support.
+5. Supports extracting non-streamed or modded textures - texture modders can now recover their source images.
+6. Has improved search functionality - can search with multiple keywords separated by spaces.
+7. Extracts "normals" in their native RG format (yellow-greenish color).
+8. Image files are exported using their full name with "$" modifiers (important for custom assets).
+9. Files are extracted to their full path used in the game (e.g. "gameresources_patch1/art/tile/etc" instead of just "images").
 
 ### Limitations:
 
-SAMUEL exports images in .DDS format only.
+SAMUEL exports images in .PNG format only.
 
-SAMUEL is not yet capable of exporting models (.lwo/.md6 files) for use in Substance Painter or Blender. However, it is now possible to export these files in their *native* formats for the very first time. This is an important step and it makes it possible for us to start reverse-engineering the format. Once the model format is better understood, we can add export to .obj/.fbx features.
-
-*Texture modders will generally prefer VEGA until we can replicate this feature.*
+SAMUEL is not yet capable of converting .md6mesh format models to other formats. They will be exported in the binary format used by the game.
 
 ## Credits:
 
-* SamPT ([@brongo](https://github.com/brongo)) - Primary author/developer of the SAMUEL tool. Reverse-engineered the Doom Eternal .streamdb file format, .resources format, image file formats, .lwo/.md6mesh headers, and discovered how to export files from .streamdb.
-* [@Powerball253](https://github.com/PowerBall253) - Many HUGE contributions in the form of code & testing. Responsible for Linux/MacOS compatibility, packageMapSpec parser, and figuring out Qt multithreading. Also assisted with reverse-engineering of Doom Eternal "TGA" (bimage) header formats.
+* SamPT ([@brongo](https://github.com/brongo)) - Primary author/developer of the SAMUEL tool. Reverse-engineered the Doom Eternal .streamdb file format, .resources format, image file formats, .lwo format, .md6mesh headers, and discovered how to export files from .streamdb.
+* [@Powerball253](https://github.com/PowerBall253) - Many HUGE contributions in the form of code & testing. Responsible for Linux/MacOS compatibility, packageMapSpec parser, and figuring out Qt multithreading. Also assisted with reverse-engineering of Doom Eternal BIM (bimage) header formats.
 * [DOOM 2016+ Modding Discord](https://discord.gg/ymRvQaU) for support and testing, and encouraging future developments.
 
 
