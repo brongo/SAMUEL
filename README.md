@@ -1,4 +1,4 @@
-# SAMUEL v2.0.9
+# SAMUEL v2.1.0
 
 SAMUEL is a tool for extracting assets from DOOM Eternal. 
 
@@ -8,7 +8,7 @@ It is cross-platform, open-source, and features an easy-to-use graphical interfa
 
 1. Export .decl files and .entities files.
 2. Export full-size images for use in texture modding (in .png format).
-3. Export .lwo files to the .obj file format.
+3. Export .lwo and .md6mesh files to the .obj file format.
 
 Files will be extracted to the "exports" folder. Models will be extracted to the "modelExports" folder. When exporting a model, all of the model's textures and material2 .decl files will also be exported.
 
@@ -21,18 +21,11 @@ This will obviously get compared to VEGA (the other asset extraction tool), so i
 1. SAMUEL is cross-platform and open-source. It works on Windows and Linux.
 2. Supports extracting of .decl files and .entities files.
 3. When exporting a model, all of it's material2 .decl files are also exported.
-4. Successfully extracts a few types of textures that VEGA doesn't support.
+4. Successfully extracts some .LWO and texture types that VEGA doesn't support.
 5. Supports extracting non-streamed or modded textures - texture modders can now recover their source images.
 6. Has improved search functionality - can search with multiple keywords separated by spaces.
-7. Extracts "normals" in their native RG format (yellow-greenish color).
-8. Image files are exported using their full name with "$" modifiers (important for custom assets).
-9. Files are extracted to their full path used in the game (e.g. "gameresources_patch1/art/tile/etc" instead of just "images").
-
-### Limitations:
-
-SAMUEL exports images in .PNG format only.
-
-SAMUEL is not yet capable of converting .md6mesh format models to other formats. They will be exported in the binary format used by the game.
+7. Image files are exported using their full name with "$" modifiers (important for custom assets).
+8. Files are extracted to their full path used in the game (e.g. "gameresources_patch1/art/tile/etc" instead of just "images").
 
 ## Credits:
 
