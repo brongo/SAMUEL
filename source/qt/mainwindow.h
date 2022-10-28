@@ -5,6 +5,7 @@
 #include <QMessageBox>
 #include <QThread>
 #include <QTableWidgetItem>
+
 #include "../core/SAMUEL.h"
 
 QT_BEGIN_NAMESPACE

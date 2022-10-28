@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 #include <vector>
 #include <filesystem>
@@ -11,7 +12,6 @@
 #include "idFileTypes/StreamDBFile.h"
 
 #include "ExportManager.h"
-
 #include "Oodle.h"
 #include "ResourceFileReader.h"
 #include "Utilities.h"
@@ -32,7 +32,7 @@ namespace HAYDEN
             bool LocateFileInStreamDB(const std::vector<StreamDBFile>& streamDBFiles);            
 
             // Main Export function
-            bool Export(const fs::path exportPath, const std::string resourcePath, const std::vector<StreamDBFile>& streamDBFiles);
+            bool Export(const fs::path exportPath, const std::string resourcePath, const std::vector<StreamDBFile>& streamDBFiles, bool reconstructZ = false);
 
             // Constructor
             BIMExportTask(const ResourceEntry resourceEntry);

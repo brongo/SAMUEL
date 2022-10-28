@@ -10,8 +10,8 @@
 #include "idFileTypes/ResourceFile.h"
 #include "idFileTypes/StreamDBFile.h"
 
+#include "Common.h"
 #include "ExportManager.h"
-
 #include "Oodle.h"
 #include "ResourceFileReader.h"
 #include "Utilities.h"

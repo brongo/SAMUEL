@@ -4,12 +4,11 @@
 #include <vector>
 #include <filesystem>
 
-#include "Config.h"
+#include "Common.h"
 #include "ExportBIM.h"
 #include "ExportCOMP.h"
 #include "ExportDECL.h"
-#include "ExportLWO.h"
-#include "ExportMD6.h"
+#include "ExportModel.h"
 
 namespace fs = std::filesystem;
 

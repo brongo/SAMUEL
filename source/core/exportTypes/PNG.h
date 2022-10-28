@@ -22,6 +22,6 @@ namespace HAYDEN
     class PNGFile
     {
         public:
-            std::vector<uint8_t> ConvertDDStoPNG(std::vector<uint8_t> inputDDS);
+            std::vector<uint8_t> ConvertDDStoPNG(std::vector<uint8_t> inputDDS, bool reconstructZ = false);
     };
 }

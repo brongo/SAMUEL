@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+
 #include "../../../vendor/jsonxx/jsonxx.h"
 
 namespace HAYDEN

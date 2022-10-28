@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 
-project(SAMUEL VERSION 2.0.9 LANGUAGES CXX)
+project(SAMUEL VERSION 2.1.2 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -39,17 +39,17 @@ set(PROJECT_SOURCES
     ./source/core/idFileTypes/ResourceFile.h
     ./source/core/idFileTypes/StreamDBFile.cpp
     ./source/core/idFileTypes/StreamDBFile.h
-    ./source/core/Config.h
+    ./source/core/idFileTypes/StreamDBGeometry.cpp
+    ./source/core/idFileTypes/StreamDBGeometry.h
+    ./source/core/Common.h
     ./source/core/ExportBIM.cpp
     ./source/core/ExportBIM.h
     ./source/core/ExportCOMP.cpp
     ./source/core/ExportCOMP.h
     ./source/core/ExportDECL.cpp
     ./source/core/ExportDECL.h
-    ./source/core/ExportLWO.cpp
-    ./source/core/ExportLWO.h
-    ./source/core/ExportMD6.cpp
-    ./source/core/ExportMD6.h
+    ./source/core/ExportModel.cpp
+    ./source/core/ExportModel.h
     ./source/core/ExportManager.cpp
     ./source/core/ExportManager.h
     ./source/core/Oodle.cpp

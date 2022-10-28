@@ -16,17 +16,23 @@ namespace HAYDEN
             _BMLCount = 1;
             _UseExtendedBML = 1;
         }
+        else if(Metadata.UnkHash != 0 && Metadata.NullPad32_2 != 0)
+        {
+            _BMLCount = 4;
+            _UseExtendedBML = 0;
+            _UseShortMeshHeader = 1;
+        }
         else
         {
             _BMLCount = 3;
             _UseExtendedBML = 0;
         }
 
-        if (Metadata.NullPad32_2 != 0)
-        {
+        // if (Metadata.NullPad32_2 != 0)
+        // {
             // ADD ERROR HANDLER
-            return;
-        }
+        //    return;
+        // }
 
         // Advance offset to start of Mesh info
         offset += sizeof(LWO_METADATA);
@@ -34,8 +40,18 @@ namespace HAYDEN
         // Read mesh and material info
         for (int i = 0; i < Metadata.NumMeshes; i++)
         {
-            MeshInfo[i].MeshHeader = *(LWO_MESH_HEADER*)(binaryData.data() + offset);
-            offset += sizeof(LWO_MESH_HEADER);
+            if (i > 0 && _UseShortMeshHeader)
+            {
+                MeshInfo[i].MeshHeader.UnkInt2 = *(uint32_t*)(binaryData.data() + offset);
+                offset += sizeof(uint32_t);
+                MeshInfo[i].MeshHeader.DeclStrlen = *(uint32_t*)(binaryData.data() + offset);
+                offset += sizeof(uint32_t);
+            }
+            else
+            {
+                MeshInfo[i].MeshHeader = *(LWO_MESH_HEADER*)(binaryData.data() + offset);
+                offset += sizeof(LWO_MESH_HEADER);
+            }
 
             int strLen = MeshInfo[i].MeshHeader.DeclStrlen;
 
@@ -53,12 +69,23 @@ namespace HAYDEN
             offset += sizeof(LWO_MESH_FOOTER);
 
             // Read BMLr data (level-of-detail info for each mesh)
-            MeshInfo[i].BMLHeaders.resize(_BMLCount);
+            MeshInfo[i].LODInfo.resize(_BMLCount);
 
             for (int j = 0; j < _BMLCount; j++)
             {
-                MeshInfo[i].BMLHeaders[j] = *(LWO_BML_HEADER*)(binaryData.data() + offset);
-                offset += sizeof(LWO_BML_HEADER);
+                MeshInfo[i].LODInfo[j] = *(LWO_LOD_INFO*)(binaryData.data() + offset);
+
+                // test
+                if (MeshInfo[i].LODInfo[j].NullPad32 != 0)
+                {
+                    _BMLCount = j;
+                    MeshInfo[i].LODInfo.resize(_BMLCount);
+                    offset += sizeof(uint32_t);
+                }
+                else
+                {
+                    offset += sizeof(LWO_LOD_INFO);
+                }
 
                 // No idea what these are for
                 if (_UseExtendedBML)
@@ -79,19 +106,19 @@ namespace HAYDEN
 
         // StreamDB structure depends on what our LWO version is.
         const uint64_t streamDBStructCount = 5;
-        LWOStreamDBHeaders.resize(streamDBStructCount);
-        LWOGeoStreamDiskLayout.resize(streamDBStructCount);
+        StreamDBHeaders.resize(streamDBStructCount);
+        StreamDiskLayout.resize(streamDBStructCount);
         uint64_t streamDBStructSize = sizeof(LWO_STREAMDB_HEADER) + sizeof(LWO_GEOMETRY_STREAMDISK_LAYOUT);
 
-        if (MeshInfo[0].BMLHeaders[0].LWOVersion == 60)
+        if (MeshInfo[0].LODInfo[0].GeoFlags.Flags1 == 60)
         {
             streamDBStructSize += sizeof(LWO_STREAMDB_DATA);
-            LWOStreamDBData.resize(streamDBStructCount);
+            StreamDBData.resize(streamDBStructCount);
         }
         else
         {
             streamDBStructSize += sizeof(LWO_STREAMDB_DATA_VARIANT);
-            LWOStreamDBDataVariant.resize(streamDBStructCount);
+            StreamDBDataVariant.resize(streamDBStructCount);
         }
 
         // Move offset to the beginning of streamDB structures
@@ -101,21 +128,21 @@ namespace HAYDEN
         // Read StreamDB info
         for (int i = 0; i < streamDBStructCount; i++)
         {
-            LWOStreamDBHeaders[i] = *(LWO_STREAMDB_HEADER*)(binaryData.data() + offset);
+            StreamDBHeaders[i] = *(LWO_STREAMDB_HEADER*)(binaryData.data() + offset);
             offset += sizeof(LWO_STREAMDB_HEADER);
 
-            if (MeshInfo[0].BMLHeaders[0].LWOVersion == 60)
+            if (MeshInfo[0].LODInfo[0].GeoFlags.Flags1 == 60)
             {
-                LWOStreamDBData[i] = *(LWO_STREAMDB_DATA*)(binaryData.data() + offset);
+                StreamDBData[i] = *(LWO_STREAMDB_DATA*)(binaryData.data() + offset);
                 offset += sizeof(LWO_STREAMDB_DATA);
             }
             else
             {
-                LWOStreamDBDataVariant[i] = *(LWO_STREAMDB_DATA_VARIANT*)(binaryData.data() + offset);
+                StreamDBDataVariant[i] = *(LWO_STREAMDB_DATA_VARIANT*)(binaryData.data() + offset);
                 offset += sizeof(LWO_STREAMDB_DATA_VARIANT);
             }
 
-            LWOGeoStreamDiskLayout[i] = *(LWO_GEOMETRY_STREAMDISK_LAYOUT*)(binaryData.data() + offset);
+            StreamDiskLayout[i] = *(LWO_GEOMETRY_STREAMDISK_LAYOUT*)(binaryData.data() + offset);
             offset += sizeof(LWO_GEOMETRY_STREAMDISK_LAYOUT);
         }
 
@@ -127,7 +154,7 @@ namespace HAYDEN
     void LWO::Serialize(LWO_HEADER lwoHeader, std::vector<uint8_t> lwoGeo)
     {
         Header = lwoHeader;
-        Geo.resize(Header.Metadata.NumMeshes);
+        MeshGeometry.resize(Header.Metadata.NumMeshes);
 
         uint64_t offset = 0;
         uint64_t offsetNormals = 0;
@@ -135,111 +162,73 @@ namespace HAYDEN
         uint64_t offsetFaces = 0;
 
         // Get offsets from LWO streamdb data
-        if (Header.MeshInfo[0].BMLHeaders[0].LWOVersion == 60)
+        if (Header.MeshInfo[0].LODInfo[0].GeoFlags.Flags1 == 60)
         {
-            offsetNormals = Header.LWOStreamDBData[0].LOD_NormalStartOffset;
-            offsetUVs = Header.LWOStreamDBData[0].LOD_UVStartOffset;
-            offsetFaces = Header.LWOStreamDBData[0].LOD_FacesStartOffset;
+            offsetNormals = Header.StreamDBData[0].NormalStartOffset;
+            offsetUVs = Header.StreamDBData[0].UVStartOffset;
+            offsetFaces = Header.StreamDBData[0].FacesStartOffset;
         }
         else
         {
-            offsetNormals = Header.LWOStreamDBDataVariant[0].LOD_NormalStartOffset;
-            offsetUVs = Header.LWOStreamDBDataVariant[0].LOD_UVStartOffset;
-            offsetFaces = Header.LWOStreamDBDataVariant[0].LOD_FacesStartOffset;
+            offsetNormals = Header.StreamDBDataVariant[0].NormalStartOffset;
+            offsetUVs = Header.StreamDBDataVariant[0].UVStartOffset;
+            offsetFaces = Header.StreamDBDataVariant[0].FacesStartOffset;
         }
 
         // Allocate
-        for (int i = 0; i < Geo.size(); i++)
+        for (int i = 0; i < MeshGeometry.size(); i++)
         {
-            Geo[i].Vertices.resize(Header.MeshInfo[i].BMLHeaders[0].NumVertices);
-            Geo[i].Normals.resize(Header.MeshInfo[i].BMLHeaders[0].NumVertices);
-            Geo[i].UVs.resize(Header.MeshInfo[i].BMLHeaders[0].NumVertices);
-            Geo[i].Faces.resize(Header.MeshInfo[i].BMLHeaders[0].NumFacesX3 / 3);
+            MeshGeometry[i].Vertices.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
+            MeshGeometry[i].Normals.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
+            MeshGeometry[i].UVs.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
+            MeshGeometry[i].Faces.resize(Header.MeshInfo[i].LODInfo[0].NumEdges / 3);
         }
 
         // Read Vertices
-        for (int i = 0; i < Geo.size(); i++)
+        for (int i = 0; i < MeshGeometry.size(); i++)
         {
-            for (int j = 0; j < Geo[i].Vertices.size(); j++)
+            for (int j = 0; j < MeshGeometry[i].Vertices.size(); j++)
             {
-                LWO_VERTEX_PACKED packedVertex = *(LWO_VERTEX_PACKED*)(lwoGeo.data() + offset);
-                Geo[i].Vertices[j] = Geo[i].UnpackVertex(packedVertex, Header.MeshInfo[i].BMLHeaders[0].VertexOffsetX, Header.MeshInfo[i].BMLHeaders[0].VertexOffsetY, Header.MeshInfo[i].BMLHeaders[0].VertexOffsetZ, Header.MeshInfo[i].BMLHeaders[0].VertexScale);
-                offset += sizeof(LWO_VERTEX_PACKED);
+                PackedVertex packedVertex = *(PackedVertex*)(lwoGeo.data() + offset);
+                MeshGeometry[i].Vertices[j] = MeshGeometry[i].UnpackVertex(packedVertex, Header.MeshInfo[i].LODInfo[0].GeoMeta.VertexOffsetX, Header.MeshInfo[i].LODInfo[0].GeoMeta.VertexOffsetY, Header.MeshInfo[i].LODInfo[0].GeoMeta.VertexOffsetZ, Header.MeshInfo[i].LODInfo[0].GeoMeta.VertexScale);
+                offset += sizeof(PackedVertex);
             }
         }
      
         // Read Normals
         offset = offsetNormals;
-        for (int i = 0; i < Geo.size(); i++)
+        for (int i = 0; i < MeshGeometry.size(); i++)
         {
-            for (int j = 0; j < Geo[i].Normals.size(); j++)
+            for (int j = 0; j < MeshGeometry[i].Normals.size(); j++)
             {
-                LWO_NORMAL_PACKED packedNormal = *(LWO_NORMAL_PACKED*)(lwoGeo.data() + offset);
-                Geo[i].Normals[j] = Geo[i].UnpackNormal(packedNormal);
-                offset += sizeof(LWO_NORMAL_PACKED);
+                PackedNormal packedNormal = *(PackedNormal*)(lwoGeo.data() + offset);
+                MeshGeometry[i].Normals[j] = MeshGeometry[i].UnpackNormal(packedNormal);
+                offset += sizeof(PackedNormal);
             }
         }
 
         // Read UVs
         offset = offsetUVs;
-        for (int i = 0; i < Geo.size(); i++)
+        for (int i = 0; i < MeshGeometry.size(); i++)
         {
-            for (int j = 0; j < Geo[i].UVs.size(); j++)
+            for (int j = 0; j < MeshGeometry[i].UVs.size(); j++)
             {
-                LWO_UV_PACKED packedUV = *(LWO_UV_PACKED*)(lwoGeo.data() + offset);
-                Geo[i].UVs[j] = Geo[i].UnpackUV(packedUV, Header.MeshInfo[i].BMLHeaders[0].UVMapOffsetU, Header.MeshInfo[i].BMLHeaders[0].UVMapOffsetV, Header.MeshInfo[i].BMLHeaders[0].UVScale);
-                offset += sizeof(LWO_UV_PACKED);
+                PackedUV packedUV = *(PackedUV*)(lwoGeo.data() + offset);
+                MeshGeometry[i].UVs[j] = MeshGeometry[i].UnpackUV(packedUV, Header.MeshInfo[i].LODInfo[0].GeoMeta.UVMapOffsetU, Header.MeshInfo[i].LODInfo[0].GeoMeta.UVMapOffsetV, Header.MeshInfo[i].LODInfo[0].GeoMeta.UVScale);
+                offset += sizeof(PackedUV);
             }
         }
 
         // Read Faces
         offset = offsetFaces;
-        for (int i = 0; i < Geo.size(); i++)
+        for (int i = 0; i < MeshGeometry.size(); i++)
         {
-            for (int j = 0; j < Geo[i].Faces.size(); j++)
+            for (int j = 0; j < MeshGeometry[i].Faces.size(); j++)
             {
-                Geo[i].Faces[j] = *(LWO_FACE_GROUP*)(lwoGeo.data() + offset);
-                offset += sizeof(LWO_FACE_GROUP);
+                MeshGeometry[i].Faces[j] = *(Face*)(lwoGeo.data() + offset);
+                offset += sizeof(Face);
             }
         }
         return;
-    }
-
-    // Subroutines of LWO_GEO::Serialize - for unpacking geometry
-    LWO_VERTEX LWO_GEO::UnpackVertex(LWO_VERTEX_PACKED packed, float_t offsetX, float_t offsetY, float_t offsetZ, float_t vertexScale)
-    {
-        LWO_VERTEX vertex;
-        float packedX = packed.X;
-        float packedY = packed.Y;
-        float packedZ = packed.Z;
-
-        vertex.X = ((packedX / 65535) * vertexScale) + offsetX;
-        vertex.Z = -(((packedY / 65535) * vertexScale) + offsetY);
-        vertex.Y = ((packedZ / 65535) * vertexScale) + offsetZ;
-        return vertex;
-    }
-
-    LWO_NORMAL LWO_GEO::UnpackNormal(LWO_NORMAL_PACKED packed)
-    {
-        LWO_NORMAL normal;
-        float packedXn = packed.Xn;
-        float packedYn = packed.Yn;
-        float packedZn = packed.Zn;
-
-        normal.Xn = (packedXn / 256) * 2 - 1;
-        normal.Yn = -((packedYn / 256) * 2 - 1);
-        normal.Zn = (packedZn / 256) * 2 - 1;
-        return normal;
-    }
-
-    LWO_UV LWO_GEO::UnpackUV(LWO_UV_PACKED packed, float_t offsetU, float_t offsetV, float_t uvScale)
-    {
-        LWO_UV uv;
-        float packedU = packed.U;
-        float packedV = packed.V;
-
-        uv.U = ((packedU / 65535) * uvScale) + offsetU;
-        uv.V = abs(((abs(packedV / 65535)) * uvScale) - (1 - offsetV));
-        return uv;
     }
 }

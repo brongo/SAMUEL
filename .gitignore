@@ -1,11 +1,12 @@
 # Executable
 SAMUEL.exe
 
-# Project-specific
+# Oodle DLL
 oo2core_8_win64.dll
 
 # User Settings
 CMakeLists.txt.user
+CMakeSettings.json
 
 # Build results
 [Dd]ebug/

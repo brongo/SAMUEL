@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.1.2] - 2022-10-28
+- Fix several crashes that could occur when exporting unrecognized LWO files
+
+## [2.1.0] - 2022-05-04
+- Added support for exporting MD6MESH to OBJ format
+
 ## [2.0.9] - 2022-05-01
 
 - Massive code cleanup / refactor.

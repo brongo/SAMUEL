@@ -38,11 +38,8 @@ namespace HAYDEN
                 outputDirectory = outputDirectory / resourceFolder;
                 break;
             case ExportType::LWO:
-                filePath = fs::path(filePath).filename().replace_extension("").string();
-                outputDirectory.replace_filename("modelExports");
-                break;
             case ExportType::MD6:
-                filePath = fs::path(filePath).filename().replace_extension(".md6mesh").string();
+                filePath = fs::path(filePath).filename().replace_extension("").string();
                 outputDirectory.replace_filename("modelExports");
                 break;
         }
@@ -146,7 +143,7 @@ namespace HAYDEN
                 case ExportType::BIM:
                 {
                     BIMExportTask bimExportTask(_ExportJobQueue[i].Entry);
-                    _ExportJobQueue[i].Result = bimExportTask.Export(_ExportJobQueue[i].ExportPath, resourcePath, streamDBFiles);
+                    _ExportJobQueue[i].Result = bimExportTask.Export(_ExportJobQueue[i].ExportPath, resourcePath, streamDBFiles, true);
                     break;
                 }
                 case ExportType::COMP:
@@ -163,14 +160,14 @@ namespace HAYDEN
                 }
                 case ExportType::MD6:
                 {
-                    MD6ExportTask md6ExportTask(_ExportJobQueue[i].Entry);
-                    _ExportJobQueue[i].Result = md6ExportTask.Export(_ExportJobQueue[i].ExportPath, resourcePath, streamDBFiles);
+                    ModelExportTask modelExportTask(_ExportJobQueue[i].Entry);
+                    modelExportTask.Export(_ExportJobQueue[i].ExportPath, resourcePath, streamDBFiles, resourceData, globalResources, 31);
                     break;
                 }
                 case ExportType::LWO:
                 {
-                    LWOExportTask lwoExportTask(_ExportJobQueue[i].Entry);
-                    lwoExportTask.ExportLWO(_ExportJobQueue[i].ExportPath, resourcePath, streamDBFiles, resourceData, globalResources);
+                    ModelExportTask modelExportTask(_ExportJobQueue[i].Entry);
+                    modelExportTask.Export(_ExportJobQueue[i].ExportPath, resourcePath, streamDBFiles, resourceData, globalResources, 67);
                     break;
                 }
             }

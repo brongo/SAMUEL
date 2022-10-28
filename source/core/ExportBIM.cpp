@@ -32,7 +32,7 @@ namespace HAYDEN
     // Main export function for BIM files.
     // Convert BIM file to PNG format and write to local filesystem. 
     // Return 1 for success, 0 for failure.
-    bool BIMExportTask::Export(const fs::path exportPath, const std::string resourcePath, const std::vector<StreamDBFile>& streamDBFiles)
+    bool BIMExportTask::Export(const fs::path exportPath, const std::string resourcePath, const std::vector<StreamDBFile>& streamDBFiles, bool reconstructZ)
     {
         std::vector<uint8_t> rawImageData;
         ResourceFileReader resourceFile(resourcePath);
@@ -102,7 +102,7 @@ namespace HAYDEN
 
         // Convert DDS file to PNG format
         PNGFile pngFile;
-        std::vector<uint8_t> pngData = pngFile.ConvertDDStoPNG(ddsFile);
+        std::vector<uint8_t> pngData = pngFile.ConvertDDStoPNG(ddsFile, reconstructZ);
 
         if (pngData.empty())
         {

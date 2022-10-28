@@ -1,9 +1,11 @@
 #pragma once
+
 #include <string>
 #include <vector>
 #include <filesystem>
 
 #include "idFileTypes/ResourceFile.h"
+
 #include "ResourceFileReader.h"
 #include "Utilities.h"
 
