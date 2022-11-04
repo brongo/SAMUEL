@@ -38,7 +38,7 @@ namespace HAYDEN
     class OBJFile
     {
 	public:
-            std::string SignatureLine = "# Exported with SAMUEL v2.1.2 by SamPT \n# https://github.com/brongo/SAMUEL";
+            std::string SignatureLine = "# Exported with SAMUEL v2.1.3-alpha by SamPT \n# https://github.com/brongo/SAMUEL";
             std::string MaterialLibrary;
 	    std::vector<OBJFile_Object> Objects;
             std::vector<OBJFile_FaceMaterialGroup> FaceMaterialGroups;

@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.1.3-alpha] - 2022-11-04
+- Adds support for BMODEL format (export to OBJ)
+- Adds support for world brush format (export to OBJ)
+
 ## [2.1.2] - 2022-10-28
 - Fix several crashes that could occur when exporting unrecognized LWO files
 - Source code published (first source code release since v2.0.9).

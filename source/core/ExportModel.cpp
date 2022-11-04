@@ -376,6 +376,7 @@ namespace HAYDEN
         ResourcePath = resourcePath;
         std::vector<uint8_t> modelData;
         ResourceFileReader resourceFile(resourcePath);
+        bool geometryIsStreamed = 1;
 
         // Extract model header from .resources file and read it
         std::vector<uint8_t> binaryData = resourceFile.GetEmbeddedFileHeader(resourcePath, _ResourceDataOffset, _ResourceDataLength, _ResourceDataLengthDecompressed);
@@ -385,7 +386,7 @@ namespace HAYDEN
 
         // FOR DEBUG ONLY
         // writeToFilesystem(binaryData, exportPath);
-
+        
         // Read binary data from our extracted model header 
         if (modelType == 31)
         {
@@ -396,43 +397,59 @@ namespace HAYDEN
 
         if (modelType == 67)
         {
-            _LWOHeader.ReadBinaryHeader(binaryData);
-            _StreamedDataLength = _LWOHeader.StreamDiskLayout[0].CompressedSize;                      // [0] = LOD_ZERO
-            _StreamedDataLengthDecompressed = _LWOHeader.StreamDiskLayout[0].DecompressedSize;        // [0] = LOD_ZERO
-        }
-
-        // Convert resourceID to streamFileID
-        _StreamedDataHash = resourceFile.CalculateStreamDBIndex(_ResourceID);
-
-        // Locate and extract the model geometry from .streamdb file
-        for (int i = 0; i < streamDBFiles.size(); i++)
-        {
-            _StreamDBEntry = streamDBFiles[i].LocateStreamDBEntry(_StreamedDataHash, _StreamedDataLength);
-
-            if (_StreamDBEntry.Offset16 > 0)
+            if ((_FileName.rfind("world_") != -1) || (_FileName.rfind(".bmodel") != -1))
             {
-                // Match found in this file
-                _StreamDBNumber = i;
-                _StreamDBFilePath = streamDBFiles[i].FilePath;
-                break;
+                _LWOHeader.ReadBinaryHeader(binaryData, 1);
+                modelData = _LWOHeader.EmbeddedGeo;
+                geometryIsStreamed = 0;
+
+                if (_FileName.rfind("world_") != -1)
+                    ModelExportPath.replace_filename("world_geo");
+            }
+            else
+            {
+                _LWOHeader.ReadBinaryHeader(binaryData, 0);
+                _StreamedDataLength = _LWOHeader.StreamDiskLayout[0].CompressedSize;                      // [0] = LOD_ZERO
+                _StreamedDataLengthDecompressed = _LWOHeader.StreamDiskLayout[0].DecompressedSize;        // [0] = LOD_ZERO
             }
         }
-
-        // Unable to locate geometry in .streamdb. Abort.
-        if (_StreamDBEntry.Offset16 <= 0)
-            return 0;
-
-        // Extract model geometry from .streamdb file.
-        modelData = streamDBFiles[_StreamDBNumber].GetEmbeddedFile(_StreamDBFilePath, _StreamDBEntry);
-
-        // Decompress the streamed model geometry if needed (almost always).
-        if (_StreamDBEntry.CompressedSize != _StreamedDataLengthDecompressed)
+        
+        // Extract geometry from streamdb (needed for most files except .bmodel and world brushes)
+        if (geometryIsStreamed)
         {
-            modelData = oodleDecompress(modelData, _StreamedDataLengthDecompressed);
-            if (modelData.empty())
+            // Convert resourceID to streamFileID
+            _StreamedDataHash = resourceFile.CalculateStreamDBIndex(_ResourceID);
+
+            // Locate and extract the model geometry from .streamdb file
+            for (int i = 0; i < streamDBFiles.size(); i++)
             {
-                fprintf(stderr, "Error: Failed to decompress: %s \n", _FileName.c_str());
+                _StreamDBEntry = streamDBFiles[i].LocateStreamDBEntry(_StreamedDataHash, _StreamedDataLength);
+
+                if (_StreamDBEntry.Offset16 > 0)
+                {
+                    // Match found in this file
+                    _StreamDBNumber = i;
+                    _StreamDBFilePath = streamDBFiles[i].FilePath;
+                    break;
+                }
+            }
+
+            // Unable to locate geometry in .streamdb. Abort.
+            if (_StreamDBEntry.Offset16 <= 0)
                 return 0;
+
+            // Extract model geometry from .streamdb file.
+            modelData = streamDBFiles[_StreamDBNumber].GetEmbeddedFile(_StreamDBFilePath, _StreamDBEntry);
+
+            // Decompress the streamed model geometry if needed (almost always).
+            if (_StreamDBEntry.CompressedSize != _StreamedDataLengthDecompressed)
+            {
+                modelData = oodleDecompress(modelData, _StreamedDataLengthDecompressed);
+                if (modelData.empty())
+                {
+                    fprintf(stderr, "Error: Failed to decompress: %s \n", _FileName.c_str());
+                    return 0;
+                }
             }
         }
 
@@ -456,7 +473,11 @@ namespace HAYDEN
         // Serialize model data and get materials (LWO)
         if (modelType == 67)
         {
-            _LWO.Serialize(_LWOHeader, modelData);
+            if (geometryIsStreamed)
+                _LWO.SerializeStreamedGeo(_LWOHeader, modelData);
+            else
+                _LWO.SerializeEmbeddedGeo(_LWOHeader, modelData);
+            
             for (int i = 0; i < _LWOHeader.MeshInfo.size(); i++)
             {
                 MaterialInfo materialInfo;

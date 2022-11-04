@@ -2,7 +2,7 @@
 
 namespace HAYDEN
 {
-    void LWO_HEADER::ReadBinaryHeader(const std::vector<uint8_t> binaryData)
+    void LWO_HEADER::ReadBinaryHeader(const std::vector<uint8_t> binaryData, bool hasEmbeddedGeo)
     {
         int offset = 0;
 
@@ -27,12 +27,6 @@ namespace HAYDEN
             _BMLCount = 3;
             _UseExtendedBML = 0;
         }
-
-        // if (Metadata.NullPad32_2 != 0)
-        // {
-            // ADD ERROR HANDLER
-        //    return;
-        // }
 
         // Advance offset to start of Mesh info
         offset += sizeof(LWO_METADATA);
@@ -75,7 +69,6 @@ namespace HAYDEN
             {
                 MeshInfo[i].LODInfo[j] = *(LWO_LOD_INFO*)(binaryData.data() + offset);
 
-                // test
                 if (MeshInfo[i].LODInfo[j].NullPad32 != 0)
                 {
                     _BMLCount = j;
@@ -99,51 +92,77 @@ namespace HAYDEN
             }
         }
 
-        // Everything above has been read sequentially.
-        // But now, we will skip a bunch of data in the middle of the LWO header.
-        // The size varies considerably, and most of this data has no known purpose. It is not needed for exporting to OBJ
-        // The last thing we need for exporting is StreamDB info, which is located at the END of the file.
-
-        // StreamDB structure depends on what our LWO version is.
-        const uint64_t streamDBStructCount = 5;
-        StreamDBHeaders.resize(streamDBStructCount);
-        StreamDiskLayout.resize(streamDBStructCount);
-        uint64_t streamDBStructSize = sizeof(LWO_STREAMDB_HEADER) + sizeof(LWO_GEOMETRY_STREAMDISK_LAYOUT);
-
-        if (MeshInfo[0].LODInfo[0].GeoFlags.Flags1 == 60)
+        // Get embedded model geometry if needed
+        if (hasEmbeddedGeo)
         {
-            streamDBStructSize += sizeof(LWO_STREAMDB_DATA);
-            StreamDBData.resize(streamDBStructCount);
+            // Skip 8 unknown bytes
+            offset += 8;
+
+            // If this is non-zero, we have a world brush
+            // This needs to be set for LWO::SerializeEmbeddedGeo() to distinguish between world_ and .bmodel.
+            UnkNullOrFloat = *(float*)(binaryData.data() + offset);
+            offset += sizeof(float);
+            
+            // Skip past 29 unknown bytes - geometry starts here
+            offset += 29;
+
+            // If there is more than 1 material, skip ahead additional +5 bytes for each material
+            if (Metadata.NumMeshes > 1)
+            {
+                int skipAhead = (5 * (Metadata.NumMeshes - 1));
+                offset += skipAhead;
+            }
+
+            EmbeddedGeo.insert(EmbeddedGeo.begin(), binaryData.begin() + offset, binaryData.end());
         }
         else
         {
-            streamDBStructSize += sizeof(LWO_STREAMDB_DATA_VARIANT);
-            StreamDBDataVariant.resize(streamDBStructCount);
-        }
+            // Everything above has been read sequentially.
+            // But now, we will skip a bunch of data in the middle of the LWO header.
+            // The size varies considerably, and most of this data has no known purpose. It is not needed for exporting to OBJ
+            // The last thing we need for exporting is StreamDB info, which is located at the END of the file.
 
-        // Move offset to the beginning of streamDB structures
-        // Calculated from end of file.
-        offset = binaryData.size() - (streamDBStructSize * streamDBStructCount);
-
-        // Read StreamDB info
-        for (int i = 0; i < streamDBStructCount; i++)
-        {
-            StreamDBHeaders[i] = *(LWO_STREAMDB_HEADER*)(binaryData.data() + offset);
-            offset += sizeof(LWO_STREAMDB_HEADER);
+            // StreamDB structure depends on what our LWO version is.
+            const uint64_t streamDBStructCount = 5;
+            StreamDBHeaders.resize(streamDBStructCount);
+            StreamDiskLayout.resize(streamDBStructCount);
+            uint64_t streamDBStructSize = sizeof(LWO_STREAMDB_HEADER) + sizeof(LWO_GEOMETRY_STREAMDISK_LAYOUT);
 
             if (MeshInfo[0].LODInfo[0].GeoFlags.Flags1 == 60)
             {
-                StreamDBData[i] = *(LWO_STREAMDB_DATA*)(binaryData.data() + offset);
-                offset += sizeof(LWO_STREAMDB_DATA);
+                streamDBStructSize += sizeof(LWO_STREAMDB_DATA);
+                StreamDBData.resize(streamDBStructCount);
             }
             else
             {
-                StreamDBDataVariant[i] = *(LWO_STREAMDB_DATA_VARIANT*)(binaryData.data() + offset);
-                offset += sizeof(LWO_STREAMDB_DATA_VARIANT);
+                streamDBStructSize += sizeof(LWO_STREAMDB_DATA_VARIANT);
+                StreamDBDataVariant.resize(streamDBStructCount);
             }
 
-            StreamDiskLayout[i] = *(LWO_GEOMETRY_STREAMDISK_LAYOUT*)(binaryData.data() + offset);
-            offset += sizeof(LWO_GEOMETRY_STREAMDISK_LAYOUT);
+            // Move offset to the beginning of streamDB structures
+            // Calculated from end of file.
+            offset = binaryData.size() - (streamDBStructSize * streamDBStructCount);
+
+            // Read StreamDB info
+            for (int i = 0; i < streamDBStructCount; i++)
+            {
+                StreamDBHeaders[i] = *(LWO_STREAMDB_HEADER*)(binaryData.data() + offset);
+                offset += sizeof(LWO_STREAMDB_HEADER);
+
+                if (MeshInfo[0].LODInfo[0].GeoFlags.Flags1 == 60)
+                {
+                    StreamDBData[i] = *(LWO_STREAMDB_DATA*)(binaryData.data() + offset);
+                    offset += sizeof(LWO_STREAMDB_DATA);
+                }
+                else
+                {
+                    StreamDBDataVariant[i] = *(LWO_STREAMDB_DATA_VARIANT*)(binaryData.data() + offset);
+                    offset += sizeof(LWO_STREAMDB_DATA_VARIANT);
+                }
+
+                StreamDiskLayout[i] = *(LWO_GEOMETRY_STREAMDISK_LAYOUT*)(binaryData.data() + offset);
+                offset += sizeof(LWO_GEOMETRY_STREAMDISK_LAYOUT);
+            }
         }
 
         // Temporary for rev-eng
@@ -151,7 +170,60 @@ namespace HAYDEN
         return;
     }
 
-    void LWO::Serialize(LWO_HEADER lwoHeader, std::vector<uint8_t> lwoGeo)
+    void LWO::SerializeEmbeddedGeo(LWO_HEADER lwoHeader, std::vector<uint8_t> lwoGeo)
+    {
+        Header = lwoHeader;
+        MeshGeometry.resize(Header.Metadata.NumMeshes);
+
+        // Allocate
+        for (int i = 0; i < MeshGeometry.size(); i++)
+        {
+            MeshGeometry[i].Vertices.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
+            MeshGeometry[i].Normals.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
+            MeshGeometry[i].UVs.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
+            MeshGeometry[i].Faces.resize(Header.MeshInfo[i].LODInfo[0].NumEdges / 3);
+        }
+
+        // World geo is stored sequentially. We can get by with just 1 offset, update as we go
+        uint64_t offset = 0;
+
+        for (int i = 0; i < MeshGeometry.size(); i++)
+        {
+            for (int j = 0; j < MeshGeometry[i].Vertices.size(); j++)
+            {
+                // Read Vertices
+                MeshGeometry[i].Vertices[j] = *(Vertex*)(lwoGeo.data() + offset);
+                offset += sizeof(Vertex);
+
+                // Read UVs
+                MeshGeometry[i].UVs[j] = *(UV*)(lwoGeo.data() + offset);
+                offset += sizeof(UV);
+
+                // Read Normals + Tangents
+                PackedNormal packedNormal = *(PackedNormal*)(lwoGeo.data() + offset);
+                MeshGeometry[i].Normals[j] = MeshGeometry[i].UnpackNormal(packedNormal);
+                offset += sizeof(PackedNormal);
+
+                // Skip Colors
+                offset += sizeof(uint32_t);
+
+                // Skip Lightmap UVs (world brushes only)
+                if (Header.UnkNullOrFloat != 0)
+                {
+                    offset += sizeof(uint64_t);
+                }
+            }
+
+            // Read Faces
+            for (int j = 0; j < MeshGeometry[i].Faces.size(); j++)
+            {
+                MeshGeometry[i].Faces[j] = *(Face*)(lwoGeo.data() + offset);
+                offset += sizeof(Face);
+            }
+        }
+    }
+
+    void LWO::SerializeStreamedGeo(LWO_HEADER lwoHeader, std::vector<uint8_t> lwoGeo)
     {
         Header = lwoHeader;
         MeshGeometry.resize(Header.Metadata.NumMeshes);

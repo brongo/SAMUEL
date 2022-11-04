@@ -118,7 +118,7 @@ namespace HAYDEN
     {
 	public:
 	    std::vector<uint8_t> RawLWOHeader;
-	    void ReadBinaryHeader(const std::vector<uint8_t> binaryData);
+	    void ReadBinaryHeader(const std::vector<uint8_t> binaryData, bool hasEmbeddedGeo);
 
             // Serialized file data
             LWO_METADATA Metadata;
@@ -127,6 +127,10 @@ namespace HAYDEN
             std::vector<LWO_STREAMDB_DATA> StreamDBData;                         // Used if LWO version = 60
             std::vector<LWO_STREAMDB_DATA_VARIANT> StreamDBDataVariant;          // Used in LWO version = 124 (uv lightmap)
             std::vector<LWO_GEOMETRY_STREAMDISK_LAYOUT> StreamDiskLayout;
+            
+            // Only for world brushes and .bmodels
+            std::vector<uint8_t> EmbeddedGeo;
+            float UnkNullOrFloat = 0;                                            // Non-zero value here is used to detect "world brush" model type
 
         private:
 
@@ -142,7 +146,8 @@ namespace HAYDEN
 	public:
             LWO_HEADER Header;
             std::vector<Mesh> MeshGeometry;
-	    void Serialize(LWO_HEADER lwoHeader, std::vector<uint8_t> lwoGeo);
+            void SerializeEmbeddedGeo(LWO_HEADER lwoHeader, std::vector<uint8_t> lwoGeo);
+	    void SerializeStreamedGeo(LWO_HEADER lwoHeader, std::vector<uint8_t> lwoGeo);
     };
 }
 

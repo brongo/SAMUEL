@@ -169,16 +169,6 @@ void MainWindow::PopulateGUIResourceTable(std::vector<std::string> searchWords)
                 continue;
         }
 
-        // Filter out unsupported .lwo
-        if (resourceData[i].Version == 67)
-        {
-            if (resourceData[i].Name.rfind("world_") != -1 && (resourceData[i].Name.find("maps/game") != -1))
-                continue;
-
-            if (resourceData[i].Name.rfind(".bmodel") != -1)
-                continue;
-        }
-
         // Filter out unsupported md6
         if (resourceData[i].Version == 31)
         {
