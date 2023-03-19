@@ -36,8 +36,8 @@ namespace HAYDEN
             size_t mipDataStart = sizeof(BIM_HEADER) + (sizeof(BIM_MIPMAP) * largestMipUsed);
 
             // replace original size & dimensions with data for the largest mip used
-            Header.PixelHeight = *(int*)(binaryData.data() + mipDataStart + 8);
-            Header.PixelWidth = *(int*)(binaryData.data() + mipDataStart + 12);
+            Header.PixelWidth = *(int*)(binaryData.data() + mipDataStart + 8);
+            Header.PixelHeight = *(int*)(binaryData.data() + mipDataStart + 12);
             MipMaps[0].DecompressedSize = *(int*)(binaryData.data() + mipDataStart + 20);
             MipMaps[0].CompressedSize = *(int*)(binaryData.data() + mipDataStart + 28);
 

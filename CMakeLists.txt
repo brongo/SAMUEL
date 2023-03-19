@@ -69,7 +69,7 @@ set(PROJECT_SOURCES
 )
 
 if (NOT WIN32)
-    set(PROJECT_SOURCES ${PROJECT_SOURCES} ./vendor/detex/detex.h)
+    set(PROJECT_SOURCES ${PROJECT_SOURCES} ./vendor/detex/detex.h ./vendor/ooz/ooz.hpp)
 endif()
 
 set(APP_ICON_RESOURCE_WINDOWS "./resources/icon.rc")
@@ -101,7 +101,7 @@ if (WIN32)
 else()
     find_package(PNG REQUIRED)
     include_directories(${PNG_INCLUDE_DIR})
-    target_link_libraries(SAMUEL PRIVATE ${CMAKE_SOURCE_DIR}/vendor/detex/libdetex.a ${PNG_LIBRARY})
+    target_link_libraries(SAMUEL PRIVATE ${CMAKE_SOURCE_DIR}/vendor/detex/libdetex.a ${CMAKE_SOURCE_DIR}/vendor/ooz/libooz.a ${PNG_LIBRARY})
 endif()
 
 if (MSVC)

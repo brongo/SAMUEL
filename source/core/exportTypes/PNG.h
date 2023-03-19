@@ -7,6 +7,7 @@
 #include <filesystem>
 
 #include "../Utilities.h"
+#include "../exportTypes/DDSHeader.h"
 
 #ifdef _WIN32
 #include <wincodec.h>
@@ -22,6 +23,6 @@ namespace HAYDEN
     class PNGFile
     {
         public:
-            std::vector<uint8_t> ConvertDDStoPNG(std::vector<uint8_t> inputDDS, bool reconstructZ = false);
+            std::vector<uint8_t> ConvertDDStoPNG(std::vector<uint8_t> inputDDS, ImageType imageType, bool reconstructZ = false);
     };
 }
