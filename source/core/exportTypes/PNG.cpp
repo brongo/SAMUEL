@@ -3,7 +3,7 @@
 namespace HAYDEN
 {
     // Convert DDS file to PNG (using DirectXTex on Windows, else use Detex library)
-    std::vector<uint8_t> PNGFile::ConvertDDStoPNG(std::vector<uint8_t> inputDDS, bool reconstructZ)
+    std::vector<uint8_t> PNGFile::ConvertDDStoPNG(std::vector<uint8_t> inputDDS,ImageType imageType, bool reconstructZ)
     {
         std::vector<uint8_t> outputPNG;
 
@@ -109,32 +109,68 @@ namespace HAYDEN
         pngTexture.format = DETEX_PIXEL_FORMAT_RGBA8;
         detexTexture* ddsTexture = NULL;
         std::unique_ptr<uint8_t> pngData;
+        bool isDDS = false;
 
-        if (!detexLoadDDSFile(fullPath.c_str(), &ddsTexture))
+        // Check format
+        switch (imageType)
         {
-            // Try loading as raw (for rgba8 textures)
-            pngTexture.width = *(int*)(inputDDS.data() + 12);
-            pngTexture.height = *(int*)(inputDDS.data() + 16);
-            pngTexture.width_in_blocks = pngTexture.width;
-            pngTexture.height_in_blocks = pngTexture.height;
-            pngTexture.data = inputDDS.data() + 128;
+            case ImageType::FMT_BC1_ZERO_ALPHA:
+            case ImageType::FMT_BC1_SRGB:
+            case ImageType::FMT_BC1_LINEAR:
+            case ImageType::FMT_BC3_SRGB:
+            case ImageType::FMT_BC3_LINEAR:
+            case ImageType::FMT_BC4_LINEAR:
+            case ImageType::FMT_BC5_LINEAR:
+            case ImageType::FMT_BC6H_UF16:
+            case ImageType::FMT_BC7_SRGB:
+            case ImageType::FMT_BC7_LINEAR:
+                isDDS = true;
+                pngTexture.format = DETEX_PIXEL_FORMAT_RGBA8;
+                break;
+            case ImageType::FMT_RGBA8:
+                pngTexture.format = DETEX_PIXEL_FORMAT_RGBA8;
+                break;
+            case ImageType::FMT_ALPHA:
+                pngTexture.format = DETEX_PIXEL_FORMAT_A8;
+                break;
+            case ImageType::FMT_RG8:
+                pngTexture.format = DETEX_PIXEL_FORMAT_RG8;
+                break;
         }
-        else
-        {
-            // Create output PNG 
-            pngTexture.width = ddsTexture->width;
-            pngTexture.height = ddsTexture->height;
-            pngTexture.width_in_blocks = ddsTexture->width;
-            pngTexture.height_in_blocks = ddsTexture->height;
-            pngData.reset(new uint8_t[detexGetPixelSize(pngTexture.format) * pngTexture.width * pngTexture.height]);
-            pngTexture.data = pngData.get();
 
-            // Decompress DDS
-            if (!detexDecompressTextureLinear(ddsTexture, pngTexture.data, DETEX_PIXEL_FORMAT_RGBA8))
+        if (isDDS)
+        {
+            // Load DDS
+            if (detexLoadDDSFile(fullPath.c_str(), &ddsTexture)) {
+                // Create output png
+                pngTexture.width = ddsTexture->width;
+                pngTexture.height = ddsTexture->height;
+                pngTexture.width_in_blocks = ddsTexture->width;
+                pngTexture.height_in_blocks = ddsTexture->height;
+                pngData.reset(new uint8_t[detexGetPixelSize(pngTexture.format) * pngTexture.width * pngTexture.height]);
+                pngTexture.data = pngData.get();
+
+                // Decompress DDS
+                if (!detexDecompressTextureLinear(ddsTexture, pngTexture.data, DETEX_PIXEL_FORMAT_RGBA8))
+                {
+                    fprintf(stderr, "ERROR: Failed to decompress DDS file. \n");
+                    failed = 1;
+                }
+            }
+            else
             {
                 fprintf(stderr, "ERROR: Failed to decompress DDS file. \n");
                 failed = 1;
             }
+        }
+        else
+        {
+            // Try loading as raw
+            pngTexture.width = *(int*)(inputDDS.data() + 16);
+            pngTexture.height = *(int*)(inputDDS.data() + 12);
+            pngTexture.width_in_blocks = pngTexture.width;
+            pngTexture.height_in_blocks = pngTexture.height;
+            pngTexture.data = inputDDS.data() + 128;
         }
 
         // Save as PNG
