@@ -107,8 +107,8 @@ namespace HAYDEN
         // Load DDS file
         detexTexture pngTexture;
         pngTexture.format = DETEX_PIXEL_FORMAT_RGBA8;
-        detexTexture* ddsTexture = NULL;
         std::unique_ptr<uint8_t> pngData;
+        int sourceFormat;
         bool isDDS = false;
 
         // Check format
@@ -125,22 +125,23 @@ namespace HAYDEN
             case ImageType::FMT_BC7_SRGB:
             case ImageType::FMT_BC7_LINEAR:
                 isDDS = true;
-                pngTexture.format = DETEX_PIXEL_FORMAT_RGBA8;
+                sourceFormat = DETEX_PIXEL_FORMAT_RGBA8;
                 break;
             case ImageType::FMT_RGBA8:
-                pngTexture.format = DETEX_PIXEL_FORMAT_RGBA8;
+                sourceFormat = DETEX_PIXEL_FORMAT_RGBA8;
                 break;
             case ImageType::FMT_ALPHA:
-                pngTexture.format = DETEX_PIXEL_FORMAT_A8;
+                sourceFormat = DETEX_PIXEL_FORMAT_A8;
                 break;
             case ImageType::FMT_RG8:
-                pngTexture.format = DETEX_PIXEL_FORMAT_RG8;
+                sourceFormat = DETEX_PIXEL_FORMAT_RG8;
                 break;
         }
 
         if (isDDS)
         {
             // Load DDS
+            detexTexture* ddsTexture = NULL;
             if (detexLoadDDSFile(fullPath.c_str(), &ddsTexture)) {
                 // Create output png
                 pngTexture.width = ddsTexture->width;
@@ -151,7 +152,7 @@ namespace HAYDEN
                 pngTexture.data = pngData.get();
 
                 // Decompress DDS
-                if (!detexDecompressTextureLinear(ddsTexture, pngTexture.data, DETEX_PIXEL_FORMAT_RGBA8))
+                if (!detexDecompressTextureLinear(ddsTexture, pngTexture.data, pngTexture.format))
                 {
                     fprintf(stderr, "ERROR: Failed to decompress DDS file. \n");
                     failed = 1;
@@ -162,15 +163,48 @@ namespace HAYDEN
                 fprintf(stderr, "ERROR: Failed to decompress DDS file. \n");
                 failed = 1;
             }
+
+            if (ddsTexture)
+                free(ddsTexture);
         }
         else
         {
-            // Try loading as raw
+            // Load as raw
             pngTexture.width = *(int*)(inputDDS.data() + 16);
             pngTexture.height = *(int*)(inputDDS.data() + 12);
             pngTexture.width_in_blocks = pngTexture.width;
             pngTexture.height_in_blocks = pngTexture.height;
-            pngTexture.data = inputDDS.data() + 128;
+            pngData.reset(new uint8_t[detexGetPixelSize(pngTexture.format) * pngTexture.width * pngTexture.height]);
+            pngTexture.data = pngData.get();
+
+            // Convert to RGBA8
+            switch (sourceFormat)
+            {
+                case DETEX_PIXEL_FORMAT_A8:
+                    for (size_t i = 0; i < inputDDS.size() - 128; i++)
+                    {
+                        // Set RGB bytes to default
+                        pngData.get()[i * 4] = 255;
+                        pngData.get()[i * 4 + 1] = 255;
+                        pngData.get()[i * 4 + 2] = 255;
+
+                        // Set alpha byte
+                        pngData.get()[i * 4 + 3] = inputDDS[128 + i];
+                    }
+                    break;
+                case DETEX_PIXEL_FORMAT_RG8:
+                    for (size_t i = 0; i < inputDDS.size() - 128; i += 2)
+                    {
+                        // Set RG bytes
+                        pngData.get()[i * 2] = inputDDS[128 + i];
+                        pngData.get()[i * 2 + 1] = inputDDS[128 + i + 1];
+
+                        // Set BA bytes to default
+                        pngData.get()[i * 2 + 2] = 255;
+                        pngData.get()[i * 2 + 3] = 255;
+                    }
+                    break;
+            }
         }
 
         // Save as PNG
@@ -184,8 +218,6 @@ namespace HAYDEN
         }
 
         // Clean up memory and temp files
-        if (ddsTexture)
-            free(ddsTexture);
         std::error_code ec;
         fs::remove(fullPath, ec);
 
