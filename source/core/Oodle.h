@@ -4,6 +4,7 @@
 #include <Windows.h>
 #else
 #include <dlfcn.h>
+#include "../../vendor/ooz/ooz.hpp"
 #endif
 
 #include <string>
