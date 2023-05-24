@@ -4,46 +4,72 @@
 #include <vector>
 #include <filesystem>
 
-#pragma pack(push)  // Not portable, sorry.
-#pragma pack(1)     // Works on my machine (TM).
+#include "../Utilities.h"
+
 
 namespace fs = std::filesystem;
+namespace HAYDEN {
+    HAYDEN_PACK(
 
-namespace HAYDEN
-{
-    struct StreamDBHeader // 0x20 bytes
-    {
-        /* 0x00 */ uint64_t Magic = 0;		    // Always 0x50A5C2292EF3C761
-        /* 0x08 */ uint32_t DataStartOffset = 0;    // End of StreamDB Index tables, start of embedded files
-        /* 0x0C */ uint32_t Pad0 = 0;		    // null padding
-        /* 0x10 */ uint32_t Pad1 = 0;		    // null padding
-        /* 0x14 */ uint32_t Pad2 = 0;		    // null padding
-        /* 0x18 */ uint32_t NumEntries = 0;	    // Does not include prefetch entries
-        /* 0x1C */ uint32_t Flags = 0;		    // Always 3
-    };
+            struct StreamDBHeader // 0x20 bytes
+            {
+                /* 0x00 */ uint64_t m_magic;            // Always 0x50A5C2292EF3C761
+                /* 0x08 */ uint32_t m_dataStartOffset;    // End of StreamDB Index tables, start of embedded files
+                /* 0x0C */ uint32_t m_pad0;            // null padding
+                /* 0x10 */ uint32_t m_pad1;            // null padding
+                /* 0x14 */ uint32_t m_pad2;            // null padding
+                /* 0x18 */ uint32_t m_numEntries;        // Does not include prefetch entries
+                /* 0x1C */ uint32_t m_flags;            // Always 3
+            };
 
-    struct StreamDBEntry // 0x10 bytes
-    {
-        /* 0x00 */ uint64_t FileID = 0;             // Shuffled version of StreamResourceHash from .resources file
-        /* 0x08 */ uint32_t Offset16 = 0;           // Multiply by 16 for the real offset
-        /* 0x0C */ uint32_t CompressedSize = 0;     
-    };
+            struct StreamDBEntry // 0x10 bytes
+            {
+                /* 0x00 */ uint64_t m_fileID;             // Shuffled version of StreamResourceHash from .resources file
+                /* 0x08 */ uint32_t m_offset16;           // Multiply by 16 for the real offset
+                /* 0x0C */ uint32_t m_compressedSize;
+            };
+    )
 
-    class StreamDBFile
-    {
-        public:
+    class StreamDBFile {
+    public:
 
-            std::string FilePath;
-            StreamDBEntry LocateStreamDBEntry(const uint64_t streamedFileID, const uint64_t streamedDataLength) const;
-            std::vector<uint8_t> GetEmbeddedFile(const std::string streamDBFileName, const StreamDBEntry streamDBEntry) const;
-            StreamDBFile(const fs::path& path);
 
-        private:
+        explicit StreamDBFile(const fs::path &path);
 
-            // Binary data within the .streamdb file
-            StreamDBHeader _StreamDBHeader;
-            std::vector<StreamDBEntry> _StreamDBEntries;
+        [[nodiscard]] const StreamDBEntry *
+        locateStreamDBEntry(uint64_t streamedFileID, uint64_t streamedDataLength) const;
+
+        [[nodiscard]] std::vector<uint8_t>
+        GetEmbeddedFile(const std::string &streamDBFileName, const StreamDBEntry *streamDBEntry) const;
+
+        [[nodiscard]] std::vector<uint8_t>
+        GetEmbeddedFile(const fs::path &streamDBFileName, const StreamDBEntry *streamDBEntry) const {
+            return GetEmbeddedFile(streamDBFileName.string(), streamDBEntry);
+        };
+
+        [[nodiscard]] const fs::path &filePath() const { return m_filePath; };
+
+        [[nodiscard]] bool contain(uint64_t resourceHash) const {
+            for (const auto &item: m_streamDBEntries) {
+
+                if (item.m_fileID == resourceHash) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        [[nodiscard]] bool loaded() const { return m_loaded; };
+
+        [[nodiscard]] std::optional<std::vector<uint8_t>> getData(uint64_t resourceHash, uint64_t streamSize) const;
+
+    private:
+
+        [[nodiscard]] std::vector<uint8_t> getEntryData(const StreamDBEntry &entry) const;
+
+        bool m_loaded = false;
+        fs::path m_filePath;
+        StreamDBHeader m_streamDBHeader{};
+        std::vector<StreamDBEntry> m_streamDBEntries{};
     };
 }
-
-#pragma pack(pop)

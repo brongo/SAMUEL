@@ -33,7 +33,7 @@ namespace HAYDEN
 	int32_t StreamDBMipCount = 0;		// usually same number of mips stored in streamdb
     };
 
-    struct BIM_MIPMAP
+    struct BIMMipmap
     {
 	int64_t MipLevel = 0;		        // Starts at 0, increment by 1 each time it repeats
 	int32_t MipPixelWidth = 0;		// Original PixelWidth reduced by 50% for each MipLevel
@@ -49,7 +49,7 @@ namespace HAYDEN
     {
 	public:
 	    BIM_HEADER Header;
-	    std::vector<BIM_MIPMAP> MipMaps;
+	    std::vector<BIMMipmap> MipMaps;
 	    std::vector<uint8_t> RawImageData;
 	    void Serialize(const std::vector<uint8_t> binaryData);
     };

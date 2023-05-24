@@ -1,41 +1,29 @@
 #include "StreamDBGeometry.h"
 
-namespace HAYDEN
-{
-    Vertex Mesh::UnpackVertex(PackedVertex packedVertex, float_t offsetX, float_t offsetY, float_t offsetZ, float_t vertexScale)
-    {
-        Vertex vertex;
-        float packedX = packedVertex.X;
-        float packedY = packedVertex.Y;
-        float packedZ = packedVertex.Z;
-
-        vertex.X = ((packedX / 65535) * vertexScale) + offsetX;
-        vertex.Z = -(((packedY / 65535) * vertexScale) + offsetY);
-        vertex.Y = ((packedZ / 65535) * vertexScale) + offsetZ;
-        return vertex;
+namespace HAYDEN {
+    Vertex Mesh::UnpackVertex(PackedVertex pv, Cast::Vector3 offset, float vertexScale) {
+        float scale = vertexScale / 65535;
+        return Vertex{
+                (float) pv.X * scale + offset.x,
+                (float) pv.Z * scale + offset.z,
+                (float) -((pv.Y * scale) + offset.y)
+        };
     }
 
-    Normal Mesh::UnpackNormal(PackedNormal packedNormal)
-    {
-        Normal normal;
-        float packedXn = packedNormal.Xn;
-        float packedYn = packedNormal.Yn;
-        float packedZn = packedNormal.Zn;
-
-        normal.Xn = (packedXn / 255) * 2 - 1;
-        normal.Yn = -((packedYn / 255) * 2 - 1);
-        normal.Zn = (packedZn / 255) * 2 - 1;
-        return normal;
+    Normal Mesh::UnpackNormal(PackedNormal pn) {
+        float scale = 2.0f / 255;
+        return Normal{
+                (float) pn.Xn * scale - 1,
+                -((float) pn.Yn * scale - 1),
+                (float) pn.Zn * scale - 1
+        };
     }
 
-    UV Mesh::UnpackUV(PackedUV packed, float_t offsetU, float_t offsetV, float_t uvScale)
-    {
-        UV uv;
-        float packedU = packed.U;
-        float packedV = packed.V;
-
-        uv.U = ((packedU / 65535) * uvScale) + offsetU;
-        uv.V = abs(((abs(packedV / 65535)) * uvScale) - (1 - offsetV));
-        return uv;
+    UV Mesh::UnpackUV(PackedUV pv, Cast::Vector2 offset, float uvScale) {
+        float scale = uvScale / 65535;
+        return UV{
+                (float) pv.U * scale + offset.x,
+                fabs(fabs((float) pv.V * scale) - (1 - offset.y))
+        };
     }
 }

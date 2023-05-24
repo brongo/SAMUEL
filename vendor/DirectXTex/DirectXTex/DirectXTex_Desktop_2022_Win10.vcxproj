@@ -546,7 +546,7 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
-  <Target Name="ATGEnsureShaders" BeforeTargets="PrepareForBuild">
+  <Target m_name="ATGEnsureShaders" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <_ATGFXCPath>$(WindowsSDK_ExecutablePath_x64.Split(';')[0])</_ATGFXCPath>
       <_ATGFXCPath>$(_ATGFXCPath.Replace("x64",""))</_ATGFXCPath>
@@ -557,12 +557,12 @@
       <_ATGFXCPath />
     </PropertyGroup>
   </Target>
-  <Target Name="ATGDeleteShaders" AfterTargets="Clean">
+  <Target m_name="ATGDeleteShaders" AfterTargets="Clean">
     <ItemGroup>
       <_ATGShaderHeaders Include="$(ProjectDir)Shaders/Compiled/*.inc" />
       <_ATGShaderSymbols Include="$(ProjectDir)Shaders/Compiled/*.pdb" />
     </ItemGroup>
-    <Delete Files="@(_ATGShaderHeaders)" />
-    <Delete Files="@(_ATGShaderSymbols)" />
+    <Delete m_files="@(_ATGShaderHeaders)" />
+    <Delete m_files="@(_ATGShaderSymbols)" />
   </Target>
 </Project>

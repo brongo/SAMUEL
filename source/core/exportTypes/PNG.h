@@ -8,7 +8,7 @@
 
 #include "../Utilities.h"
 
-#ifdef _WIN32
+#if defined(_WIN32)
 #include <wincodec.h>
 #include "../../../vendor/DirectXTex/DirectXTex/DirectXTex.h"
 #else

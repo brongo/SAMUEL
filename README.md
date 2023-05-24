@@ -10,7 +10,7 @@ It is cross-platform, open-source, and features an easy-to-use graphical interfa
 2. Export full-size images for use in texture modding (in .png format).
 3. Export .lwo and .md6mesh files to the .obj file format.
 
-Files will be extracted to the "exports" folder. Models will be extracted to the "modelExports" folder. When exporting a model, all of the model's textures and material2 .decl files will also be exported.
+m_files will be extracted to the "exports" folder. Models will be extracted to the "modelExports" folder. When exporting a model, all of the model's textures and material2 .decl files will also be exported.
 
 ## SAMUEL vs. VEGA
 
@@ -25,7 +25,7 @@ This will obviously get compared to VEGA (the other asset extraction tool), so i
 5. Supports extracting non-streamed or modded textures - texture modders can now recover their source images.
 6. Has improved search functionality - can search with multiple keywords separated by spaces.
 7. Image files are exported using their full name with "$" modifiers (important for custom assets).
-8. Files are extracted to their full path used in the game (e.g. "gameresources_patch1/art/tile/etc" instead of just "images").
+8. m_files are extracted to their full path used in the game (e.g. "gameresources_patch1/art/tile/etc" instead of just "images").
 
 ## Credits:
 

@@ -11,7 +11,7 @@
 #include "idFileTypes/BIM.h"
 #include "idFileTypes/DECL.h"
 #include "idFileTypes/LWO.h"
-#include "idFileTypes/MD6.h"
+#include "idFileTypes/MD6Mesh.h"
 #include "idFileTypes/ResourceFile.h"
 #include "idFileTypes/StreamDBFile.h"
 
@@ -21,70 +21,49 @@
 #include "Oodle.h"
 #include "ResourceFileReader.h"
 #include "Utilities.h"
+#include "exportTypes/CAST.h"
 
 namespace fs = std::filesystem;
 
-namespace HAYDEN
-{
+namespace HAYDEN {
     // Holds material2 .decl data used by the model
-    struct MaterialInfo
-    {
+    struct MaterialInfo {
         DeclFile ParsedDeclFile;
         std::string DeclFileName;
         std::vector<std::string> TextureNames;
         std::vector<std::string> TextureTypes;
     };
 
-    class ModelExportTask
-    {
-        public:
-            
-            std::string ResourcePath;
-            fs::path ModelExportPath;
-            std::vector<MaterialInfo> MaterialData;
+    class ModelExportTask {
+    public:
 
-            // OBJ export functions. Consider moving to OBJ.h
-            void WriteMTLFile();
-            void WriteOBJFile(const int modelType);
 
-            // Dependency export functions (material2 .decls and BIM textures)
-            void ExportBIMTextures(const std::vector<ResourceEntry>& resourceData, const GLOBAL_RESOURCES* globalResources, const MaterialInfo& materialInfo, const std::vector<StreamDBFile>& streamDBFiles);
-            void ExportMaterial2Decls(const std::vector<ResourceEntry>& resourceData, const GLOBAL_RESOURCES* globalResources);
-            void ReadMaterial2Decls();
+        explicit ModelExportTask(const ResourceManager &resourceManager, const std::string &resourceName);
 
-            bool Export(const fs::path exportPath, const std::string resourcePath, const std::vector<StreamDBFile>& streamDBFiles, const std::vector<ResourceEntry>& resourceData, const GLOBAL_RESOURCES* globalResources, const int modelType);
-            ModelExportTask(const ResourceEntry resourceEntry);
+        // OBJ export functions. Consider moving to OBJ.h
+//        void WriteMTLFile();
+//
+        CAST castMeshFromMD6(const MD6Mesh &mesh, const MD6Skl &md6Skl);
+//
+//        // Dependency export functions (material2 .decls and BIM textures)
+//        void ExportBIMTextures(const std::vector<ResourceEntry> &resourceData, const MaterialInfo &materialInfo) const;
+//
+//        void
+//        ExportMaterial2Decls(const std::vector<ResourceEntry> &resourceData);
+//
+//        void ReadMaterial2Decls();
 
-        private:
+        bool exportMD6Model(const fs::path &exportPath);
 
-            // Name of the file we are exporting, as it appears in a *.resources file
-            std::string _FileName;
+    private:
 
-            // For locating the model header, which is embedded in a *.resources file
-            uint64_t _ResourceID = 0;
-            uint64_t _ResourceDataOffset = 0;
-            uint64_t _ResourceDataLength = 0;
-            uint64_t _ResourceDataLengthDecompressed = 0;
+        // m_name of the file we are exporting, as it appears in a *.resources file
+        const ResourceManager &m_resourceManager;
+        std::string m_fileName;
+        std::string m_resourcePath;
+        fs::path m_modelExportPath;
+        std::vector<MaterialInfo> m_materialData;
 
-            // For locating the model geometry (+LODs), which is embedded in a *.streamdb file
-            std::string _StreamDBFilePath;
-            uint64_t _StreamedDataHash = 0;
-            uint64_t _StreamedDataLength = 0;
-            uint64_t _StreamedDataLengthDecompressed = 0;
-            int32_t _StreamCompressionType = 0;
-            int32_t _StreamDBNumber = -1;                            // index into std::vector<StreamDBFile>& streamDBFiles
 
-            // Matching StreamDBEntry for the model
-            StreamDBEntry _StreamDBEntry;
-
-            // Serialized MD6 model
-            MD6 _MD6;
-            MD6_HEADER _MD6Header;
-
-            // Serialized LWO model
-            LWO _LWO;
-            LWO_HEADER _LWOHeader;
-
-            std::vector<Mesh> _StreamedGeometry;
     };
 }

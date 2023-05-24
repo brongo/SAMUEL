@@ -11,29 +11,20 @@
 
 namespace fs = std::filesystem;
 
-namespace HAYDEN
-{
-    // User-friendly struct for managing .resources data
-    struct ResourceEntry
-    {
-        uint64_t DataOffset = 0;
-        uint64_t DataSize = 0;
-        uint64_t DataSizeUncompressed = 0;
-        uint64_t StreamResourceHash = 0;
-        uint32_t Version = 0;
-        uint16_t CompressionMode = 0;
-        std::string Name;
-        std::string Type;
-    };
+namespace HAYDEN {
 
-    class ResourceFileReader
-    {
-        public:
-            fs::path ResourceFilePath;
 
-            std::vector<ResourceEntry> ParseResourceFile();
-            uint64_t CalculateStreamDBIndex(uint64_t resourceId, const int mipCount = -6) const;
-            std::vector<uint8_t> GetEmbeddedFileHeader(const std::string resourcePath, const uint64_t fileOffset, const uint64_t compressedSize, const uint64_t decompressedSize);
-            ResourceFileReader(const fs::path resourceFilePath) { ResourceFilePath = resourceFilePath; }
+    class ResourceFileReader {
+    public:
+        fs::path m_resourceFilePath;
+
+        explicit ResourceFileReader(const fs::path &resourceFilePath) { m_resourceFilePath = resourceFilePath; }
+
+        std::vector<ResourceEntry> ParseResourceFile() const;
+
+        [[nodiscard]] uint64_t CalculateStreamDBIndex(uint64_t resourceId, int mipCount = -6) const;
+
+        std::vector<uint8_t> GetEmbeddedFileHeader(const std::string &resourcePath, uint64_t fileOffset,
+                                                   uint64_t compressedSize, uint64_t decompressedSize);
     };
 }

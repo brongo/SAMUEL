@@ -3,60 +3,94 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <filesystem>
 
 #include "../../../vendor/jsonxx/jsonxx.h"
 
-namespace HAYDEN
-{
-    class PackageMapSpecFile
-    {
-        public:
-            std::string Name;
+namespace fs = std::filesystem;
+
+namespace HAYDEN {
+    class PackageMapSpec;
+
+    class PackageMapSpecFile {
+    public:
+        [[nodiscard]] const std::string &name() const {
+            return m_name;
+        }
+
+    private:
+        std::string m_name;
+
+        friend PackageMapSpec;
     };
 
-    class PackageMapSpecMapFileRef
-    {
-        public:
-            int32_t File;
-            int32_t Map;
+    class PackageMapSpecMapFileRef {
+    public:
+        PackageMapSpecMapFileRef() {
+            m_file = -1;
+            m_map = -1;
+        }
 
-            PackageMapSpecMapFileRef()
-            {
-                File = -1;
-                Map = -1;
-            }
+        PackageMapSpecMapFileRef(const int32_t file, const int32_t map) {
+            m_file = file;
+            m_map = map;
+        }
 
-            PackageMapSpecMapFileRef(const int32_t file, const int32_t map)
-            {
-                File = file;
-                Map = map;
-            }
+        [[nodiscard]] int32_t file() const { return m_file; }
+
+        [[nodiscard]] int32_t map() const { return m_map; }
+
+    private:
+        int32_t m_file;
+        int32_t m_map;
+
+        friend PackageMapSpec;
     };
 
-    class PackageMapSpecMap
-    {
-        public:
-            std::string Name;
+    class PackageMapSpecMap {
+    public:
+        std::string m_name;
     };
 
-    class PackageMapSpec
-    {
-        public:
-            std::vector<PackageMapSpecFile> Files;
-            std::vector<PackageMapSpecMapFileRef> MapFileRefs;
-            std::vector<PackageMapSpecMap> Maps;
+    class PackageMapSpec {
 
-        public:
-            PackageMapSpec() {};
-            PackageMapSpec(const std::string& json);
-            std::string Dump() const;
+    public:
+        PackageMapSpec() = default;
 
-            bool InBaseDirectory(const std::string& filePath) const; 
-            void NormalizeFilePath(std::string& filePath) const;
-            size_t GetFileIndexByFileName(const std::string& filePath) const;
-            size_t GetMapIndexByFileIndex(const size_t fileIndex) const;
+        explicit PackageMapSpec(const std::string &json);
 
-            std::string GetRelativeFilePath(const std::string& filePath) const;
-            std::vector<std::string> GetFilesByResourceName(std::string resourceFileName) const;
+        [[nodiscard]] std::string dump() const;
+
+        [[nodiscard]] static bool inBaseDirectory(const std::string &filePath);
+
+        static std::string normalizedFilePath(const std::string &filePath);
+
+        [[nodiscard]] size_t getFileIndexByFileName(const std::string &filePath) const;
+
+        [[nodiscard]] size_t getMapIndexByFileIndex(size_t fileIndex) const;
+
+        [[nodiscard]] static std::string getRelativeFilePath(const std::string &filePath);
+
+        [[nodiscard]] std::vector<std::string> getFilesByResourceName(const std::string &resourceFileName) const;
+
+        [[nodiscard]] std::vector<std::string> getFilesByResourceName(const fs::path resourceFileName) const {
+            return getFilesByResourceName(resourceFileName.string());
+        };
+
+        const std::vector<PackageMapSpecFile> &files() { return m_files; };
+
+        const std::vector<PackageMapSpecMapFileRef> &mapFileRefs() { return m_mapFileRefs; };
+
+        const std::vector<PackageMapSpecMap> &maps() { return m_maps; };
+
+        [[nodiscard]] bool loaded() const { return m_loaded; };
+
+        void reset();
+
+    private:
+        std::vector<PackageMapSpecFile> m_files;
+        std::vector<PackageMapSpecMapFileRef> m_mapFileRefs;
+        std::vector<PackageMapSpecMap> m_maps;
+        bool m_loaded = false;
     };
 }

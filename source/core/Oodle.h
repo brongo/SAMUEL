@@ -13,7 +13,7 @@
 #define SAFE_SPACE 64
 
 typedef int OodLZ_DecompressFunc(
-    uint8_t* src_buf, int src_len, uint8_t* dst, size_t dst_size, int fuzz, int crc, int verbose,
+    const uint8_t* src_buf, int src_len, uint8_t* dst, size_t dst_size, int fuzz, int crc, int verbose,
     uint8_t* dst_base, size_t e, void* cb, void* cb_ctx, void* scratch, size_t scratch_size, int threadPhase);
 
 namespace fs = std::filesystem;
@@ -22,5 +22,6 @@ namespace HAYDEN
 {
     // Decompress using Oodle DLL
     bool oodleInit(const std::string& basePath);
-    std::vector<uint8_t> oodleDecompress(std::vector<uint8_t> compressedData, const uint64_t decompressedSize);
+    std::vector<uint8_t> oodleDecompress(const std::vector<uint8_t>& compressedData, uint64_t decompressedSize);
+    void oodleDecompressInplace(std::vector<uint8_t>& compressedData, uint64_t decompressedSize);
 }

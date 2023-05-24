@@ -8,7 +8,7 @@
 #include <algorithm>
 
 #include "../idFileTypes/LWO.h"
-#include "../idFileTypes/MD6.h"
+#include "../idFileTypes/MD6Mesh.h"
 
 namespace fs = std::filesystem;
 
@@ -40,10 +40,10 @@ namespace HAYDEN
 	public:
             std::string SignatureLine = "# Exported with SAMUEL v2.1.2 by SamPT \n# https://github.com/brongo/SAMUEL";
             std::string MaterialLibrary;
-	    std::vector<OBJFile_Object> Objects;
+	        std::vector<OBJFile_Object> Objects;
             std::vector<OBJFile_FaceMaterialGroup> FaceMaterialGroups;
             void ConvertFromLWO(LWO& lwo);
-            void ConvertFromMD6(MD6& md6);
-            void Serialize(const std::vector<Mesh> streamedGeometry, const std::vector<std::string> meshNames, const int modelType, const int numVertices, const int numFaces, const GEO_FLAGS geoFlags, const GEO_METADATA geoMeta);
+            void ConvertFromMD6(MD6Mesh& md6);
+            void Serialize(const std::vector<Mesh> streamedGeometry, const std::vector<std::string> meshNames, const int modelType, const int numVertices, const int numFaces, const GeoFlags geoFlags, const GeoMetadata geoMeta);
     };
 }

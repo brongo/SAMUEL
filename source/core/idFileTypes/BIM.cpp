@@ -7,7 +7,7 @@ namespace HAYDEN
         Header = *(BIM_HEADER*)(binaryData.data());
 
         for (int i = 0; i < Header.MipCount; i++)
-            MipMaps.push_back(*(BIM_MIPMAP*)(binaryData.data() + sizeof(BIM_HEADER) + (i * sizeof(BIM_MIPMAP))));
+            MipMaps.push_back(*(BIMMipmap*)(binaryData.data() + sizeof(BIM_HEADER) + (i * sizeof(BIMMipmap))));
 
         // special handling for small images: these aren't in .streamdb, even if isStreamed = 1.
         if (MipMaps[0].MipPixelHeight <= 32 && MipMaps[0].MipPixelWidth <= 32)
@@ -21,7 +21,7 @@ namespace HAYDEN
         if (Header.BoolIsStreamed == 0 && MipMaps[0].BoolIsCompressed == 0)
         {
             // calculate header size
-            size_t rawDataStart = sizeof(BIM_HEADER) + (Header.MipCount * sizeof(BIM_MIPMAP));
+            size_t rawDataStart = sizeof(BIM_HEADER) + (Header.MipCount * sizeof(BIMMipmap));
             size_t rawDataSize = binaryData.size() - rawDataStart;
 
             // read the raw image data into uint8_t vector
@@ -33,7 +33,7 @@ namespace HAYDEN
         {
             // divide by 16 to get largest mip used in game (original image isn't used)
             int largestMipUsed = Header.StreamDBMipCount / 16;
-            size_t mipDataStart = sizeof(BIM_HEADER) + (sizeof(BIM_MIPMAP) * largestMipUsed);
+            size_t mipDataStart = sizeof(BIM_HEADER) + (sizeof(BIMMipmap) * largestMipUsed);
 
             // replace original size & dimensions with data for the largest mip used
             Header.PixelHeight = *(int*)(binaryData.data() + mipDataStart + 8);

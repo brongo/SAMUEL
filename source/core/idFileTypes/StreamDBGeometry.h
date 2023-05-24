@@ -6,80 +6,85 @@
 
 #include "../Common.h"
 
-#pragma pack(push)	// Not portable, sorry.
-#pragma pack(1)		// Works on my machine (TM).
+#pragma pack(push)    // Not portable, sorry.
+#pragma pack(1)        // Works on my machine (TM).
 
-namespace HAYDEN
-{
-    struct PackedVertex
-    {
+namespace HAYDEN {
+    struct PackedVertex {
         uint16_t X = 0;
         uint16_t Y = 0;
         uint16_t Z = 0;
         uint16_t NullPad = 0;
     };
 
-    struct Vertex
-    {
+    struct Vertex {
         float_t X = 0;
         float_t Y = 0;
         float_t Z = 0;
     };
 
-    struct Normal
-    {
+    struct Normal {
         float_t Xn = 0;
         float_t Yn = 0;
         float_t Zn = 0;
     };
 
-    struct PackedNormal
-    {
+    struct PackedNormal {
         uint8_t Xn = 0;
         uint8_t Yn = 0;
         uint8_t Zn = 0;
-        uint8_t Always0 = 0;
+        uint8_t weights1 = 0;
         uint8_t Xt = 0;
         uint8_t Yt = 0;
         uint8_t Zt = 0;
-        uint8_t Always128 = 0;
+        uint8_t weights2 = 0;
     };
 
-    struct UV
-    {
+    struct UV {
         float_t U = 0;
         float_t V = 0;
     };
 
-    struct PackedUV
-    {
+    struct PackedUV {
         uint16_t U = 0;
         uint16_t V = 0;
     };
 
-    struct Face
-    {
+    struct Face {
         uint16_t F1 = 0;
         uint16_t F2 = 0;
         uint16_t F3 = 0;
     };
 
-    class Mesh
-    {
-        public:
-            std::vector<Vertex> Vertices;
-            std::vector<Normal> Normals;
-            std::vector<UV> UVs;
-            std::vector<Face> Faces;
-            Vertex UnpackVertex(PackedVertex packedVertex, float_t offsetX, float_t offsetY, float_t offsetZ, float_t vertexScale);
-            Normal UnpackNormal(PackedNormal packedNormal);
-            UV UnpackUV(PackedUV packedUV, float_t offsetU, float_t offsetV, float_t uvScale);
+    struct BoneWeights {
+        float a, b, c, d;
     };
 
-    class StreamedGeometry
-    {
+    struct BoneIds {
+        uint8_t a, b, c, d;
+    };
+
+    class Mesh {
+    public:
+        std::vector<Vertex> m_vertices;
+        std::vector<Normal> m_normals;
+        std::vector<BoneIds> m_boneIds;
+        std::vector<BoneWeights> m_boneWeights;
+        std::vector<UV> m_uv;
+        std::vector<Face> m_faces;
+
+        static Vertex UnpackVertex(PackedVertex packedVertex, Cast::Vector3 offset, float_t vertexScale);
+
+        static Normal UnpackNormal(PackedNormal packedNormal);
+
+        static UV UnpackUV(PackedUV packedUV, Cast::Vector2 offset, float_t uvScale);
+    };
+
+    class StreamedGeometry {
         std::vector<Mesh> Meshes;
-        void Serialize(const std::vector<uint8_t> binaryData, const int numVertices, const int numFaces, const GEO_FLAGS geoFlags, const GEO_METADATA geoMeta);
+
+        void Serialize(const std::vector<uint8_t> binaryData, const int numVertices, const int numFaces,
+                       const GeoFlags geoFlags, const GeoMetadata geoMeta);
     };
 }
 

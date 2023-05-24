@@ -43,10 +43,10 @@ namespace HAYDEN
         return true;
     }
 
-    std::vector<uint8_t> oodleDecompress(std::vector<uint8_t> compressedData, const uint64_t decompressedSize)
+    std::vector<uint8_t> oodleDecompress(const std::vector<uint8_t>& compressedData, uint64_t decompressedSize)
     {
         if (OodLZ_Decompress == NULL)
-            return std::vector<uint8_t>();
+            return {};
 
         std::vector<uint8_t> output(decompressedSize + SAFE_SPACE);
         uint64_t outbytes = 0;
@@ -57,9 +57,29 @@ namespace HAYDEN
         if (outbytes == 0)
         {
             fprintf(stderr, "Error: failed to decompress with Oodle DLL.\n\n");
-            return std::vector<uint8_t>();
+            return {};
         }
 
-        return std::vector<uint8_t>(output.begin(), output.begin() + outbytes);
+        return std::move(std::vector<uint8_t>(output.begin(), output.begin() + outbytes));
+    }
+    void oodleDecompressInplace(std::vector<uint8_t>& compressedData, uint64_t decompressedSize)
+    {
+        if (OodLZ_Decompress == NULL)
+            return;
+
+        std::vector<uint8_t> output(decompressedSize + SAFE_SPACE);
+        uint64_t outbytes = 0;
+
+        // Decompress using Oodle DLL
+        outbytes = OodLZ_Decompress(compressedData.data(), compressedData.size(), output.data(), decompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+        if (outbytes == 0)
+        {
+            fprintf(stderr, "Error: failed to decompress with Oodle DLL.\n\n");
+            return;
+        }
+        compressedData.clear();
+        compressedData.resize(outbytes);
+        compressedData.insert(compressedData.begin(), output.begin(), output.begin() + outbytes);
     }
 }

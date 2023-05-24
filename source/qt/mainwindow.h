@@ -17,10 +17,9 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
     public:
-        HAYDEN::GLOBAL_RESOURCES GlobalResources;
-        void ThrowFatalError(std::string errorMessage, std::string errorDetail = "");
-        void ThrowError(std::string errorMessage, std::string errorDetail = "");
-        MainWindow(QWidget *parent = NULL);
+        static void ThrowFatalError(const std::string& errorMessage, const std::string& errorDetail = "");
+        static void ThrowError(const std::string& errorMessage, const std::string& errorDetail = "");
+        MainWindow(QWidget *parent = nullptr);
         ~MainWindow();
 
     private slots:
@@ -37,16 +36,16 @@ class MainWindow : public QMainWindow
         void on_radioShowModels_toggled(bool checked);
 
     private:
-        QMessageBox _LoadStatusBox;
-        QMessageBox _ExportStatusBox;
-        QThread* _LoadResourceThread = NULL;
-        QThread* _ExportThread = NULL;
-        std::string _ApplicationPath;
-        std::string _ExportPath;
-        std::string _ResourcePath;
-        bool _ResourceFileIsLoaded = 0;
-        bool _ViewIsFiltered = 0;
-        int _SearchMode = 0;
+        QMessageBox m_loadStatusBox;
+        QMessageBox m_exportStatusBox;
+        QThread* m_loadResourceThread = nullptr;
+        QThread* m_exportThread = nullptr;
+        std::string m_applicationPath;
+        std::string m_exportPath;
+        std::string m_resourcePath;
+        bool m_resourceFileIsLoaded = false;
+        bool m_viewIsFiltered = false;
+        int m_searchMode = -1;
 
         HAYDEN::SAMUEL SAM;
         Ui::MainWindow *ui;
@@ -56,8 +55,8 @@ class MainWindow : public QMainWindow
         void DisableGUI();
         void EnableGUI();
         void ResetGUITable();
-        void PopulateGUIResourceTable(std::vector<std::string> searchWords = std::vector<std::string>());
+        void PopulateGUIResourceTable(const std::vector<std::string>& searchWords = std::vector<std::string>());
 
         // Splits search query by whitespace
-        std::vector<std::string> SplitSearchTerms(std::string inputString);
+        static std::vector<std::string> SplitSearchTerms(std::string inputString);
 };

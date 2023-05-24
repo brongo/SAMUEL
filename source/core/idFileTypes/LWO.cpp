@@ -178,54 +178,54 @@ namespace HAYDEN
         // Allocate
         for (int i = 0; i < MeshGeometry.size(); i++)
         {
-            MeshGeometry[i].Vertices.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
-            MeshGeometry[i].Normals.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
-            MeshGeometry[i].UVs.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
-            MeshGeometry[i].Faces.resize(Header.MeshInfo[i].LODInfo[0].NumEdges / 3);
+            MeshGeometry[i].m_vertices.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
+            MeshGeometry[i].m_normals.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
+            MeshGeometry[i].m_uv.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
+            MeshGeometry[i].m_faces.resize(Header.MeshInfo[i].LODInfo[0].NumEdges / 3);
         }
 
-        // Read Vertices
+        // Read m_vertices
         for (int i = 0; i < MeshGeometry.size(); i++)
         {
-            for (int j = 0; j < MeshGeometry[i].Vertices.size(); j++)
+            for (int j = 0; j < MeshGeometry[i].m_vertices.size(); j++)
             {
                 PackedVertex packedVertex = *(PackedVertex*)(lwoGeo.data() + offset);
-                MeshGeometry[i].Vertices[j] = MeshGeometry[i].UnpackVertex(packedVertex, Header.MeshInfo[i].LODInfo[0].GeoMeta.VertexOffsetX, Header.MeshInfo[i].LODInfo[0].GeoMeta.VertexOffsetY, Header.MeshInfo[i].LODInfo[0].GeoMeta.VertexOffsetZ, Header.MeshInfo[i].LODInfo[0].GeoMeta.VertexScale);
+                MeshGeometry[i].m_vertices[j] = MeshGeometry[i].UnpackVertex(packedVertex, Header.MeshInfo[i].LODInfo[0].GeoMeta.VertexOffset, Header.MeshInfo[i].LODInfo[0].GeoMeta.VertexScale);
                 offset += sizeof(PackedVertex);
             }
         }
      
-        // Read Normals
+        // Read m_normals
         offset = offsetNormals;
         for (int i = 0; i < MeshGeometry.size(); i++)
         {
-            for (int j = 0; j < MeshGeometry[i].Normals.size(); j++)
+            for (int j = 0; j < MeshGeometry[i].m_normals.size(); j++)
             {
                 PackedNormal packedNormal = *(PackedNormal*)(lwoGeo.data() + offset);
-                MeshGeometry[i].Normals[j] = MeshGeometry[i].UnpackNormal(packedNormal);
+                MeshGeometry[i].m_normals[j] = MeshGeometry[i].UnpackNormal(packedNormal);
                 offset += sizeof(PackedNormal);
             }
         }
 
-        // Read UVs
+        // Read m_uv
         offset = offsetUVs;
         for (int i = 0; i < MeshGeometry.size(); i++)
         {
-            for (int j = 0; j < MeshGeometry[i].UVs.size(); j++)
+            for (int j = 0; j < MeshGeometry[i].m_uv.size(); j++)
             {
                 PackedUV packedUV = *(PackedUV*)(lwoGeo.data() + offset);
-                MeshGeometry[i].UVs[j] = MeshGeometry[i].UnpackUV(packedUV, Header.MeshInfo[i].LODInfo[0].GeoMeta.UVMapOffsetU, Header.MeshInfo[i].LODInfo[0].GeoMeta.UVMapOffsetV, Header.MeshInfo[i].LODInfo[0].GeoMeta.UVScale);
+                MeshGeometry[i].m_uv[j] = MeshGeometry[i].UnpackUV(packedUV, Header.MeshInfo[i].LODInfo[0].GeoMeta.UVMapOffset, Header.MeshInfo[i].LODInfo[0].GeoMeta.UVScale);
                 offset += sizeof(PackedUV);
             }
         }
 
-        // Read Faces
+        // Read m_faces
         offset = offsetFaces;
         for (int i = 0; i < MeshGeometry.size(); i++)
         {
-            for (int j = 0; j < MeshGeometry[i].Faces.size(); j++)
+            for (int j = 0; j < MeshGeometry[i].m_faces.size(); j++)
             {
-                MeshGeometry[i].Faces[j] = *(Face*)(lwoGeo.data() + offset);
+                MeshGeometry[i].m_faces[j] = *(Face*)(lwoGeo.data() + offset);
                 offset += sizeof(Face);
             }
         }

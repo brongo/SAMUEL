@@ -50,8 +50,8 @@ namespace HAYDEN
         uint32_t NumVertices = 0;
         uint32_t NumEdges = 0;
 
-        GEO_FLAGS GeoFlags;
-        GEO_METADATA GeoMeta;
+        GeoFlags GeoFlags;
+        GeoMetadata GeoMeta;
 
 	float_t UnkFloat1 = 0;
 	float_t UnkFloat2 = 0;

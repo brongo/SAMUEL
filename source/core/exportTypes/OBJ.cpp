@@ -19,43 +19,43 @@ namespace HAYDEN
             Objects[i].UseMaterialLine = "usemtl " + mtlName;
 
             // build vert strings
-            for (uint64_t j = 0; j < lwo.MeshGeometry[i].Vertices.size(); j++)
+            for (uint64_t j = 0; j < lwo.MeshGeometry[i].m_vertices.size(); j++)
             {
                 std::stringstream x;
                 std::stringstream y;
                 std::stringstream z;
 
-                x << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].Vertices[j].X;
-                y << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].Vertices[j].Y;
-                z << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].Vertices[j].Z;
+                x << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].m_vertices[j].X;
+                y << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].m_vertices[j].Y;
+                z << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].m_vertices[j].Z;
 
                 std::string str = ("v " + x.str() + " " + y.str() + " " + z.str());
                 Objects[i].Vertices.push_back(str);
             }
 
             // build UV strings
-            for (uint64_t j = 0; j < lwo.MeshGeometry[i].UVs.size(); j++)
+            for (uint64_t j = 0; j < lwo.MeshGeometry[i].m_uv.size(); j++)
             {
                 std::stringstream u;
                 std::stringstream v;
 
-                u << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].UVs[j].U;
-                v << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].UVs[j].V;
+                u << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].m_uv[j].U;
+                v << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].m_uv[j].V;
 
                 std::string str = ("vt " + u.str() + " " + v.str());
                 Objects[i].UVs.push_back(str);
             }
 
             // build Normal strings
-            for (uint64_t j = 0; j < lwo.MeshGeometry[i].Normals.size(); j++)
+            for (uint64_t j = 0; j < lwo.MeshGeometry[i].m_normals.size(); j++)
             {
                 std::stringstream xn;
                 std::stringstream yn;
                 std::stringstream zn;
 
-                xn << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].Normals[j].Xn;
-                yn << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].Normals[j].Yn;
-                zn << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].Normals[j].Zn;
+                xn << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].m_normals[j].Xn;
+                yn << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].m_normals[j].Yn;
+                zn << std::fixed << std::setprecision(8) << lwo.MeshGeometry[i].m_normals[j].Zn;
 
                 std::string str = ("vn " + xn.str() + " " + yn.str() + " " + zn.str());
                 Objects[i].Normals.push_back(str);
@@ -67,15 +67,15 @@ namespace HAYDEN
             if (i > 0)
             {
                 // offset the face index by the number of vertices that came before it
-                vertexCount += lwo.MeshGeometry[i - 1].Vertices.size();
+                vertexCount += lwo.MeshGeometry[i - 1].m_vertices.size();
                 offset = vertexCount + 1;
             }
 
-            for (uint64_t j = 0; j < lwo.MeshGeometry[i].Faces.size(); j++)
+            for (uint64_t j = 0; j < lwo.MeshGeometry[i].m_faces.size(); j++)
             {
-                std::string f1 = std::to_string(lwo.MeshGeometry[i].Faces[j].F1 + offset);
-                std::string f2 = std::to_string(lwo.MeshGeometry[i].Faces[j].F2 + offset);
-                std::string f3 = std::to_string(lwo.MeshGeometry[i].Faces[j].F3 + offset);
+                std::string f1 = std::to_string(lwo.MeshGeometry[i].m_faces[j].F1 + offset);
+                std::string f2 = std::to_string(lwo.MeshGeometry[i].m_faces[j].F2 + offset);
+                std::string f3 = std::to_string(lwo.MeshGeometry[i].m_faces[j].F3 + offset);
 
                 f1 = "f " + f1 + "/" + f1 + "/" + f1;
                 f2 =  " " + f2 + "/" + f2 + "/" + f2;
@@ -90,7 +90,7 @@ namespace HAYDEN
         return;
     }
 
-    void OBJFile::ConvertFromMD6(MD6& md6)
+    void OBJFile::ConvertFromMD6(MD6Mesh& md6)
     {
         uint64_t vertexCount = 0;
         Objects.resize(md6.Header.NumMeshes);
@@ -111,43 +111,43 @@ namespace HAYDEN
             Objects[i].UseMaterialLine = "usemtl " + mtlName;
 
             // build Vert strings
-            for (uint64_t j = 0; j < md6.MeshGeometry[i].Vertices.size(); j++)
+            for (uint64_t j = 0; j < md6.MeshGeometry[i].m_vertices.size(); j++)
             {
                 std::stringstream x;
                 std::stringstream y;
                 std::stringstream z;
 
-                x << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].Vertices[j].X;
-                y << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].Vertices[j].Y;
-                z << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].Vertices[j].Z;
+                x << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].m_vertices[j].X;
+                y << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].m_vertices[j].Y;
+                z << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].m_vertices[j].Z;
 
                 std::string str = ("v " + x.str() + " " + y.str() + " " + z.str());
                 Objects[i].Vertices.push_back(str);
             }
 
             // build UV strings
-            for (uint64_t j = 0; j < md6.MeshGeometry[i].UVs.size(); j++)
+            for (uint64_t j = 0; j < md6.MeshGeometry[i].m_uv.size(); j++)
             {
                 std::stringstream u;
                 std::stringstream v;
 
-                u << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].UVs[j].U;
-                v << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].UVs[j].V;
+                u << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].m_uv[j].U;
+                v << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].m_uv[j].V;
 
                 std::string str = ("vt " + u.str() + " " + v.str());
                 Objects[i].UVs.push_back(str);
             }
 
             // build Normal strings
-            for (uint64_t j = 0; j < md6.MeshGeometry[i].Normals.size(); j++)
+            for (uint64_t j = 0; j < md6.MeshGeometry[i].m_normals.size(); j++)
             {
                 std::stringstream xn;
                 std::stringstream yn;
                 std::stringstream zn;
 
-                xn << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].Normals[j].Xn;
-                yn << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].Normals[j].Yn;
-                zn << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].Normals[j].Zn;
+                xn << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].m_normals[j].Xn;
+                yn << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].m_normals[j].Yn;
+                zn << std::fixed << std::setprecision(8) << md6.MeshGeometry[i].m_normals[j].Zn;
 
                 std::string str = ("vn " + xn.str() + " " + yn.str() + " " + zn.str());
                 Objects[i].Normals.push_back(str);
@@ -159,15 +159,15 @@ namespace HAYDEN
             if (i > 0)
             {
                 // offset the face index by the number of vertices that came before it
-                vertexCount += md6.MeshGeometry[i - 1].Vertices.size();
+                vertexCount += md6.MeshGeometry[i - 1].m_vertices.size();
                 offset = vertexCount + 1;
             }
 
-            for (uint64_t j = 0; j < md6.MeshGeometry[i].Faces.size(); j++)
+            for (uint64_t j = 0; j < md6.MeshGeometry[i].m_faces.size(); j++)
             {
-                std::string f1 = std::to_string(md6.MeshGeometry[i].Faces[j].F1 + offset);
-                std::string f2 = std::to_string(md6.MeshGeometry[i].Faces[j].F2 + offset);
-                std::string f3 = std::to_string(md6.MeshGeometry[i].Faces[j].F3 + offset);
+                std::string f1 = std::to_string(md6.MeshGeometry[i].m_faces[j].F1 + offset);
+                std::string f2 = std::to_string(md6.MeshGeometry[i].m_faces[j].F2 + offset);
+                std::string f3 = std::to_string(md6.MeshGeometry[i].m_faces[j].F3 + offset);
 
                 f1 = "f " + f1 + "/" + f1 + "/" + f1;
                 f2 = " " + f2 + "/" + f2 + "/" + f2;
@@ -192,7 +192,7 @@ namespace HAYDEN
         return;
     }
 
-    void OBJFile::Serialize(const std::vector<Mesh> streamedGeometry, const std::vector<std::string> meshNames, const int modelType, const int numVertices, const int numFaces, const GEO_FLAGS geoFlags, const GEO_METADATA geoMeta)
+    void OBJFile::Serialize(const std::vector<Mesh> streamedGeometry, const std::vector<std::string> meshNames, const int modelType, const int numVertices, const int numFaces, const GeoFlags geoFlags, const GeoMetadata geoMeta)
     {
         uint64_t vertexCount = 0;
         Objects.resize(streamedGeometry.size());
@@ -213,43 +213,43 @@ namespace HAYDEN
             Objects[i].UseMaterialLine = "usemtl " + mtlName;
 
             // build Vert strings
-            for (uint64_t j = 0; j < streamedGeometry[i].Vertices.size(); j++)
+            for (uint64_t j = 0; j < streamedGeometry[i].m_vertices.size(); j++)
             {
                 std::stringstream x;
                 std::stringstream y;
                 std::stringstream z;
 
-                x << std::fixed << std::setprecision(8) << streamedGeometry[i].Vertices[j].X;
-                y << std::fixed << std::setprecision(8) << streamedGeometry[i].Vertices[j].Y;
-                z << std::fixed << std::setprecision(8) << streamedGeometry[i].Vertices[j].Z;
+                x << std::fixed << std::setprecision(8) << streamedGeometry[i].m_vertices[j].X;
+                y << std::fixed << std::setprecision(8) << streamedGeometry[i].m_vertices[j].Y;
+                z << std::fixed << std::setprecision(8) << streamedGeometry[i].m_vertices[j].Z;
 
                 std::string str = ("v " + x.str() + " " + y.str() + " " + z.str());
                 Objects[i].Vertices.push_back(str);
             }
 
             // build UV strings
-            for (uint64_t j = 0; j < streamedGeometry[i].UVs.size(); j++)
+            for (uint64_t j = 0; j < streamedGeometry[i].m_uv.size(); j++)
             {
                 std::stringstream u;
                 std::stringstream v;
 
-                u << std::fixed << std::setprecision(8) << streamedGeometry[i].UVs[j].U;
-                v << std::fixed << std::setprecision(8) << streamedGeometry[i].UVs[j].V;
+                u << std::fixed << std::setprecision(8) << streamedGeometry[i].m_uv[j].U;
+                v << std::fixed << std::setprecision(8) << streamedGeometry[i].m_uv[j].V;
 
                 std::string str = ("vt " + u.str() + " " + v.str());
                 Objects[i].UVs.push_back(str);
             }
 
             // build Normal strings
-            for (uint64_t j = 0; j < streamedGeometry[i].Normals.size(); j++)
+            for (uint64_t j = 0; j < streamedGeometry[i].m_normals.size(); j++)
             {
                 std::stringstream xn;
                 std::stringstream yn;
                 std::stringstream zn;
 
-                xn << std::fixed << std::setprecision(8) << streamedGeometry[i].Normals[j].Xn;
-                yn << std::fixed << std::setprecision(8) << streamedGeometry[i].Normals[j].Yn;
-                zn << std::fixed << std::setprecision(8) << streamedGeometry[i].Normals[j].Zn;
+                xn << std::fixed << std::setprecision(8) << streamedGeometry[i].m_normals[j].Xn;
+                yn << std::fixed << std::setprecision(8) << streamedGeometry[i].m_normals[j].Yn;
+                zn << std::fixed << std::setprecision(8) << streamedGeometry[i].m_normals[j].Zn;
 
                 std::string str = ("vn " + xn.str() + " " + yn.str() + " " + zn.str());
                 Objects[i].Normals.push_back(str);
@@ -261,15 +261,15 @@ namespace HAYDEN
             if (i > 0)
             {
                 // offset the face index by the number of vertices that came before it
-                vertexCount += streamedGeometry[i - 1].Vertices.size();
+                vertexCount += streamedGeometry[i - 1].m_vertices.size();
                 offset = vertexCount + 1;
             }
 
-            for (uint64_t j = 0; j < streamedGeometry[i].Faces.size(); j++)
+            for (uint64_t j = 0; j < streamedGeometry[i].m_faces.size(); j++)
             {
-                std::string f1 = std::to_string(streamedGeometry[i].Faces[j].F1 + offset);
-                std::string f2 = std::to_string(streamedGeometry[i].Faces[j].F2 + offset);
-                std::string f3 = std::to_string(streamedGeometry[i].Faces[j].F3 + offset);
+                std::string f1 = std::to_string(streamedGeometry[i].m_faces[j].F1 + offset);
+                std::string f2 = std::to_string(streamedGeometry[i].m_faces[j].F2 + offset);
+                std::string f3 = std::to_string(streamedGeometry[i].m_faces[j].F3 + offset);
 
                 f1 = "f " + f1 + "/" + f1 + "/" + f1;
                 f2 = " " + f2 + "/" + f2 + "/" + f2;

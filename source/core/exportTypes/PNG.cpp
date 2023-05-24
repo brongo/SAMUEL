@@ -7,7 +7,7 @@ namespace HAYDEN
     {
         std::vector<uint8_t> outputPNG;
 
-#ifdef _WIN32
+#if defined(_WIN32) && USE_DX
         
         // Windows systems use the DirectXTex library to convert a DDS file to PNG format
         HRESULT initCOM = CoInitializeEx(NULL, COINIT_MULTITHREADED);
@@ -110,7 +110,7 @@ namespace HAYDEN
         detexTexture* ddsTexture = NULL;
         std::unique_ptr<uint8_t> pngData;
 
-        if (!detexLoadDDSFile(fullPath.c_str(), &ddsTexture))
+        if (!detexLoadDDSFile(reinterpret_cast<const char *>(fullPath.c_str()), &ddsTexture))
         {
             // Try loading as raw (for rgba8 textures)
             pngTexture.width = *(int*)(inputDDS.data() + 12);
@@ -140,7 +140,7 @@ namespace HAYDEN
         // Save as PNG
         if (!failed)
         {
-            if (!detexSavePNGFile(&pngTexture, fullPath.c_str()))
+            if (!detexSavePNGFile(&pngTexture, reinterpret_cast<const char *>(fullPath.c_str())))
                 fprintf(stderr, "ERROR: Failed to convert DDS file to PNG. \n");
 
             if (!readFile(fullPath, outputPNG))

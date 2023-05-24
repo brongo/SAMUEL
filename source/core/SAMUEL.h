@@ -15,52 +15,47 @@
 #include "Oodle.h"
 #include "ResourceFileReader.h"
 #include "Utilities.h"
+#include "ResourceManager.h"
 
 namespace fs = std::filesystem;
 
-namespace HAYDEN
-{
-    class SAMUEL
-    {
-	public:
+namespace HAYDEN {
+    class SAMUEL {
+    public:
 
-	    // Startup and resource loader functions
-	    bool Init(const std::string resourcePath, GLOBAL_RESOURCES& GlobalResources);
-	    bool LoadResource(const std::string fileName);
+// Startup and resource loader functions
+        bool Init(const std::string &resourcePath);
 
-	    // File export functions
-	    bool ExportFiles(const fs::path outputDirectory, const std::vector<std::vector<std::string>> filesToExport);
-	    bool HasResourceLoadError() { return _HasResourceLoadError; }
-	    std::string GetLastErrorMessage() { return _LastErrorMessage; }
-	    std::string GetLastErrorDetail() { return _LastErrorDetail; }
-	    std::vector<ResourceEntry> GetResourceData() { return _ResourceData; }
+        bool LoadResource(const std::string &fileName);
 
-	private:
-	    bool _HasFatalError = 0;
-	    bool _HasResourceLoadError = 0;
-	    std::string _LastErrorMessage;
-	    std::string _LastErrorDetail;
-	    std::string _BasePath;
-	    std::string _ResourcePath;
-            std::string _ResourceFileName;
-	    std::vector<std::string> _StreamDBFileList;
-	    std::vector<StreamDBFile> _StreamDBFileData; 
-	    std::vector<ResourceEntry> _ResourceData;
-	    PackageMapSpec _PackageMapSpec;
-            GLOBAL_RESOURCES* _GlobalResources;
+        // File export functions
+        bool ExportFiles(const fs::path &outputDirectory, const std::vector<std::vector<std::string>> &filesToExport);
 
-	    // Outputs to stderr, but also stores error message for passing to another application (Qt, etc).
-	    void ThrowError(bool isFatal, std::string errorMessage, std::string errorDetail = "");
+        [[nodiscard]] bool hasResourceLoadError() const { return m_hasResourceLoadError; }
 
-	    // Called on startup
-	    bool SetBasePath(const std::string resourcePath);
-	    void LoadPackageMapSpec();
+        const std::string &GetLastErrorMessage() { return m_lastErrorMessage; }
 
-	    // Loads all global *.resources (needed for LWO export)
-	    void LoadGlobalResources();
+        const std::string &GetLastErrorDetail() { return m_lastErrorDetail; }
 
-	    // Reads streamdb data associated with this resource file (per packageMapSpec).
-	    void UpdateStreamDBFileList(const std::string resourceFileName);
-	    void ReadStreamDBFiles();
+        ResourceManager &resourceManager() { return m_resourceManager; }
+
+    private:
+        bool m_hasFatalError = false;
+        bool m_hasResourceLoadError = false;
+        std::string m_lastErrorMessage;
+        std::string m_lastErrorDetail;
+        std::string m_basePath;
+        std::string m_resourcePath;
+        std::string m_resourceFileName;
+        ResourceManager m_resourceManager;
+
+        // Outputs to stderr, but also stores error message for passing to another application (Qt, etc).
+        void ThrowError(bool isFatal, std::string errorMessage, std::string errorDetail = "");
+
+        // Called on startup
+        bool SetBasePath(const std::string &resourcePath);
+
+        // Loads all global *.resources (needed for LWO export)
+        void LoadGlobalResources();
     };
 }
