@@ -277,14 +277,6 @@ namespace HAYDEN {
 //            }
 //        }
 
-//        // Export the material2 .decls and parse them for textures used in this model
-//        ExportMaterial2Decls(resourceData, globalResources);
-//        ReadMaterial2Decls();
-//
-//        // Find required textures and export them
-//        for (const auto &material: MaterialData)
-//            ExportBIMTextures(resourceData, globalResources, material, streamDBFiles);
-
         for (auto &meshInfo: mesh.header().m_meshInfo) {
             MaterialInfo materialInfo;
             materialInfo.DeclFileName = meshInfo.MaterialDeclName;

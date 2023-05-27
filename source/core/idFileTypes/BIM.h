@@ -62,7 +62,6 @@ namespace HAYDEN {
         std::vector<BIMMipmap> m_mipMaps;
         std::vector<uint8_t> m_data;
 
-//        void Serialize(const std::vector<uint8_t> binaryData);
     };
 }
 

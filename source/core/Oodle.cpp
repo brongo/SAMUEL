@@ -1,11 +1,10 @@
 #include "Oodle.h"
 
-namespace HAYDEN
-{
+namespace HAYDEN {
     // Decompress using Oodle DLL
-    OodLZ_DecompressFunc* OodLZ_Decompress = NULL;
-    bool oodleInit(const std::string& basePath)
-    {
+    OodLZ_DecompressFunc *OodLZ_Decompress = NULL;
+
+    bool oodleInit(const std::string &basePath) {
         std::string oodlePath = basePath.substr(0, basePath.length() - 4) + "oo2core_8_win64.dll";
 
 #ifdef _WIN32
@@ -14,7 +13,7 @@ namespace HAYDEN
         if (!oodle)
             return false;
 
-        OodLZ_Decompress = (OodLZ_DecompressFunc*)GetProcAddress(oodle, "OodleLZ_Decompress");
+        OodLZ_Decompress = (OodLZ_DecompressFunc *) GetProcAddress(oodle, "OodleLZ_Decompress");
 #else
         std::error_code ec;
 
@@ -37,49 +36,48 @@ namespace HAYDEN
             fs::remove(fs::current_path().append("oo2core_8_win64.dll"), ec);
 #endif
 
-        if (oodle == NULL || OodLZ_Decompress == NULL)
+        if (oodle == nullptr || OodLZ_Decompress == nullptr)
             return false;
 
         return true;
     }
 
-    std::vector<uint8_t> oodleDecompress(const std::vector<uint8_t>& compressedData, uint64_t decompressedSize)
-    {
-        if (OodLZ_Decompress == NULL)
+    std::vector<uint8_t> oodleDecompress(const std::vector<uint8_t> &compressedData, uint64_t decompressedSize) {
+        if (OodLZ_Decompress == nullptr)
             return {};
 
         std::vector<uint8_t> output(decompressedSize + SAFE_SPACE);
         uint64_t outbytes = 0;
 
         // Decompress using Oodle DLL
-        outbytes = OodLZ_Decompress(compressedData.data(), compressedData.size(), output.data(), decompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        outbytes = OodLZ_Decompress(compressedData.data(), (int) compressedData.size(), output.data(), decompressedSize,
+                                    0, 0, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, 0);
 
-        if (outbytes == 0)
-        {
+        if (outbytes == 0) {
             fprintf(stderr, "Error: failed to decompress with Oodle DLL.\n\n");
             return {};
         }
 
-        return std::move(std::vector<uint8_t>(output.begin(), output.begin() + outbytes));
+        return std::move(std::vector<uint8_t>(output.begin(), output.begin() + (int64_t) outbytes));
     }
-    void oodleDecompressInplace(std::vector<uint8_t>& compressedData, uint64_t decompressedSize)
-    {
-        if (OodLZ_Decompress == NULL)
+
+    void oodleDecompressInplace(std::vector<uint8_t> &compressedData, uint64_t decompressedSize) {
+        if (OodLZ_Decompress == nullptr)
             return;
 
         std::vector<uint8_t> output(decompressedSize + SAFE_SPACE);
         uint64_t outbytes = 0;
 
         // Decompress using Oodle DLL
-        outbytes = OodLZ_Decompress(compressedData.data(), compressedData.size(), output.data(), decompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        outbytes = OodLZ_Decompress(compressedData.data(), (int) compressedData.size(), output.data(), decompressedSize,
+                                    0, 0, 0, nullptr, 0, nullptr, nullptr, nullptr, 0, 0);
 
-        if (outbytes == 0)
-        {
+        if (outbytes == 0) {
             fprintf(stderr, "Error: failed to decompress with Oodle DLL.\n\n");
             return;
         }
         compressedData.clear();
         compressedData.resize(outbytes);
-        compressedData.insert(compressedData.begin(), output.begin(), output.begin() + outbytes);
+        compressedData.insert(compressedData.begin(), output.begin(), output.begin() + (int64_t) outbytes);
     }
 }
