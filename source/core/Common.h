@@ -4,7 +4,6 @@
 #include <string>
 #include <cmath>
 
-#include "ResourceFileReader.h"
 #include "source/core/cast/cast.h"
 
 namespace HAYDEN {

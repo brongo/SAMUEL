@@ -1,5 +1,6 @@
 #include "MD6Mesh.h"
 #include "../ResourceManager.h"
+#include "../Oodle.h"
 
 namespace HAYDEN {
     void MD6MeshHeader::fromData(const std::vector<uint8_t> &binaryData) {

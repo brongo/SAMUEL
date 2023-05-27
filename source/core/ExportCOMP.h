@@ -7,7 +7,6 @@
 #include "idFileTypes/ResourceFile.h"
 
 #include "Oodle.h"
-#include "ResourceFileReader.h"
 #include "Utilities.h"
 
 namespace fs = std::filesystem;

@@ -5,8 +5,6 @@
 #include <filesystem>
 
 #include "exportTypes/DDSHeader.h"
-#include "exportTypes/OBJ.h"
-#include "exportTypes/PNG.h"
 
 #include "idFileTypes/BIM.h"
 #include "idFileTypes/DECL.h"
@@ -19,7 +17,6 @@
 #include "ExportDECL.h"
 #include "ExportBIM.h"
 #include "Oodle.h"
-#include "ResourceFileReader.h"
 #include "Utilities.h"
 #include "exportTypes/CAST.h"
 
@@ -27,23 +24,22 @@ namespace fs = std::filesystem;
 
 namespace HAYDEN {
     // Holds material2 .decl data used by the model
+
     struct MaterialInfo {
-        DeclFile ParsedDeclFile;
         std::string DeclFileName;
-        std::vector<std::string> TextureNames;
-        std::vector<std::string> TextureTypes;
+        std::map<std::string, std::string> TextureMapping;
     };
 
     class ModelExportTask {
     public:
 
 
-        explicit ModelExportTask(const ResourceManager &resourceManager, const std::string &resourceName);
+        ModelExportTask(const ResourceManager &resourceManager, const std::string &resourceName);
 
         // OBJ export functions. Consider moving to OBJ.h
 //        void WriteMTLFile();
 //
-        CAST castMeshFromMD6(const MD6Mesh &mesh, const MD6Skl &md6Skl);
+        CAST castMeshFromMD6(const MD6Mesh &mesh, const MD6Skl &md6Skl, const std::vector<MaterialInfo>& materials);
 //
 //        // Dependency export functions (material2 .decls and BIM textures)
 //        void ExportBIMTextures(const std::vector<ResourceEntry> &resourceData, const MaterialInfo &materialInfo) const;

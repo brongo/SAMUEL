@@ -27,48 +27,6 @@ namespace HAYDEN {
         m_loaded = true;
     }
 
-    // Attempts to locate a StreamDBEntry based on a known streamedFileID + streamedDataLength.
-    const StreamDBEntry *
-    StreamDBFile::locateStreamDBEntry(uint64_t streamedFileID, uint64_t streamedDataLength) const {
-        for (uint64_t i = 0; i < m_streamDBHeader.m_numEntries; i++) {
-            // Match
-            if ((streamedFileID == m_streamDBEntries[i].m_fileID) &&
-                (streamedDataLength == m_streamDBEntries[i].m_compressedSize))
-                return &m_streamDBEntries[i];
-
-            // FileID matches, but compressed size doesn't. 
-            if ((streamedFileID == m_streamDBEntries[i].m_fileID) &&
-                (streamedDataLength < m_streamDBEntries[i].m_compressedSize)) {
-                // Sometimes it will match the next entry in sequence, so check this.
-                if (streamedDataLength == m_streamDBEntries[i + 1].m_compressedSize)
-                    return &m_streamDBEntries[i + 1];
-            }
-        }
-
-        // No match found, return empty StreamDBEntry
-        return nullptr;
-    }
-
-    // Extracts an embedded file in StreamDB, returning it as a byte vector
-    std::vector<uint8_t>
-    StreamDBFile::GetEmbeddedFile(const std::string &streamDBFileName, const StreamDBEntry *streamDBEntry) const {
-        // Multiply streamDBEntry.m_offset16 by 16 to get the real file offset
-        uint64_t fileOffset= streamDBEntry->m_offset16 * 16;
-
-        // Read from stream
-        std::ifstream f;
-        std::vector<uint8_t> fileData(streamDBEntry->m_compressedSize);
-        f.open(streamDBFileName, std::ios::in | std::ios::binary);
-        f.seekg(fileOffset, std::ios_base::beg);
-        f.read(reinterpret_cast<char *>(fileData.data()), streamDBEntry->m_compressedSize);
-
-        // Validate number of bytes read, 0 if failed
-        fileData.resize(f.gcount());
-        f.close();
-
-        return std::move(fileData);
-    }
-
 
     std::optional<std::vector<uint8_t>> StreamDBFile::getData(uint64_t resourceHash, uint64_t streamSize) const {
         for (int i = 0; i < m_streamDBEntries.size(); i++) {

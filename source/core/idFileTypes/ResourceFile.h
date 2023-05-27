@@ -66,9 +66,10 @@ namespace HAYDEN {
                 /* 0x68 */ uint64_t m_addrData;               // starting offset for embedded file data
                 /* 0x70 */ uint32_t m_addrUnk70;
                 /* 0x74 */ uint64_t m_addrEndMarker;          // "IDCL" marks end of resource file metadata, start of embedded files
-            };
+            })
 
-            // Built-in struct in .resources binary file
+    // Built-in struct in .resources binary file
+    HAYDEN_PACK(
             struct ResourceFileEntry // 0x90 bytes
             {
                 /* 0x00 */ uint64_t m_pathTuple_OffsetType;   // add this to PathTuple_Index to get idx of the file type - always 0
@@ -108,9 +109,10 @@ namespace HAYDEN {
 
                 /* 0x86 */ uint16_t m_unk86;                  // sub_1408E8DC0 reads this
                 /* 0x88 */ uint64_t m_unk88;
-            };
+            })
 
-            // Built-in struct in .resources binary file
+    // Built-in struct in .resources binary file
+    HAYDEN_PACK(
             struct ResourceFileDependency // 0x20 bytes
             {
                 /* 0x00 */ uint64_t m_assetTypeStringIndex;   // index into _stringEntries,  file "type" of the depedency
@@ -119,17 +121,8 @@ namespace HAYDEN {
                 /* 0x14 */ uint32_t m_unk14;                  // always 1 ??
                 /* 0x18 */ uint32_t m_unk18;                  // some kind of file ID ??
                 /* 0x1C */ uint32_t m_unk1C;                  // file ID ??  but often 0x0000 for some file types, like .lwo
-            };
+            }
     )
-
-    struct FileData {
-
-        FileData(std::vector<uint8_t> &&headerData, std::vector<uint8_t> &&streamData) : m_headerData(
-                std::move(headerData)), m_streamData(std::move(streamData)) {};
-
-        std::vector<uint8_t> m_headerData;
-        std::vector<uint8_t> m_streamData;
-    };
 
     class ResourceFile {
     public:
@@ -141,7 +134,7 @@ namespace HAYDEN {
         [[nodiscard]] std::optional<std::vector<uint8_t>> queryFileByName(const std::string &name) const;
 
         [[nodiscard]] std::optional<std::vector<uint8_t>>
-        queryStreamDataByName(const std::string &name, uint64_t streamSize) const;
+        queryStreamDataByName(const std::string &name, uint64_t streamSize, int32_t mipCount = -6) const;
 
 
         // Getters
@@ -152,14 +145,13 @@ namespace HAYDEN {
 
         [[nodiscard]] const std::vector<uint64_t> &allPathStringIndexes() const { return m_pathStringIndexes; }
 
-        const ResourceFileEntry &resourceFileEntryAt(size_t index) { return m_file_entries[index]; }
+        [[nodiscard]] const ResourceFileEntry &resourceFileEntryAt(size_t index) { return m_file_entries[index]; }
 
         [[nodiscard]] std::vector<std::pair<std::string, std::string>> filenameList() const;
 
         [[nodiscard]] std::vector<HAYDEN::ResourceEntry> fileList() const;
 
-
-        const fs::path &filepath() { return m_filePath; };
+        [[nodiscard]] const fs::path &filepath() { return m_filePath; };
 
         [[nodiscard]] bool loaded() const { return m_loaded; };
 
@@ -168,10 +160,11 @@ namespace HAYDEN {
 
         [[nodiscard]] std::vector<uint8_t> readHeader(const ResourceFileEntry &entry) const;
 
-        [[nodiscard]] static uint64_t calculateStreamDBIndex(uint64_t resourceId, int mipCoun = -6);
+        [[nodiscard]] static uint64_t calculateStreamDBIndex(uint64_t resourceId, int mipCount = -6);
 
         fs::path m_filePath; // External, passed into constructor
         bool m_loaded;
+
         // Binary data within the .resources file
         ResourceFileHeader m_header{};                             // first 0x7C bytes in file
         std::vector<ResourceFileEntry> m_file_entries;            // immediately after ResourceFileHeader,  repeating 0x90 byte sequence

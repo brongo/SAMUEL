@@ -177,7 +177,7 @@ std::vector<TYPE> m_data;\
 
     class CastNode {
     public:
-        explicit CastNode(CastId id) : m_id(id) {};
+        explicit CastNode(CastId id) : m_id(id), m_hash(0) {};
 
         void addProperty(std::unique_ptr<CastProperty> prop) {
             m_properties.emplace_back(std::move(prop));
@@ -187,12 +187,21 @@ std::vector<TYPE> m_data;\
             m_children.emplace_back(std::move(node));
         }
 
+        void setHash(uint64_t hash) {
+            m_hash = hash;
+        }
+        uint64_t hash() const {
+            return m_hash;
+        }
+
         void serialize(std::ofstream &stream) const;
 
         [[nodiscard]] size_t calcSize() const;
 
+
     private:
         CastId m_id;
+        uint64_t m_hash;
         std::vector<std::unique_ptr<CastProperty>> m_properties{};
         std::vector<CastNode> m_children{};
     };

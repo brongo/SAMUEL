@@ -6,11 +6,12 @@ namespace HAYDEN {
     ModelExportTask::ModelExportTask(const ResourceManager &resourceManager, const std::string &resourceName)
             : m_resourceManager(resourceManager) {
         m_resourcePath = resourceName;
-        m_fileName = fs::path(resourceName).filename().string();
+        m_fileName = getFilename(resourceName);
     }
 
     // Write the model data to OBJ file
-    CAST ModelExportTask::castMeshFromMD6(const MD6Mesh &mesh, const MD6Skl &md6Skl) {
+    CAST ModelExportTask::castMeshFromMD6(const MD6Mesh &mesh, const MD6Skl &md6Skl,
+                                          const std::vector<MaterialInfo> &materials) {
 
 
         fs::path materialFile;
@@ -18,7 +19,7 @@ namespace HAYDEN {
 
         CAST castFile;
 
-        castFile.ConvertFromMD6(mesh, md6Skl);
+        castFile.ConvertFromMD6(mesh, md6Skl, materials);
 
         return std::move(castFile);
     }
@@ -262,13 +263,9 @@ namespace HAYDEN {
         if (!mesh.loaded())
             return false;
 
-        fs::path outputFile = exportPath / fs::path(m_fileName).filename().replace_extension(".cast");
+        fs::path outputFile = exportPath / fs::path(m_fileName).replace_extension(".cast");
 
-        for (auto &meshInfo: mesh.header().m_meshInfo) {
-            MaterialInfo materialInfo;
-            materialInfo.DeclFileName = meshInfo.MaterialDeclName;
-            m_materialData.push_back(materialInfo);
-        }
+
 
 //        // Serialize model data and get materials (LWO)
 //        if (modelType == 67) {
@@ -280,6 +277,19 @@ namespace HAYDEN {
 //            }
 //        }
 
+//        // Export the material2 .decls and parse them for textures used in this model
+//        ExportMaterial2Decls(resourceData, globalResources);
+//        ReadMaterial2Decls();
+//
+//        // Find required textures and export them
+//        for (const auto &material: MaterialData)
+//            ExportBIMTextures(resourceData, globalResources, material, streamDBFiles);
+
+        for (auto &meshInfo: mesh.header().m_meshInfo) {
+            MaterialInfo materialInfo;
+            materialInfo.DeclFileName = meshInfo.MaterialDeclName;
+            m_materialData.push_back(materialInfo);
+        }
         // Remove any duplicate materials
         std::sort(m_materialData.begin(), m_materialData.end(), [](const MaterialInfo &a, const MaterialInfo &b) {
             return (a.DeclFileName < b.DeclFileName);
@@ -294,25 +304,46 @@ namespace HAYDEN {
 
         size_t listSize = it - m_materialData.begin();
         m_materialData.resize(listSize);
+        for (auto &item: m_materialData) {
+            std::string materialFilename = "generated/decls/material2/" + item.DeclFileName + ".decl";
+            DECLExportTask task(m_resourceManager, materialFilename);
 
-
-//        // Export the material2 .decls and parse them for textures used in this model
-//        ExportMaterial2Decls(resourceData, globalResources);
-//        ReadMaterial2Decls();
-//
-//        // Find required textures and export them
-//        for (const auto &material: MaterialData)
-//            ExportBIMTextures(resourceData, globalResources, material, streamDBFiles);
-
-        MD6Skl skl(m_resourceManager, mesh.header().m_sklFilename);
-        CAST castFile = castMeshFromMD6(mesh, skl);
-        // Create output directories if needed
-        if (!fs::exists(outputFile.parent_path())) {
-            if (!mkpath(outputFile.parent_path())) {
-                fprintf(stderr, "Error: Failed to create directories for file: %s \n",
-                        outputFile.parent_path().string().c_str());
+            const std::filesystem::path &declOutputPath =
+                    outputFile.parent_path() / "materials";
+            if (!createPaths(declOutputPath)) {
                 return false;
             }
+            task.exportDECL(declOutputPath);
+            DeclFile declFile(m_resourceManager, materialFilename);
+            declFile.parse();
+            const jsonxx::Object &materialData = declFile.json();
+            const jsonxx::Object &editData = materialData.get<jsonxx::Object>("edit");
+            const jsonxx::Array &renderLayersData = editData.get<jsonxx::Array>("RenderLayers");
+            if (!renderLayersData.empty()) {
+                const jsonxx::Object &textureParms = renderLayersData.get<jsonxx::Object>(0).get<jsonxx::Object>(
+                        "parms");
+                for (auto [key, value]: textureParms.kv_map()) {
+                    const std::string &texturePath = value->get<jsonxx::Object>().get<jsonxx::String>("filePath");
+                    item.TextureMapping.insert_or_assign(key, texturePath);
+                }
+            }
+        }
+        for (const auto &material: m_materialData) {
+            for (const auto &[type, textureName]: material.TextureMapping) {
+                BIMExportTask task(m_resourceManager, textureName);
+                const std::filesystem::path &bimOutputPath =
+                        outputFile.parent_path() / "textures";
+                createPaths(bimOutputPath);
+                task.exportBIMImage(bimOutputPath, type == "normal");
+            }
+        }
+
+
+        MD6Skl skl(m_resourceManager, mesh.header().m_sklFilename);
+        CAST castFile = castMeshFromMD6(mesh, skl, m_materialData);
+        // Create output directories if needed
+        if (!createPaths(outputFile.parent_path())) {
+            return false;
         }
 
         std::ofstream file;

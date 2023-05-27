@@ -63,7 +63,8 @@ namespace HAYDEN {
 
     std::optional<std::vector<uint8_t>> ResourceFile::queryFileByName(const std::string &name) const {
         for (const auto &item: m_file_entries) {
-            if (m_stringEntries.at(m_pathStringIndexes.at(item.m_pathTuple_Index + 1)) == name) {
+            const std::string &fileName = m_stringEntries.at(m_pathStringIndexes.at(item.m_pathTuple_Index + 1));
+            if (fileName.compare(0, name.size(), name) == 0) {
                 return std::move(readHeader(item));
             }
         }
@@ -71,10 +72,21 @@ namespace HAYDEN {
     }
 
     std::optional<std::vector<uint8_t>>
-    ResourceFile::queryStreamDataByName(const std::string &name, uint64_t streamSize) const {
+    ResourceFile::queryStreamDataByName(const std::string &name, uint64_t streamSize, int32_t mipCount) const {
         for (const auto &item: m_file_entries) {
-            if (m_stringEntries.at(m_pathStringIndexes.at(item.m_pathTuple_Index + 1)) == name) {
-                uint64_t streamDbResourceHash = calculateStreamDBIndex(item.m_streamResourceHash);
+            const std::string &fileName = m_stringEntries.at(m_pathStringIndexes.at(item.m_pathTuple_Index + 1));
+            if (fileName.compare(0, name.size(), name) == 0) {
+                uint64_t streamDbResourceHash = calculateStreamDBIndex(item.m_streamResourceHash, mipCount);
+                for (const HAYDEN::StreamDBFile &streamFile: m_streamFiles) {
+                    if (streamFile.contain(streamDbResourceHash)) {
+                        auto value = streamFile.getData(streamDbResourceHash, streamSize);
+                        if (!value.has_value())
+                            continue;
+
+                        return std::move(value.value());
+                    }
+                }
+                streamDbResourceHash--;
                 for (const HAYDEN::StreamDBFile &streamFile: m_streamFiles) {
                     if (streamFile.contain(streamDbResourceHash)) {
                         auto value = streamFile.getData(streamDbResourceHash, streamSize);
@@ -86,7 +98,9 @@ namespace HAYDEN {
                 }
             }
         }
-        return std::nullopt;
+
+        return
+                std::nullopt;
     }
 
     bool ResourceFile::mountStreamDB(const fs::path &path) {

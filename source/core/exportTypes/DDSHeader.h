@@ -48,16 +48,16 @@ namespace HAYDEN
     enum class ImageType
     {
         FMT_BC1_ZERO_ALPHA = 54,
-        FMT_BC7_SRGB = 35,
-        FMT_BC3_SRGB = 34,
-        FMT_BC1_SRGB = 33,
-        FMT_BC5_LINEAR = 25, 
-        FMT_BC4_LINEAR = 24, 
-        FMT_BC7_LINEAR = 23, 
-        FMT_BC6H_UF16 = 22, 
-        FMT_BC3_LINEAR = 11, 
         FMT_BC1_LINEAR = 10,
-        FMT_RG8 = 7, 
+        FMT_BC1_SRGB = 33,
+        FMT_BC3_LINEAR = 11,
+        FMT_BC3_SRGB = 34,
+        FMT_BC4_LINEAR = 24,
+        FMT_BC5_LINEAR = 25,
+        FMT_BC7_SRGB = 35,
+        FMT_BC7_LINEAR = 23,
+        FMT_BC6H_UF16 = 22,
+        FMT_RG8 = 7,
         FMT_ALPHA = 5, 
         FMT_RGBA8 = 3
     };

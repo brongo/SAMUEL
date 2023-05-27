@@ -34,10 +34,9 @@ std::optional<std::vector<uint8_t>> HAYDEN::ResourceManager::queryFileByName(con
 }
 
 std::optional<std::vector<uint8_t>> HAYDEN::ResourceManager::queryStreamDataByName(
-        const std::string &name,
-        uint64_t streamSize) const {
+        const std::string &name, uint64_t streamSize, int32_t mipCount) const {
     for (const auto &item: m_resourceFiles) {
-        if (auto file = item.queryStreamDataByName(name, streamSize)) {
+        if (auto file = item.queryStreamDataByName(name, streamSize, mipCount)) {
             return file;
         }
     }

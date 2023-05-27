@@ -13,7 +13,6 @@
 #include "Common.h"
 #include "ExportManager.h"
 #include "Oodle.h"
-#include "ResourceFileReader.h"
 #include "Utilities.h"
 #include "ResourceManager.h"
 

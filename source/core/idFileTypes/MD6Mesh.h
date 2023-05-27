@@ -6,6 +6,7 @@
 
 #include "../Common.h"
 #include "StreamDBGeometry.h"
+#include "../ResourceManager.h"
 
 
 namespace HAYDEN {
@@ -179,5 +180,3 @@ namespace HAYDEN {
         std::vector<Mesh> m_meshGeometry;
     };
 }
-
-#pragma pack(pop)

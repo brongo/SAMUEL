@@ -58,28 +58,37 @@ namespace HAYDEN {
         return new_path;
     }
 
-    // Writes data from memory to local filesystem. Return 1 on success.
-    bool writeToFilesystem(std::vector<uint8_t> outData, fs::path outPath) {
+    bool writeToFilesystem(const std::vector<char> &outData, const fs::path &outPath) {
+        std::vector<uint8_t> data(outData.begin(), outData.end());
+        return writeToFilesystem(data, outPath);
+    }
+
+    bool writeToFilesystem(const std::string &outData, const fs::path &outPath) {
+        std::vector<uint8_t> data(outData.begin(), outData.end());
+        return writeToFilesystem(data, outPath);
+    }
+
+    bool writeToFilesystem(const std::vector<uint8_t> &outData, const fs::path &outPath) {
         fs::path folderPath = outPath;
         folderPath.remove_filename();
-        outPath = replace_char_in_path(outPath, '/', '\\');
+        fs::path tmpOutPath = replace_char_in_path(outPath, '/', '\\');
 
         if (!fs::exists(folderPath)) {
             if (!mkpath(folderPath)) {
-                fprintf(stderr, "Error: Failed to create directories for file: %s \n", outPath.string().c_str());
+                fprintf(stderr, "Error: Failed to create directories for file: %s \n", tmpOutPath.string().c_str());
                 return false;
             }
         }
 
         // open file for writing
 #ifdef _WIN32
-        FILE *outFile = openLongFilePathWin32(outPath); //wb
+        FILE *outFile = openLongFilePathWin32(tmpOutPath); //wb
 #else
-        FILE* outFile = fopen(outPath.string().c_str(), "wb");
+        FILE* outFile = fopen(tmpOutPath.string().c_str(), "wb");
 #endif
 
         if (outFile == nullptr) {
-            fprintf(stderr, "Error: Failed to open file for writing: %s \n", outPath.string().c_str());
+            fprintf(stderr, "Error: Failed to open file for writing: %s \n", tmpOutPath.string().c_str());
             return false;
         }
 
@@ -127,5 +136,24 @@ namespace HAYDEN {
         }
 
         return std::move(out);
+    }
+
+    std::string HAYDEN::getFilename(const std::string &filename) {
+        auto sepIndex = std::find(filename.begin(), filename.end(), '$');
+        std::string tmp = filename.substr(0, std::distance(filename.begin(), sepIndex));
+        return fs::path(tmp).filename().string();
+    }
+
+    std::string getFilename(const fs::path &filename) { return getFilename(filename.string()); }
+
+    bool createPaths(const fs::path &outputFile) {
+        if (!fs::exists(outputFile)) {
+            if (!mkpath(outputFile)) {
+                fprintf(stderr, "Error: Failed to create directories for file: %s \n",
+                        outputFile.string().c_str());
+                return false;
+            }
+        }
+        return true;
     }
 }

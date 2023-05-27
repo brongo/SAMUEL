@@ -33,31 +33,18 @@ namespace HAYDEN {
     class StreamDBFile {
     public:
 
-
         explicit StreamDBFile(const fs::path &path);
 
-        [[nodiscard]] const StreamDBEntry *
-        locateStreamDBEntry(uint64_t streamedFileID, uint64_t streamedDataLength) const;
-
-        [[nodiscard]] std::vector<uint8_t>
-        GetEmbeddedFile(const std::string &streamDBFileName, const StreamDBEntry *streamDBEntry) const;
-
-        [[nodiscard]] std::vector<uint8_t>
-        GetEmbeddedFile(const fs::path &streamDBFileName, const StreamDBEntry *streamDBEntry) const {
-            return GetEmbeddedFile(streamDBFileName.string(), streamDBEntry);
-        };
-
-        [[nodiscard]] const fs::path &filePath() const { return m_filePath; };
 
         [[nodiscard]] bool contain(uint64_t resourceHash) const {
-            for (const auto &item: m_streamDBEntries) {
-
-                if (item.m_fileID == resourceHash) {
-                    return true;
-                }
-            }
-            return false;
+            return std::any_of(m_streamDBEntries.begin(), m_streamDBEntries.end(),
+                               [resourceHash](HAYDEN::StreamDBEntry item) {
+                                   return item.m_fileID == resourceHash;
+                               }
+            );
         }
+
+        [[nodiscard]] const fs::path &filePath() const { return m_filePath; };
 
         [[nodiscard]] bool loaded() const { return m_loaded; };
 

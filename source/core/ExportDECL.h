@@ -6,7 +6,6 @@
 
 #include "idFileTypes/ResourceFile.h"
 
-#include "ResourceFileReader.h"
 #include "Utilities.h"
 
 namespace fs = std::filesystem;
@@ -17,14 +16,16 @@ namespace HAYDEN
     {
         public:
 
-            bool Export(const fs::path exportPath, const std::string resourcePath);
-            DECLExportTask(const ResourceEntry resourceEntry);
+        DECLExportTask(const ResourceManager &resourceManager, const std::string &resourceName);
+        bool exportDECL(const fs::path &exportPath);
 
-        private:
+        const std::string &fileName() { return m_fileName; }
+        const std::string &resourcePath() { return m_resourcePath; }
 
-            std::string _FileName;        
-            uint64_t _ResourceDataOffset = 0;
-            uint64_t _ResourceDataLength = 0;
-            uint64_t _ResourceDataLengthDecompressed = 0;
+    private:
+
+        const ResourceManager &m_resourceManager;
+        std::string m_fileName;
+        std::string m_resourcePath;
     };
 }

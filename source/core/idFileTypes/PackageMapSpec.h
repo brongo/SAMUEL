@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <filesystem>
 
-#include "../../../vendor/jsonxx/jsonxx.h"
+#include "vendor/jsonxx/jsonxx.h"
 
 namespace fs = std::filesystem;
 

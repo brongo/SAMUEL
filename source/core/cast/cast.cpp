@@ -97,7 +97,7 @@ size_t Vector4CastProperty::calcSize() const {
 
 void CastNode::serialize(std::ofstream &stream) const {
     CastNodeHeader header{m_id, static_cast<uint32_t>(calcSize()),
-                          0,
+                          m_hash,
                           static_cast<uint32_t>(m_properties.size()),
                           static_cast<uint32_t>(m_children.size())};
     stream.write((char *) &header, sizeof(CastNodeHeader));

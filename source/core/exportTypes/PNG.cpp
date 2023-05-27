@@ -7,7 +7,7 @@ namespace HAYDEN
     {
         std::vector<uint8_t> outputPNG;
 
-#if defined(_WIN32) && USE_DX
+#if defined(_WIN32)
         
         // Windows systems use the DirectXTex library to convert a DDS file to PNG format
         HRESULT initCOM = CoInitializeEx(NULL, COINIT_MULTITHREADED);
@@ -56,18 +56,18 @@ namespace HAYDEN
                     [&](DirectX::XMVECTOR* outPixels, const DirectX::XMVECTOR* inPixels, size_t w, size_t y)
                     {
                         static const DirectX::XMVECTORU32 s_selectz = { { {DirectX::XM_SELECT_0, DirectX::XM_SELECT_0, DirectX::XM_SELECT_1, DirectX::XM_SELECT_0 } } };
+                        static const DirectX::XMVECTORU32 s_selecty = { { {DirectX::XM_SELECT_0, DirectX::XM_SELECT_1, DirectX::XM_SELECT_0, DirectX::XM_SELECT_0 } } };
+                        static const DirectX::XMVECTORU32 s_selectx = { { {DirectX::XM_SELECT_1, DirectX::XM_SELECT_1, DirectX::XM_SELECT_0, DirectX::XM_SELECT_0 } } };
                         UNREFERENCED_PARAMETER(y);
 
                         for (size_t j = 0; j < w; ++j)
                         {
                             const DirectX::XMVECTOR value = inPixels[j];
-                            DirectX::XMVECTOR z;
+                            DirectX::XMVECTOR y = DirectX::XMVectorSubtract(DirectX::g_XMOne, value);
 
-                            DirectX::XMVECTOR x2 = DirectX::XMVectorMultiplyAdd(value, DirectX::g_XMTwo, DirectX::g_XMNegativeOne);
-                            x2 = DirectX::XMVectorSqrt(DirectX::XMVectorSubtract(DirectX::g_XMOne, DirectX::XMVector2Dot(x2, x2)));
-                            z = DirectX::XMVectorMultiplyAdd(x2, DirectX::g_XMOneHalf, DirectX::g_XMOneHalf);
-
-                            outPixels[j] = XMVectorSelect(value, z, s_selectz);
+                            outPixels[j] = XMVectorSelect(value, DirectX::g_XMOne, s_selectz);
+                            outPixels[j] = XMVectorSelect(outPixels[j], y, s_selecty);
+                            outPixels[j] = XMVectorSelect(outPixels[j], y, s_selectx);
                         }
                     }, scratchReconstructedZ);
 

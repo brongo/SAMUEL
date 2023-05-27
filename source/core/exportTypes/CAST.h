@@ -13,16 +13,17 @@
 #include "../idFileTypes/MD6Skl.h"
 #include "../cast/cast.h"
 
+
 namespace fs = std::filesystem;
 
 
 namespace HAYDEN {
-
+    struct MaterialInfo;
     class CAST {
     public:
-        void ConvertFromLWO(LWO &lwo);
+//        void ConvertFromLWO(LWO &lwo, const std::vector<MaterialInfo>& vector);
 
-        void ConvertFromMD6(const MD6Mesh &md6Mesh, const MD6Skl &md6Skl);
+        void ConvertFromMD6(const MD6Mesh &md6Mesh, const MD6Skl &md6Skl, const std::vector<MaterialInfo>& materials);
 
         void toFile(std::ofstream &stream);
 

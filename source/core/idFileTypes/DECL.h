@@ -8,36 +8,26 @@
 #include <locale> // std::isalpha
 
 #include "../Utilities.h"
+#include "../ResourceManager.h"
 
-namespace HAYDEN
-{
-    class DeclSingleLine
-    {
-        public:
-            std::string GetLineVariable() const { return _LineVariable; };
-            std::string GetLineValue() const { return _LineValue; };
-            void ReadFromStream(std::ifstream& input, std::string line);
+namespace HAYDEN {
+    class DeclFile {
+    public:
 
-        private:
-            int _FormatIsGood = 1;
-            std::string _LineStart = "";
-            std::string _LineVariable = "";
-            std::string _LineAssignment = "";
-            std::string _LineValue = "";
-            std::string _LineTerminator = "";
-    };
+        DeclFile(const ResourceManager &resourceManager, const std::string &resourcePath);
 
-    class DeclFile
-    {
-        public: 
-            int LineCount = 0;
-            std::string GetFileName() const { return _DeclFileName; };
-            DeclSingleLine GetLineData(int lineNumber) const { return _LineData[lineNumber]; }
-            void SetFileName(std::string fileName) { _DeclFileName = fileName; }
-            void SetLineData(DeclSingleLine lineData) { _LineData.push_back(lineData); }
+        void parse();
 
-        private:
-            std::vector<DeclSingleLine> _LineData;
-            std::string _DeclFileName;
+        [[nodiscard]] bool loaded() const { return m_loaded; }
+
+        [[nodiscard]] const std::vector<char> &data() const { return m_data; }
+
+        [[nodiscard]] const jsonxx::Object& json() const { return m_parsed; }
+
+    private:
+
+        bool m_loaded;
+        std::vector<char> m_data;
+        jsonxx::Object m_parsed;
     };
 }

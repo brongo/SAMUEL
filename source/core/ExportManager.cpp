@@ -31,10 +31,11 @@ namespace HAYDEN {
         switch (exportType) {
             case ExportType::COMP:
             case ExportType::DECL:
+                outputFilePath = "";
                 outputPath = outputDirectory / resourceFolder;
                 break;
             case ExportType::BIM:
-                outputFilePath = filePath + ".png";
+                outputFilePath = "";
                 outputPath = outputDirectory / resourceFolder;
                 break;
             case ExportType::LWO:
@@ -72,9 +73,13 @@ namespace HAYDEN {
 //                case 1:
 //                    _COMPFileNames.push_back(filesToExport[i][0]);
 //                    break;
-//                case 21:
-//                    _BIMFileNames.push_back(filesToExport[i][0]);
-//                    break;
+                case 21: {
+                    fs::path exportPath = buildOutputPath(fs::path(filesToExport[i][0]).stem().string(), outputDirectory,
+                                                          ExportType::BIM, resourceFolder);
+                    HAYDEN::BIMExportTask task2(resourceManager, filesToExport[i][0]);
+                    task2.exportBIMImage(outputDirectory / exportPath, true);
+                }
+                    break;
                 case 31: {
                     fs::path exportPath = buildOutputPath(fs::path(filesToExport[i][0]).stem().string(), outputDirectory,
                                                           ExportType::MD6, resourceFolder);

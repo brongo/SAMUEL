@@ -22,29 +22,29 @@ set(PROJECT_SOURCES
         ./source/core/exportTypes/DDSHeader.cpp
 #        ./source/core/exportTypes/OBJ.cpp
         ./source/core/exportTypes/PNG.cpp
+        ./source/core/exportTypes/CAST.cpp
         ./source/core/idFileTypes/BIM.cpp
         ./source/core/idFileTypes/DECL.cpp
-        ./source/core/idFileTypes/LWO.cpp
+        #        ./source/core/idFileTypes/LWO.cpp
         ./source/core/idFileTypes/MD6Mesh.cpp
         ./source/core/idFileTypes/PackageMapSpec.cpp
         ./source/core/idFileTypes/ResourceFile.cpp
         ./source/core/idFileTypes/StreamDBFile.cpp
         ./source/core/idFileTypes/StreamDBGeometry.cpp
-#        ./source/core/ExportBIM.cpp
-#        ./source/core/ExportCOMP.cpp
-#        ./source/core/ExportDECL.cpp
+        ./source/core/ExportBIM.cpp
+        #        ./source/core/ExportCOMP.cpp
+        ./source/core/ExportDECL.cpp
         ./source/core/ExportModel.cpp
         ./source/core/ExportManager.cpp
         ./source/core/Oodle.cpp
-        ./source/core/ResourceFileReader.cpp
         ./source/core/SAMUEL.cpp
         ./source/core/Utilities.cpp
         ./source/core/Utilities.h
         ./vendor/jsonxx/jsonxx.cc
-        ./source/core/exportTypes/CAST.cpp
         ./source/core/cast/cast.cpp
         ./source/core/ResourceManager.cpp
         source/core/idFileTypes/MD6Skl.cpp
+
         )
 
 set(PROJECT_SOURCES_QT
@@ -69,9 +69,15 @@ add_executable(SAMUEL_cli
         ./source/core/idFileTypes/StreamDBGeometry.cpp
         ./source/core/idFileTypes/MD6Mesh.cpp
         ./source/core/idFileTypes/MD6Skl.cpp
+        ./source/core/idFileTypes/BIM.cpp
+        ./source/core/idFileTypes/DECL.cpp
         ./source/core/ExportModel.cpp
+        ./source/core/ExportBIM.cpp
+        ./source/core/ExportDECL.cpp
         ./source/core/ExportManager.cpp
         ./source/core/exportTypes/CAST.cpp
+        ./source/core/exportTypes/DDSHeader.cpp
+        ./source/core/exportTypes/PNG.cpp
         ./source/core/cast/cast.cpp
         ./vendor/jsonxx/jsonxx.cc
         ./source/cli/main.cpp
@@ -85,7 +91,6 @@ if (${QT_VERSION_MAJOR} GREATER_EQUAL 6)
             ${PROJECT_SOURCES_QT}
             ${APP_ICON_RESOURCE_WINDOWS}
             )
-    target_compile_definitions(SAMUEL PUBLIC USE_DX)
 else ()
     if (ANDROID)
         add_library(SAMUEL SHARED
@@ -105,6 +110,7 @@ target_link_libraries(SAMUEL PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${CMAKE_DL_L
 
 if (WIN32)
     target_link_libraries(SAMUEL PRIVATE DirectXTex)
+    target_link_libraries(SAMUEL_cli PRIVATE DirectXTex)
     find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt HINTS ${QTDIR} ENV QTDIR PATH_SUFFIXES bin)
     add_custom_command(TARGET SAMUEL POST_BUILD
             COMMAND ${WINDEPLOYQT_EXECUTABLE} --no-translations $<TARGET_FILE_DIR:SAMUEL>)
