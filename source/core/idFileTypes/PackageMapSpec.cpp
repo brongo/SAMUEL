@@ -18,13 +18,15 @@ namespace HAYDEN {
 
         PackageMapSpecMapFileRef packageMapSpecMapFileRef;
         jsonxx::Array mapFileRefs = packageMapSpecJson.get<jsonxx::Array>("mapFileRefs");
-        m_mapFileRefs.reserve(mapFileRefs.size());
+//        m_mapFileRefs.reserve(mapFileRefs.size());
 
         for (int32_t i = 0; i < mapFileRefs.size(); i++) {
             jsonxx::Object mapFileRef = mapFileRefs.get<jsonxx::Object>(i);
-            packageMapSpecMapFileRef.m_file = (int32_t) mapFileRef.get<jsonxx::Number>("file");
-            packageMapSpecMapFileRef.m_map = (int32_t) mapFileRef.get<jsonxx::Number>("map");
-            m_mapFileRefs.push_back(packageMapSpecMapFileRef);
+            int32_t fileId = (int32_t) mapFileRef.get<jsonxx::Number>("file");
+            int32_t mapId = (int32_t) mapFileRef.get<jsonxx::Number>("map");
+            packageMapSpecMapFileRef.m_file = fileId;
+            packageMapSpecMapFileRef.m_map = mapId;
+            m_mapToFile[mapId].push_back(fileId);
         }
 
         PackageMapSpecMap packageMapSpecMap;
@@ -52,10 +54,10 @@ namespace HAYDEN {
             files << jsonFile;
         }
 
-        for (auto &mapFileRef: m_mapFileRefs) {
+        for (auto &[mapId, fileId]: m_mapToFile) {
             jsonxx::Object jsonMapFileRef;
-            jsonMapFileRef << "file" << mapFileRef.file();
-            jsonMapFileRef << "map" << mapFileRef.map();
+            jsonMapFileRef << "file" << fileId;
+            jsonMapFileRef << "map" << mapId;
             mapFileRefs << jsonMapFileRef;
         }
 
@@ -105,15 +107,12 @@ namespace HAYDEN {
 
     // Returns map index for a given file index
     size_t PackageMapSpec::getMapIndexByFileIndex(size_t fileIndex) const {
-        auto mapFileRefIterator = std::find_if(m_mapFileRefs.begin(), m_mapFileRefs.end(),
-                                               [&](const PackageMapSpecMapFileRef &mapFileRef) {
-                                                   return mapFileRef.file() == fileIndex;
-                                               });
-
-        if (mapFileRefIterator == m_mapFileRefs.end())
-            return -1;
-
-        return m_mapFileRefs[std::distance(m_mapFileRefs.begin(), mapFileRefIterator)].map();
+        for (const auto &[mapId, fileIds]: m_mapToFile){
+            if(std::find(fileIds.begin(),fileIds.end(),fileIndex)!=fileIds.end()){
+                return mapId;
+            }
+        }
+        return -1;
     }
 
     // Returns list of .resources and .streamdbs loaded in a certain map
@@ -134,17 +133,16 @@ namespace HAYDEN {
 
         if (mapIndex == -1 || fileIndex == -1)
             return std::move(fileList);
-
-        for (const auto &mapFileRef: m_mapFileRefs) {
-            if (mapFileRef.map() != mapIndex)
-                continue;
-            fileList.push_back(m_files[mapFileRef.file()].name());
+        std::vector<uint32_t> filesToMount(m_mapToFile.at(mapIndex));
+        std::sort(filesToMount.begin(), filesToMount.end());
+        for (const auto &item: filesToMount) {
+            fileList.push_back(m_files[item].name());
         }
         return std::move(fileList);
     }
 
     void PackageMapSpec::reset() {
-        m_mapFileRefs.clear();
+        m_mapToFile.clear();
         m_files.clear();
         m_maps.clear();
         m_loaded = false;

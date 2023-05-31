@@ -31,6 +31,8 @@ namespace HAYDEN {
             m_roots.push_back(std::move(node));
         }
 
+        void ConvertFromLWO(const LWO &lwo, const std::vector<MaterialInfo> &vector);
+
     private:
         std::vector<Cast::CastNode> m_roots;
     };

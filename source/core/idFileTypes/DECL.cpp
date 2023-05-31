@@ -64,6 +64,7 @@ namespace HAYDEN {
                     case ('\n'):
                     case ('\r'):
                     case ('\t'):
+                    case (','):
                     case (' '): {
                         advance();
                         continue;

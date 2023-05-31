@@ -29,14 +29,14 @@ namespace HAYDEN {
             })
     HAYDEN_PACK(
             struct PackedUV {
-                uint16_t U = 0;
-                uint16_t V = 0;
+                uint16_t U;
+                uint16_t V;
             })
     HAYDEN_PACK(
             struct Face {
-                uint16_t a = 0;
-                uint16_t b = 0;
-                uint16_t c = 0;
+                uint16_t a;
+                uint16_t b;
+                uint16_t c;
             })
     HAYDEN_PACK(
             struct BoneWeights {

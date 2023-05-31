@@ -25,7 +25,7 @@ set(PROJECT_SOURCES
         ./source/core/exportTypes/CAST.cpp
         ./source/core/idFileTypes/BIM.cpp
         ./source/core/idFileTypes/DECL.cpp
-        #        ./source/core/idFileTypes/LWO.cpp
+        ./source/core/idFileTypes/LWO.cpp
         ./source/core/idFileTypes/MD6Mesh.cpp
         ./source/core/idFileTypes/PackageMapSpec.cpp
         ./source/core/idFileTypes/ResourceFile.cpp
@@ -71,6 +71,7 @@ add_executable(SAMUEL_cli
         ./source/core/idFileTypes/MD6Skl.cpp
         ./source/core/idFileTypes/BIM.cpp
         ./source/core/idFileTypes/DECL.cpp
+        ./source/core/idFileTypes/LWO.cpp
         ./source/core/ExportModel.cpp
         ./source/core/ExportBIM.cpp
         ./source/core/ExportDECL.cpp

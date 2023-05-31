@@ -4,14 +4,28 @@
 #include "Utilities.h"
 
 bool HAYDEN::ResourceManager::mountResourceFile(const fs::path &path) {
+    std::cout << "Info: Mounting " << path << std::endl;
     ResourceFile resourceFile(path);
     if (resourceFile.loaded()) {
         bool failedToMountStreamDB = false;
-        if (!m_mapSpec.loaded() && loadPackageMapSpec(path.parent_path() / "packagemapspec.json")) {
-            const std::vector<std::string> toMount = m_mapSpec.getFilesByResourceName(path);
-            std::for_each(toMount.begin(), toMount.end(),
+        if (!m_mapSpec.loaded() && !loadPackageMapSpec(path.parent_path() / "packagemapspec.json")) {
+            std::cerr << "Error: packagemapspec.json" << std::endl;
+            return false;
+        }
+        const std::vector<std::string> toMount = m_mapSpec.getFilesByResourceName(path);
+        std::for_each(toMount.begin(), toMount.end(),
+                      [&resourceFile, &path, &failedToMountStreamDB](const std::string &item) {
+                          if (item.find(".streamdb") != -1) {
+                              std::cout << "\tInfo: Mounting " << path.parent_path() / item << std::endl;
+                              failedToMountStreamDB |= !resourceFile.mountStreamDB(path.parent_path() / item);
+                          }
+                      });
+        if(path.stem().string()!="gameresources"){
+            const std::vector<std::string> toMountGlobal = m_mapSpec.getFilesByResourceName(fs::path("base/gameresources.resources"));
+            std::for_each(toMountGlobal.begin(), toMountGlobal.end(),
                           [&resourceFile, &path, &failedToMountStreamDB](const std::string &item) {
                               if (item.find(".streamdb") != -1) {
+                                  std::cout << "\tInfo: Mounting " << path.parent_path() / item << std::endl;
                                   failedToMountStreamDB |= !resourceFile.mountStreamDB(path.parent_path() / item);
                               }
                           });
@@ -25,21 +39,27 @@ bool HAYDEN::ResourceManager::mountResourceFile(const fs::path &path) {
 }
 
 std::optional<std::vector<uint8_t>> HAYDEN::ResourceManager::queryFileByName(const std::string &name) const {
+    std::cout << "Info: Querying \"" << name << "\"" << std::endl;
     for (const auto &item: m_resourceFiles) {
         if (auto file = item.queryFileByName(name)) {
+            std::cout << "Info: Found in " << item.m_filePath << std::endl;
             return file;
         }
     }
+    std::cerr << "Error: Failed find \"" << name << "\"" << std::endl;
     return std::nullopt;
 }
 
 std::optional<std::vector<uint8_t>> HAYDEN::ResourceManager::queryStreamDataByName(
         const std::string &name, uint64_t streamSize, int32_t mipCount) const {
+    std::cout << "Info: Querying stream \"" << name << "\"" << std::endl;
     for (const auto &item: m_resourceFiles) {
         if (auto file = item.queryStreamDataByName(name, streamSize, mipCount)) {
+            std::cout << "Info: Found in " << item.m_filePath << std::endl;
             return file;
         }
     }
+    std::cerr << "Error: Failed find steam \"" << name << "\"" << std::endl;
     return std::nullopt;
 }
 

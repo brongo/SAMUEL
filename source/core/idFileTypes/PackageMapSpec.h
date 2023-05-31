@@ -73,13 +73,13 @@ namespace HAYDEN {
 
         [[nodiscard]] std::vector<std::string> getFilesByResourceName(const std::string &resourceFileName) const;
 
-        [[nodiscard]] std::vector<std::string> getFilesByResourceName(const fs::path resourceFileName) const {
+        [[nodiscard]] std::vector<std::string> getFilesByResourceName(const fs::path& resourceFileName) const {
             return getFilesByResourceName(resourceFileName.string());
         };
 
         const std::vector<PackageMapSpecFile> &files() { return m_files; };
 
-        const std::vector<PackageMapSpecMapFileRef> &mapFileRefs() { return m_mapFileRefs; };
+        const std::map<uint32_t, std::vector<uint32_t>> &mapFileRefs() { return m_mapToFile; };
 
         const std::vector<PackageMapSpecMap> &maps() { return m_maps; };
 
@@ -89,7 +89,7 @@ namespace HAYDEN {
 
     private:
         std::vector<PackageMapSpecFile> m_files;
-        std::vector<PackageMapSpecMapFileRef> m_mapFileRefs;
+        std::map<uint32_t, std::vector<uint32_t>> m_mapToFile;
         std::vector<PackageMapSpecMap> m_maps;
         bool m_loaded = false;
     };

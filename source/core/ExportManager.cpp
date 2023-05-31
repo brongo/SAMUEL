@@ -67,35 +67,48 @@ namespace HAYDEN {
             int fileType = std::stoi(filesToExport[i][2]);
 
             switch (fileType) {
-//                case 0:
-//                    _DECLFileNames.push_back(filesToExport[i][0]);
-//                    break;
+                case 0: {
+                    fs::path exportPath = buildOutputPath(fs::path(filesToExport[i][0]).stem().string(),
+                                                          outputDirectory,
+                                                          ExportType::DECL, resourceFolder);
+                    HAYDEN::DECLExportTask task(resourceManager, filesToExport[i][0]);
+                    task.exportDECL(outputDirectory / exportPath);
+                }
 //                case 1:
 //                    _COMPFileNames.push_back(filesToExport[i][0]);
 //                    break;
                 case 21: {
-                    fs::path exportPath = buildOutputPath(fs::path(filesToExport[i][0]).stem().string(), outputDirectory,
+                    fs::path exportPath = buildOutputPath(fs::path(filesToExport[i][0]).stem().string(),
+                                                          outputDirectory,
                                                           ExportType::BIM, resourceFolder);
                     HAYDEN::BIMExportTask task2(resourceManager, filesToExport[i][0]);
                     task2.exportBIMImage(outputDirectory / exportPath, true);
                 }
                     break;
                 case 31: {
-                    fs::path exportPath = buildOutputPath(fs::path(filesToExport[i][0]).stem().string(), outputDirectory,
+                    fs::path exportPath = buildOutputPath(fs::path(filesToExport[i][0]).stem().string(),
+                                                          outputDirectory,
                                                           ExportType::MD6, resourceFolder);
 
                     ModelExportTask modelExportTask(resourceManager, filesToExport[i][0]);
-                    modelExportTask.exportMD6Model(outputDirectory/exportPath);
+                    modelExportTask.exportMD6Model(outputDirectory / exportPath);
                     break;
 
                 }
-//                case 67:
-//                    _LWOFileNames.push_back(filesToExport[i][0]);
-//                    break;
+                case 67: {
+                    fs::path exportPath = buildOutputPath(fs::path(filesToExport[i][0]).stem().string(),
+                                                          outputDirectory,
+                                                          ExportType::LWO, resourceFolder);
+
+                    ModelExportTask modelExportTask(resourceManager, filesToExport[i][0]);
+                    modelExportTask.exportLWOModel(outputDirectory / exportPath);
+                    break;
+                }
                 default: {
                     auto resourceData = resourceManager.queryFileByName(filesToExport[i][0]);
                     if (resourceData.has_value())
-                        writeToFilesystem(resourceData.value(), outputDirectory / "raw" / fs::path(filesToExport[i][0]));
+                        writeToFilesystem(resourceData.value(),
+                                          outputDirectory / "raw" / fs::path(filesToExport[i][0]));
                     break;
 
                 }

@@ -1,3 +1,4 @@
+#include <iostream>
 #include "Utilities.h"
 
 namespace HAYDEN {
@@ -79,7 +80,7 @@ namespace HAYDEN {
                 return false;
             }
         }
-
+        std::cout << "Writing " << outPath << std::endl;
         // open file for writing
 #ifdef _WIN32
         FILE *outFile = openLongFilePathWin32(tmpOutPath); //wb

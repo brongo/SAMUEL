@@ -128,7 +128,7 @@ namespace HAYDEN {
 
     }
 
-    void MD6Mesh::readStreamData(std::vector<uint8_t> md6Geo) {
+    void MD6Mesh::readStreamData(const std::vector<uint8_t>& md6Geo) {
         m_meshGeometry.resize(m_header.m_meshCount);
 
         uint64_t offset = 0;

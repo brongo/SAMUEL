@@ -29,8 +29,8 @@ namespace HAYDEN
 	std::vector<std::string> Normals;
 	std::vector<std::string> UVs;
 
-        std::string GroupLine;
-        std::string UseMaterialLine;     
+    std::string GroupLine;
+    std::string UseMaterialLine;
 	std::vector<std::string> Faces;
 
     };

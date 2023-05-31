@@ -82,7 +82,7 @@ namespace HAYDEN {
                         auto value = streamFile.getData(streamDbResourceHash, streamSize);
                         if (!value.has_value())
                             continue;
-
+                        std::cout << "Stream ID for \"" << name << "\" " << streamDbResourceHash << std::endl;
                         return std::move(value.value());
                     }
                 }
@@ -92,7 +92,7 @@ namespace HAYDEN {
                         auto value = streamFile.getData(streamDbResourceHash, streamSize);
                         if (!value.has_value())
                             continue;
-
+                        std::cout << "Stream ID for \"" << name << "\" " << streamDbResourceHash << std::endl;
                         return std::move(value.value());
                     }
                 }
@@ -104,6 +104,11 @@ namespace HAYDEN {
     }
 
     bool ResourceFile::mountStreamDB(const fs::path &path) {
+        for (const auto &item: m_streamFiles) {
+            if (item.filePath() == path)
+                return true;
+        }
+
         StreamDBFile streamDbFile(path);
         if (streamDbFile.loaded()) {
             m_streamFiles.push_back(std::move(streamDbFile));

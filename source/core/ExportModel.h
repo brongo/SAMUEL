@@ -36,20 +36,14 @@ namespace HAYDEN {
 
         ModelExportTask(const ResourceManager &resourceManager, const std::string &resourceName);
 
-        // OBJ export functions. Consider moving to OBJ.h
-//        void WriteMTLFile();
-//
-        CAST castMeshFromMD6(const MD6Mesh &mesh, const MD6Skl &md6Skl, const std::vector<MaterialInfo>& materials);
-//
-//        // Dependency export functions (material2 .decls and BIM textures)
-//        void ExportBIMTextures(const std::vector<ResourceEntry> &resourceData, const MaterialInfo &materialInfo) const;
-//
-//        void
-//        ExportMaterial2Decls(const std::vector<ResourceEntry> &resourceData);
-//
-//        void ReadMaterial2Decls();
+        CAST castMeshFromMD6(const MD6Mesh &mesh, const MD6Skl &md6Skl, const std::vector<MaterialInfo> &materials) const;
+        CAST castMeshFromLWO(const LWO &mesh, const std::vector<MaterialInfo> &materials) const;
 
         bool exportMD6Model(const fs::path &exportPath);
+
+        bool exportLWOModel(const fs::path &exportPath);
+
+        bool exportMaterialsAndTextures(const fs::path& exportPath);
 
     private:
 

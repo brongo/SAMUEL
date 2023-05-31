@@ -53,7 +53,8 @@ namespace HAYDEN {
             if (optStreamData.has_value()) {
                 m_data.insert(m_data.begin(), optStreamData->begin(),
                               optStreamData->begin() + m_mipMaps[0].CompressedSize);
-                oodleDecompressInplace(m_data, m_mipMaps[0].DecompressedSize);
+                if (m_mipMaps[0].BoolIsCompressed!=0 || m_data.size() != m_mipMaps[0].DecompressedSize)
+                    oodleDecompressInplace(m_data, m_mipMaps[0].DecompressedSize);
             }
         }
 

@@ -1,100 +1,85 @@
 #include "LWO.h"
+#include "source/core/Oodle.h"
 
-namespace HAYDEN
-{
-    void LWO_HEADER::ReadBinaryHeader(const std::vector<uint8_t> binaryData)
-    {
+namespace HAYDEN {
+    void LWOHeader::fromData(const std::vector<uint8_t> &binaryData) {
         int offset = 0;
 
         // Read number of meshes
-        Metadata = *(LWO_METADATA*)(binaryData.data() + offset);
-        MeshInfo.resize(Metadata.NumMeshes);
+        m_metadata = *(LWOMetadata *) (binaryData.data() + offset);
+        m_meshInfo.resize(m_metadata.NumMeshes);
 
         // Determine BMLr type & count
-        if (Metadata.UnkHash == 0)
-        {
-            _BMLCount = 1;
-            _UseExtendedBML = 1;
-        }
-        else if(Metadata.UnkHash != 0 && Metadata.NullPad32_2 != 0)
-        {
-            _BMLCount = 4;
-            _UseExtendedBML = 0;
-            _UseShortMeshHeader = 1;
-        }
-        else
-        {
-            _BMLCount = 3;
-            _UseExtendedBML = 0;
+        if (m_metadata.UnkHash == 0) {
+            m_bblCount = 1;
+            m_useExtendedBML = true;
+        } else if (m_metadata.UnkHash != 0 && m_metadata.NullPad32_2 != 0) {
+            m_bblCount = 4;
+            m_useExtendedBML = false;
+            m_useShortMeshHeader = true;
+        } else {
+            m_bblCount = 3;
+            m_useExtendedBML = false;
         }
 
-        // if (Metadata.NullPad32_2 != 0)
+        // if (m_metadata.NullPad32_2 != 0)
         // {
-            // ADD ERROR HANDLER
+        // ADD ERROR HANDLER
         //    return;
         // }
 
         // Advance offset to start of Mesh info
-        offset += sizeof(LWO_METADATA);
+        offset += sizeof(LWOMetadata);
 
         // Read mesh and material info
-        for (int i = 0; i < Metadata.NumMeshes; i++)
-        {
-            if (i > 0 && _UseShortMeshHeader)
-            {
-                MeshInfo[i].MeshHeader.UnkInt2 = *(uint32_t*)(binaryData.data() + offset);
+        for (int i = 0; i < m_metadata.NumMeshes; i++) {
+            if (i > 0 && m_useShortMeshHeader) {
+                m_meshInfo[i].MeshHeader.UnkInt2 = *(uint32_t *) (binaryData.data() + offset);
                 offset += sizeof(uint32_t);
-                MeshInfo[i].MeshHeader.DeclStrlen = *(uint32_t*)(binaryData.data() + offset);
+                m_meshInfo[i].MeshHeader.DeclStrlen = *(uint32_t *) (binaryData.data() + offset);
                 offset += sizeof(uint32_t);
-            }
-            else
-            {
-                MeshInfo[i].MeshHeader = *(LWO_MESH_HEADER*)(binaryData.data() + offset);
+            } else {
+                m_meshInfo[i].MeshHeader = *(LWO_MESH_HEADER *) (binaryData.data() + offset);
                 offset += sizeof(LWO_MESH_HEADER);
             }
 
-            int strLen = MeshInfo[i].MeshHeader.DeclStrlen;
+            uint32_t strLen = m_meshInfo[i].MeshHeader.DeclStrlen;
 
-            if (strLen < 0 || strLen > 1024)
-            {
+            if (strLen > 1024) {
                 // ADD ERROR HANDLER
                 return;
             }
 
-            MeshInfo[i].MaterialDeclName.resize(strLen);
-            MeshInfo[i].MaterialDeclName = std::string(binaryData.data() + offset, binaryData.data() + offset + strLen);
+            m_meshInfo[i].MaterialDeclName.resize(strLen);
+            m_meshInfo[i].MaterialDeclName = std::string(binaryData.data() + offset,
+                                                         binaryData.data() + offset + strLen);
             offset += strLen;
 
-            MeshInfo[i].MeshFooter = *(LWO_MESH_FOOTER*)(binaryData.data() + offset);
+            m_meshInfo[i].MeshFooter = *(LWO_MESH_FOOTER *) (binaryData.data() + offset);
             offset += sizeof(LWO_MESH_FOOTER);
 
             // Read BMLr data (level-of-detail info for each mesh)
-            MeshInfo[i].LODInfo.resize(_BMLCount);
+            m_meshInfo[i].LODInfo.resize(m_bblCount);
 
-            for (int j = 0; j < _BMLCount; j++)
-            {
-                MeshInfo[i].LODInfo[j] = *(LWO_LOD_INFO*)(binaryData.data() + offset);
+            for (int j = 0; j < m_bblCount; j++) {
+                m_meshInfo[i].LODInfo[j] = *(LWOLodInfo *) (binaryData.data() + offset);
 
                 // test
-                if (MeshInfo[i].LODInfo[j].NullPad32 != 0)
-                {
-                    _BMLCount = j;
-                    MeshInfo[i].LODInfo.resize(_BMLCount);
+                if (m_meshInfo[i].LODInfo[j].NullPad32 != 0) {
+                    m_bblCount = j;
+                    m_meshInfo[i].LODInfo.resize(m_bblCount);
                     offset += sizeof(uint32_t);
-                }
-                else
-                {
-                    offset += sizeof(LWO_LOD_INFO);
+                } else {
+                    offset += sizeof(LWOLodInfo);
                 }
 
                 // No idea what these are for
-                if (_UseExtendedBML)
-                {
-                    MeshInfo[i].UnkTuple[0] = *(uint32_t*)(binaryData.data() + offset);
+                if (m_useExtendedBML) {
+                    m_meshInfo[i].UnkTuple[0] = *(uint32_t *) (binaryData.data() + offset);
                     offset += sizeof(uint32_t);
 
-                    MeshInfo[i].UnkTuple[1] = *(uint32_t*)(binaryData.data() + offset);
-                    offset += sizeof(uint32_t); 
+                    m_meshInfo[i].UnkTuple[1] = *(uint32_t *) (binaryData.data() + offset);
+                    offset += sizeof(uint32_t);
                 }
             }
         }
@@ -106,19 +91,16 @@ namespace HAYDEN
 
         // StreamDB structure depends on what our LWO version is.
         const uint64_t streamDBStructCount = 5;
-        StreamDBHeaders.resize(streamDBStructCount);
-        StreamDiskLayout.resize(streamDBStructCount);
-        uint64_t streamDBStructSize = sizeof(LWO_STREAMDB_HEADER) + sizeof(LWO_GEOMETRY_STREAMDISK_LAYOUT);
+        m_streamDBHeaders.resize(streamDBStructCount);
+        m_streamDiskLayout.resize(streamDBStructCount);
+        uint64_t streamDBStructSize = sizeof(LWOStreamdbHeader) + sizeof(LWOGeometryStreamdiskLayout);
 
-        if (MeshInfo[0].LODInfo[0].GeoFlags.Flags1 == 60)
-        {
-            streamDBStructSize += sizeof(LWO_STREAMDB_DATA);
-            StreamDBData.resize(streamDBStructCount);
-        }
-        else
-        {
-            streamDBStructSize += sizeof(LWO_STREAMDB_DATA_VARIANT);
-            StreamDBDataVariant.resize(streamDBStructCount);
+        if (m_meshInfo[0].LODInfo[0].GeoFlags.Flags1 == 60) {
+            streamDBStructSize += sizeof(LWOStreamdbData);
+            m_streamDBData.resize(streamDBStructCount);
+        } else {
+            streamDBStructSize += sizeof(LWOStreamdbDataVariant);
+            m_streamDBDataVariant.resize(streamDBStructCount);
         }
 
         // Move offset to the beginning of streamDB structures
@@ -126,109 +108,116 @@ namespace HAYDEN
         offset = binaryData.size() - (streamDBStructSize * streamDBStructCount);
 
         // Read StreamDB info
-        for (int i = 0; i < streamDBStructCount; i++)
-        {
-            StreamDBHeaders[i] = *(LWO_STREAMDB_HEADER*)(binaryData.data() + offset);
-            offset += sizeof(LWO_STREAMDB_HEADER);
+        for (int i = 0; i < streamDBStructCount; i++) {
+            m_streamDBHeaders[i] = *(LWOStreamdbHeader *) (binaryData.data() + offset);
+            offset += sizeof(LWOStreamdbHeader);
 
-            if (MeshInfo[0].LODInfo[0].GeoFlags.Flags1 == 60)
-            {
-                StreamDBData[i] = *(LWO_STREAMDB_DATA*)(binaryData.data() + offset);
-                offset += sizeof(LWO_STREAMDB_DATA);
-            }
-            else
-            {
-                StreamDBDataVariant[i] = *(LWO_STREAMDB_DATA_VARIANT*)(binaryData.data() + offset);
-                offset += sizeof(LWO_STREAMDB_DATA_VARIANT);
+            if (m_meshInfo[0].LODInfo[0].GeoFlags.Flags1 == 60) {
+                m_streamDBData[i] = *(LWOStreamdbData *) (binaryData.data() + offset);
+                offset += sizeof(LWOStreamdbData);
+            } else {
+                m_streamDBDataVariant[i] = *(LWOStreamdbDataVariant *) (binaryData.data() + offset);
+                offset += sizeof(LWOStreamdbDataVariant);
             }
 
-            StreamDiskLayout[i] = *(LWO_GEOMETRY_STREAMDISK_LAYOUT*)(binaryData.data() + offset);
-            offset += sizeof(LWO_GEOMETRY_STREAMDISK_LAYOUT);
+            m_streamDiskLayout[i] = *(LWOGeometryStreamdiskLayout *) (binaryData.data() + offset);
+            offset += sizeof(LWOGeometryStreamdiskLayout);
         }
 
         // Temporary for rev-eng
-        RawLWOHeader.insert(RawLWOHeader.begin(), binaryData.begin(), binaryData.end());
+        m_rawLWOHeader.insert(m_rawLWOHeader.begin(), binaryData.begin(), binaryData.end());
         return;
     }
 
-    void LWO::Serialize(LWO_HEADER lwoHeader, std::vector<uint8_t> lwoGeo)
-    {
-        Header = lwoHeader;
-        MeshGeometry.resize(Header.Metadata.NumMeshes);
+    LWO::LWO(const ResourceManager &resourceManager, const std::string &resourcePath) {
+        m_loaded = false;
+        auto headerData = resourceManager.queryFileByName(resourcePath);
+        if (!headerData.has_value()) {
+            fprintf(stderr, "Error: No LWO header data for %s\n", resourcePath.c_str());
+            return;
+        }
+        m_header.fromData(headerData.value());
+        m_meshGeometry.resize(m_header.m_metadata.NumMeshes);
+
+        auto optStreamData = resourceManager.queryStreamDataByName(resourcePath,
+                                                                   m_header.m_streamDiskLayout[0].CompressedSize);
+        if (!optStreamData.has_value()) {
+            fprintf(stderr, "Error: No LWO stream data for %s\n", resourcePath.c_str());
+            return;
+        }
+        std::vector<uint8_t> streamData = optStreamData.value();
+        if (m_header.m_streamDiskLayout[0].CompressedSize != m_header.m_streamDiskLayout[0].DecompressedSize) {
+            oodleDecompressInplace(streamData, m_header.m_streamDiskLayout[0].DecompressedSize);
+            if (streamData.empty()) {
+                fprintf(stderr, "Error: Failed to decompress: %s \n", resourcePath.c_str());
+                return;
+            }
+        }
+
+        m_loaded = true;
+        readStreamData(streamData);
+    }
+
+    void LWO::readStreamData(const std::vector<uint8_t> &data) {
 
         uint64_t offset = 0;
-        uint64_t offsetNormals = 0;
-        uint64_t offsetUVs = 0;
-        uint64_t offsetFaces = 0;
+        uint64_t offsetNormals;
+        uint64_t offsetUVs;
+        uint64_t offsetFaces;
 
         // Get offsets from LWO streamdb data
-        if (Header.MeshInfo[0].LODInfo[0].GeoFlags.Flags1 == 60)
-        {
-            offsetNormals = Header.StreamDBData[0].NormalStartOffset;
-            offsetUVs = Header.StreamDBData[0].UVStartOffset;
-            offsetFaces = Header.StreamDBData[0].FacesStartOffset;
-        }
-        else
-        {
-            offsetNormals = Header.StreamDBDataVariant[0].NormalStartOffset;
-            offsetUVs = Header.StreamDBDataVariant[0].UVStartOffset;
-            offsetFaces = Header.StreamDBDataVariant[0].FacesStartOffset;
+        if (m_header.m_meshInfo[0].LODInfo[0].GeoFlags.Flags1 == 60) {
+            offsetNormals = m_header.m_streamDBData[0].NormalStartOffset;
+            offsetUVs = m_header.m_streamDBData[0].UVStartOffset;
+            offsetFaces = m_header.m_streamDBData[0].FacesStartOffset;
+        } else {
+            offsetNormals = m_header.m_streamDBDataVariant[0].NormalStartOffset;
+            offsetUVs = m_header.m_streamDBDataVariant[0].UVStartOffset;
+            offsetFaces = m_header.m_streamDBDataVariant[0].FacesStartOffset;
         }
 
         // Allocate
-        for (int i = 0; i < MeshGeometry.size(); i++)
-        {
-            MeshGeometry[i].m_vertices.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
-            MeshGeometry[i].m_normals.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
-            MeshGeometry[i].m_uv.resize(Header.MeshInfo[i].LODInfo[0].NumVertices);
-            MeshGeometry[i].m_faces.resize(Header.MeshInfo[i].LODInfo[0].NumEdges / 3);
+        for (int i = 0; i < m_meshGeometry.size(); i++) {
+            m_meshGeometry[i].m_vertices.resize(m_header.m_meshInfo[i].LODInfo[0].NumVertices);
+            m_meshGeometry[i].m_normals.resize(m_header.m_meshInfo[i].LODInfo[0].NumVertices);
+            m_meshGeometry[i].m_uv.resize(m_header.m_meshInfo[i].LODInfo[0].NumVertices);
+            m_meshGeometry[i].m_faces.resize(m_header.m_meshInfo[i].LODInfo[0].NumEdges / 3);
         }
 
         // Read m_vertices
-        for (int i = 0; i < MeshGeometry.size(); i++)
-        {
-            for (int j = 0; j < MeshGeometry[i].m_vertices.size(); j++)
-            {
-                PackedVertex packedVertex = *(PackedVertex*)(lwoGeo.data() + offset);
-                MeshGeometry[i].m_vertices[j] = MeshGeometry[i].UnpackVertex(packedVertex, Header.MeshInfo[i].LODInfo[0].GeoMeta.VertexOffset, Header.MeshInfo[i].LODInfo[0].GeoMeta.VertexScale);
+        for (int i = 0; i < m_meshGeometry.size(); i++) {
+            for (int j = 0; j < m_meshGeometry[i].m_vertices.size(); j++) {
+                m_meshGeometry[i].m_vertices[j] = Mesh::UnpackVertex(*(PackedVertex *) (data.data() + offset),
+                                                                     m_header.m_meshInfo[i].LODInfo[0].GeoMeta.VertexOffset,
+                                                                     m_header.m_meshInfo[i].LODInfo[0].GeoMeta.VertexScale);
                 offset += sizeof(PackedVertex);
             }
         }
-     
+
         // Read m_normals
         offset = offsetNormals;
-        for (int i = 0; i < MeshGeometry.size(); i++)
-        {
-            for (int j = 0; j < MeshGeometry[i].m_normals.size(); j++)
-            {
-                PackedNormal packedNormal = *(PackedNormal*)(lwoGeo.data() + offset);
-                MeshGeometry[i].m_normals[j] = MeshGeometry[i].UnpackNormal(packedNormal);
+        for (auto &meshGeometry: m_meshGeometry) {
+            for (auto &m_normal: meshGeometry.m_normals) {
+                m_normal = Mesh::UnpackNormal(*(PackedNormal *) (data.data() + offset));
                 offset += sizeof(PackedNormal);
             }
         }
 
         // Read m_uv
         offset = offsetUVs;
-        for (int i = 0; i < MeshGeometry.size(); i++)
-        {
-            for (int j = 0; j < MeshGeometry[i].m_uv.size(); j++)
-            {
-                PackedUV packedUV = *(PackedUV*)(lwoGeo.data() + offset);
-                MeshGeometry[i].m_uv[j] = MeshGeometry[i].UnpackUV(packedUV, Header.MeshInfo[i].LODInfo[0].GeoMeta.UVMapOffset, Header.MeshInfo[i].LODInfo[0].GeoMeta.UVScale);
+        for (int i = 0; i < m_meshGeometry.size(); i++) {
+            for (int j = 0; j < m_meshGeometry[i].m_uv.size(); j++) {
+                m_meshGeometry[i].m_uv[j] = Mesh::UnpackUV(*(PackedUV *) (data.data() + offset),
+                                                           m_header.m_meshInfo[i].LODInfo[0].GeoMeta.UVMapOffset,
+                                                           m_header.m_meshInfo[i].LODInfo[0].GeoMeta.UVScale);
                 offset += sizeof(PackedUV);
             }
         }
 
         // Read m_faces
         offset = offsetFaces;
-        for (int i = 0; i < MeshGeometry.size(); i++)
-        {
-            for (int j = 0; j < MeshGeometry[i].m_faces.size(); j++)
-            {
-                MeshGeometry[i].m_faces[j] = *(Face*)(lwoGeo.data() + offset);
-                offset += sizeof(Face);
-            }
+        for (auto &meshGeometry: m_meshGeometry) {
+            std::memcpy(meshGeometry.m_faces.data(), data.data() + offset, meshGeometry.m_faces.size() * sizeof(Face));
         }
-        return;
     }
 }

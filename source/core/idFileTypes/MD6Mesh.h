@@ -54,7 +54,7 @@ namespace HAYDEN {
             struct MD6_MESH_UNKNOWNS {
                 uint8_t UnkChar1 = 0;
                 uint32_t UnkDummy1 = 0xFFFFFFFF;
-                uint32_t UnkInt1 = 0;
+                int32_t UnkInt1 = 0;
                 uint32_t UnkInt2 = 0;
                 uint32_t UnkInt3 = 0;
                 uint32_t UnkInt4 = 0;
@@ -166,7 +166,7 @@ namespace HAYDEN {
     public:
         MD6Mesh(const ResourceManager &resourceManager, const std::string &resourcePath);
 
-        void readStreamData(std::vector<uint8_t> md6Geo);
+        void readStreamData(const std::vector<uint8_t>& md6Geo);
 
         [[nodiscard]] bool loaded() const { return m_loaded; }
 
