@@ -30,7 +30,7 @@ This will obviously get compared to VEGA (the other asset extraction tool), so i
 ## Credits:
 
 * SamPT ([@brongo](https://github.com/brongo)) - Primary author/developer of the SAMUEL tool. Reverse-engineered the Doom Eternal .streamdb file format, .resources format, image file formats, .lwo format, .md6mesh headers, and discovered how to export files from .streamdb.
-* [@Powerball253](https://github.com/PowerBall253) - Many HUGE contributions in the form of code & testing. Responsible for Linux/MacOS compatibility, packageMapSpec parser, and figuring out Qt multithreading. Also assisted with reverse-engineering of Doom Eternal BIM (bimage) header formats.
+* PowerBall253 ([@brunoanc](https://github.com/brunoanc)) - Many HUGE contributions in the form of code & testing. Responsible for Linux/MacOS compatibility, packageMapSpec parser, and figuring out Qt multithreading. Also assisted with reverse-engineering of Doom Eternal BIM (bimage) header formats.
 * [DOOM 2016+ Modding Discord](https://discord.gg/ymRvQaU) for support and testing, and encouraging future developments.
 
 
