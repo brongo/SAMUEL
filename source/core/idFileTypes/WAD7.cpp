@@ -147,7 +147,7 @@ namespace HAYDEN
                     for (uint64_t i = 0; i < numStrings; i++)
                     {
                         int stringLength = stringOffsets[i + 1] - stringOffsets[i];
-                        stringEntries[i] = std::string((char*)(memp + position), stringLength);
+                        stringEntries[i] = (char*)(memp + position);
                         position += stringLength;
                     }
                     EmbeddedTypes[i] = stringEntries[idclEntry.PathTuple_OffsetType];

@@ -43,8 +43,7 @@ namespace HAYDEN
             for (uint64_t i = 0; i < _NumStrings; i++)
             {
                 int stringLength = _StringOffsets[i + 1] - _StringOffsets[i];
-                std::unique_ptr<char> stringBuffer(new char[stringLength + 1]);
-                stringBuffer.get()[stringLength] = '\0';
+                std::unique_ptr<char> stringBuffer(new char[stringLength]);
                 fread(stringBuffer.get(), stringLength, 1, f);
                 _StringEntries[i] = stringBuffer.get();
             }

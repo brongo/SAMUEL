@@ -39,10 +39,9 @@ namespace HAYDEN
                 uint32_t stringLength = 0;
                 fread(&stringLength, sizeof(uint32_t), 1, f);
 
-                std::unique_ptr<char> stringBuffer(new char[stringLength + 1]);
-                stringBuffer.get()[stringLength] = '\0';
+                std::unique_ptr<char> stringBuffer(new char[stringLength]);
                 fread(stringBuffer.get(), stringLength, 1, f);
-                EntryNames[i] = stringBuffer.get();
+                EntryNames[i] = std::string(stringBuffer.get(), stringLength);
 
                 fread(&FileEntries[i], sizeof(PK5_ENTRY), 1, f);
 
@@ -97,8 +96,7 @@ namespace HAYDEN
                     for (uint64_t i = 0; i < numStrings; i++)
                     {
                         int stringLength = stringOffsets[i + 1] - stringOffsets[i];
-                        std::unique_ptr<char> stringBuffer(new char[stringLength + 1]);
-                        stringBuffer.get()[stringLength] = '\0';
+                        std::unique_ptr<char> stringBuffer(new char[stringLength]);
                         fread(stringBuffer.get(), stringLength, 1, f);
                         stringEntries[i] = stringBuffer.get();
                     }
