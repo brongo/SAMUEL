@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <cstdint>
 
 #include "../../../vendor/jsonxx/jsonxx.h"
 
