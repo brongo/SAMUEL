@@ -69,19 +69,23 @@ namespace HAYDEN
 
         // allocate vector to hold all entries from this .resources file
         std::vector<ResourceEntry> resourceData;
-        resourceData.resize(numFileEntries);
+        resourceData.reserve(numFileEntries);
 
         // Parse each resource file and convert to usable data
         for (uint32_t i = 0; i < numFileEntries; i++)
         {
             ResourceFileEntry& lexedEntry = resourceFile.GetResourceFileEntry(i);
-            resourceData[i].DataOffset = lexedEntry.DataOffset;
-            resourceData[i].DataSize = lexedEntry.DataSize;
-            resourceData[i].DataSizeUncompressed = lexedEntry.DataSizeUncompressed;
-            resourceData[i].Version = lexedEntry.Version;
-            resourceData[i].StreamResourceHash = lexedEntry.StreamResourceHash;
-            resourceData[i].Type = resourceFile.GetResourceStringEntry(pathStringIndexes[lexedEntry.PathTuple_Index]);
-            resourceData[i].Name = resourceFile.GetResourceStringEntry(pathStringIndexes[lexedEntry.PathTuple_Index + 1]);
+            resourceData.push_back({
+                lexedEntry.DataOffset,
+                lexedEntry.DataSize,
+                lexedEntry.DataSizeUncompressed,
+                lexedEntry.StreamResourceHash,
+                lexedEntry.Version,
+                0,
+                resourceFile.GetResourceStringEntry(pathStringIndexes[lexedEntry.PathTuple_Index + 1]),
+                resourceFile.GetResourceStringEntry(pathStringIndexes[lexedEntry.PathTuple_Index]),
+                0
+            });
         }
         return resourceData;
     };
@@ -94,29 +98,31 @@ namespace HAYDEN
 
         // allocate vector to hold all entries from this .PK5
         std::vector<ResourceEntry> resourceData;
-        resourceData.resize(pk5.EntryCount);
+        resourceData.reserve(pk5.EntryCount);
 
         // Parse each resource file and convert to usable data
+        ResourceEntry resourceEntry;
         for (uint32_t i = 0; i < pk5.EntryCount; i++)
         {
-            resourceData[i].DataOffset = pk5.FileEntries[i].DataStartOffset;
-            resourceData[i].DataSize = pk5.FileEntries[i].CompressedSize;
-            resourceData[i].DataSizeUncompressed = pk5.FileEntries[i].UncompressedSize;
-            resourceData[i].CompressionMode = pk5.FileEntries[i].CompressionMode;
-            resourceData[i].Name = pk5.EntryNames[i];
+            resourceEntry.DataOffset = pk5.FileEntries[i].DataStartOffset;
+            resourceEntry.DataSize = pk5.FileEntries[i].CompressedSize;
+            resourceEntry.DataSizeUncompressed = pk5.FileEntries[i].UncompressedSize;
+            resourceEntry.CompressionMode = pk5.FileEntries[i].CompressionMode;
+            resourceEntry.Name = pk5.EntryNames[i];
 
             if (pk5.EntryTypes[i] == EntryType::TYPE_IDCL)
             {
-                resourceData[i].Version = pk5.EntryVersions[i];
-                resourceData[i].Type = pk5.EmbeddedTypes[i];
-                resourceData[i].isIDCL = 1;
+                resourceEntry.Version = pk5.EntryVersions[i];
+                resourceEntry.Type = pk5.EmbeddedTypes[i];
+                resourceEntry.isIDCL = 1;
             }
             else if (pk5.EntryTypes[i] == EntryType::TYPE_PLAINTEXT)
             {
-                resourceData[i].Version = 0;
-                resourceData[i].Type = "rs_streamfile";
+                resourceEntry.Version = 0;
+                resourceEntry.Type = "rs_streamfile";
             }
-                
+
+            resourceData.push_back(resourceEntry);
         }
         return resourceData;
     }
@@ -129,48 +135,50 @@ namespace HAYDEN
 
         // allocate vector to hold all entries from this .wad7
         std::vector<ResourceEntry> resourceData;
-        resourceData.resize(wad7.EntryCount);
+        resourceData.reserve(wad7.EntryCount);
 
         // Parse each resource file and convert to usable data
+        ResourceEntry resourceEntry;
         for (uint32_t i = 0; i < wad7.EntryCount; i++)
         {
-            resourceData[i].DataOffset = wad7.FileEntries[i].DataStartOffset;
-            resourceData[i].DataSize = wad7.FileEntries[i].CompressedSize;
-            resourceData[i].DataSizeUncompressed = wad7.FileEntries[i].UncompressedSize;
-            resourceData[i].CompressionMode = wad7.FileEntries[i].CompressionMode;
-            resourceData[i].Name = wad7.EntryNames[i];
+            resourceEntry.DataOffset = wad7.FileEntries[i].DataStartOffset;
+            resourceEntry.DataSize = wad7.FileEntries[i].CompressedSize;
+            resourceEntry.DataSizeUncompressed = wad7.FileEntries[i].UncompressedSize;
+            resourceEntry.CompressionMode = wad7.FileEntries[i].CompressionMode;
+            resourceEntry.Name = wad7.EntryNames[i];
 
             if (wad7.EntryTypes[i] == EntryType::TYPE_IDCL)
             {
-                resourceData[i].Version = wad7.EntryVersions[i];
-                resourceData[i].Type = wad7.EmbeddedTypes[i];
-                resourceData[i].isIDCL = 1;
+                resourceEntry.Version = wad7.EntryVersions[i];
+                resourceEntry.Type = wad7.EmbeddedTypes[i];
+                resourceEntry.isIDCL = 1;
             }
             else if (wad7.EntryTypes[i] == EntryType::TYPE_PLAINTEXT)
             {
 
 
                 // Uncooked files - determine type based on file extension
-                if (resourceData[i].Name.rfind(".decl") != -1)
+                if (resourceEntry.Name.rfind(".decl") != -1)
                 {
-                    resourceData[i].Version = 0;
-                    resourceData[i].Type = "rs_streamfile";
+                    resourceEntry.Version = 0;
+                    resourceEntry.Type = "rs_streamfile";
                 }               
                 else
                 {
-                    resourceData[i].Version = 0;
-                    std::string extension = fs::path(resourceData[i].Name).extension().string();
+                    resourceEntry.Version = 0;
+                    std::string extension = fs::path(resourceEntry.Name).extension().string();
 
                     if (extension.length() >= 2) {
-                        resourceData[i].Type = extension.substr(1);
+                        resourceEntry.Type = extension.substr(1);
                     }
                     else {
-                        resourceData[i].Type = "file";
+                        resourceEntry.Type = "file";
                     }
                 }
                     
             }
 
+            resourceData.push_back(resourceEntry);
         }
         return resourceData;
     }

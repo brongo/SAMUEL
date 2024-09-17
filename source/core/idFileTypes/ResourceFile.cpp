@@ -20,33 +20,38 @@ namespace HAYDEN
             // Read .resources file header
             fseek(f, 0, SEEK_SET);
             fread(&_Header, sizeof(ResourceFileHeader), 1, f);
-            _FileEntries.resize(_Header.NumFileEntries);
+            _FileEntries.reserve(_Header.NumFileEntries);
 
             // Read .resources file entries
-            for (uint64_t i = 0; i < _FileEntries.size(); i++)
-                fread(&_FileEntries[i], sizeof(ResourceFileEntry), 1, f);
+            ResourceFileEntry fileEntry;
+            for (uint64_t i = 0; i < _FileEntries.size(); i++) {
+                fread(&fileEntry, sizeof(ResourceFileEntry), 1, f);
+                _FileEntries.push_back(fileEntry);
+            }
 
             // Read total # of strings in resource file
             fread(&_NumStrings, sizeof(uint64_t), 1, f);
 
             // Allocate vectors
-            _PathStringIndexes.resize(_Header.NumPathStringIndexes);
-            _StringEntries.resize(_NumStrings);
-            _StringOffsets.resize(_NumStrings + 1);
-            _StringOffsets[_NumStrings] = _Header.AddrDependencyEntries; // to find last entry string length
+            _PathStringIndexes.reserve(_Header.NumPathStringIndexes);
+            _StringEntries.reserve(_NumStrings);
+            _StringOffsets.reserve(_NumStrings + 1);
 
             // Read string offsets into vector
-            for (uint64_t i = 0; i < _NumStrings; i++)
-                fread(&_StringOffsets[i], 8, 1, f);
+            uint64_t offset;
+            for (uint64_t i = 0; i < _NumStrings; i++) {
+                fread(&offset, 8, 1, f);
+                _StringOffsets.push_back(offset);
+            }
+            _StringOffsets.push_back(_Header.AddrDependencyEntries); // to find last entry string length
 
             // Read strings into vector
             for (uint64_t i = 0; i < _NumStrings; i++)
             {
                 int stringLength = _StringOffsets[i + 1] - _StringOffsets[i];
-                std::unique_ptr<char> stringBuffer(new char[stringLength + 1]);
-                stringBuffer.get()[stringLength] = '\0';
+                std::unique_ptr<char> stringBuffer(new char[stringLength]);
                 fread(stringBuffer.get(), stringLength, 1, f);
-                _StringEntries[i] = stringBuffer.get();
+                _StringEntries.emplace_back(stringBuffer.get());
             }
 
             // Skip ahead to string indexes
@@ -54,8 +59,11 @@ namespace HAYDEN
             fseek(f, addrPathStringIndexes, SEEK_SET);
 
             // Read string indexes into vector
-            for (uint64_t i = 0; i < _Header.NumPathStringIndexes; i++)
-                fread(&_PathStringIndexes[i], sizeof(uint64_t), 1, f);
+            uint64_t pathStringIndex;
+            for (uint64_t i = 0; i < _Header.NumPathStringIndexes; i++) {
+                fread(&pathStringIndex, sizeof(uint64_t), 1, f);
+                _PathStringIndexes.push_back(pathStringIndex);
+            }
         }
         fclose(f);
     }

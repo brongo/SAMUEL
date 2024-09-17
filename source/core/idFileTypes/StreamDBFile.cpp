@@ -62,11 +62,14 @@ namespace HAYDEN
             // Read .streamdb file header
             fseek(f, 0, SEEK_SET);
             fread(&_StreamDBHeader, sizeof(StreamDBHeader), 1, f);
-            _StreamDBEntries.resize(_StreamDBHeader.NumEntries);
+            _StreamDBEntries.reserve(_StreamDBHeader.NumEntries);
 
             // Read .streamdb file entries
-            for (int i = 0; i < _StreamDBHeader.NumEntries; i++)
-                fread(&_StreamDBEntries[i], sizeof(StreamDBEntry), 1, f);
+            StreamDBEntry streamDBEntry;
+            for (int i = 0; i < _StreamDBHeader.NumEntries; i++) {
+                fread(&streamDBEntry, sizeof(StreamDBEntry), 1, f);
+                _StreamDBEntries.push_back(streamDBEntry);
+            }
 
             fclose(f);
         }
